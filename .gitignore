@@ -187,6 +187,12 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
 
 # Ruff stuff:
 .ruff_cache/
@@ -205,3 +211,60 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# --- Project data & experiments ---
+Data/raw/
+Data/processed/
+*.csv
+*.parquet
+*.tsv
+*.xlsx
+
+# Keep small config/metadata (override the above)
+!Data/**/metadata.json
+!Data/**/splits.json
+
+results/
+checkpoints/
+logs/
+*.pkl
+*.pt
+*.pth
+*.npz
+*.npy
+
+# --- Figures & plots ---
+figures/
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+
+# --- Scratch ---
+scratch/
+tmp/
+*.bak
+*.tmp
+
+# --- LaTeX auxiliaries (keep sources & final PDF) ---
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.lol
+*.nav
+*.snm
+
+# Keep LaTeX sources/outputs in paper/
+!paper/**.tex
+!paper/**.bib
+!paper/**.pdf
