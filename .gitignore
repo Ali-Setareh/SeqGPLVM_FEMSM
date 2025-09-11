@@ -220,9 +220,10 @@ data/processed/
 *.tsv
 *.xlsx
 
-# Keep small config/metadata (override the above)
-!data/**/metadata.json
-!data/**/splits.json
+# Keep small config/metadata
+!data/**/*.json
+!data/**/*.txt
+!data/**/*.metadata
 
 results/
 checkpoints/
