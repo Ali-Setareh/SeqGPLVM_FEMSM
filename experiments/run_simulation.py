@@ -2,6 +2,7 @@ import argparse, json
 from pathlib import Path
 import numpy as np
 from dgps import get_simulator
+from dgps.base import make_stem 
 
 def main():
     p = argparse.ArgumentParser()
@@ -30,7 +31,7 @@ def main():
     # Save data + metadata
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    stem = f'{args.dgp}_n{params["n"]}_T{params["T"]}_seed{seed}'
+    stem = make_stem(args.dgp, params)
     df.to_parquet(outdir / f"{stem}.parquet", index=False)
 
     meta = {
