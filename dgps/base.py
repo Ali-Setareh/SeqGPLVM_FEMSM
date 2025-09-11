@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import re
 
+def rng_from_seed(seed: int | None) -> np.random.Generator:
+    return np.random.default_rng(None if seed is None else int(seed))
+
 def make_stem(dgp: str, params: dict) -> str:
     """
     Create a filename stem from DGP name and params dict.

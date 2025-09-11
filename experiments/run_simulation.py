@@ -21,12 +21,11 @@ def main():
 
     # Seed handling
     seed = params.get("seed", 0)
-    rng = np.random.default_rng(seed)
     params["seed"] = seed
 
     # Simulate
     simulate = get_simulator(args.dgp)
-    df = simulate(params, rng=rng)
+    df = simulate(params)
 
     # Save data + metadata
     outdir = Path(args.outdir)
