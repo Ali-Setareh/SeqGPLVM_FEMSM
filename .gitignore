@@ -224,11 +224,11 @@ data/**/*.parquet
 #!data/processed/**/
 
 # Keep small config/metadata
-!data/raw/*.metadata.json          # files at the top of data/raw
-!data/processed/*.metadata    # files at the top of data/processed
-!data/**/*.metadata           # files in subfolders
-!data/**/*.metadata.json
-!data/**/splits.json
+#!data/raw/*.metadata.json          # files at the top of data/raw
+#!data/processed/*.metadata    # files at the top of data/processed
+#!data/**/*.metadata           # files in subfolders
+#!data/**/*.metadata.json
+#!data/**/splits.json
 
 
 results/
