@@ -1,0 +1,10 @@
+{
+  "dgp": "blackwell_yamauchi",
+  "params": {
+    "n": 1000,
+    "T": 40,
+    "seed": 2
+  },
+  "script": "experiments/run_simulation.py",
+  "data_file": "blackwell_yamauchi_T40_n1000_seed2.parquet"
+}
