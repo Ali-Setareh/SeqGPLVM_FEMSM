@@ -217,15 +217,17 @@ __marimo__/
 data/raw/*
 data/processed/*
 
-# But allow Git to enter the dirs (and their subdirs)
+# …but keep the dirs themselves so Git can descend
 !data/raw/
 !data/processed/
 !data/raw/**/
 !data/processed/**/
 
-# Whitelist small config/metadata files
-!data/**/*.metadata
-!data/**/metadata.json
+# Keep small config/metadata
+!data/raw/*.metadata.json          # files at the top of data/raw
+!data/processed/*.metadata    # files at the top of data/processed
+!data/**/*.metadata           # files in subfolders
+!data/**/*.metadata.json
 !data/**/splits.json
 
 
