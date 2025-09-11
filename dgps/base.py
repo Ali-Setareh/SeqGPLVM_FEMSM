@@ -1,7 +1,30 @@
 from typing import Dict, Any, Iterable, List
 import numpy as np
 import pandas as pd
+import re
 
+def make_stem(dgp: str, params: dict) -> str:
+    """
+    Create a filename stem from DGP name and params dict.
+    Includes all params as key-value pairs.
+    Floats are rounded, lists/arrays are flattened.
+    """
+    parts = [dgp]
+
+    for key, val in sorted(params.items()):  # sort → consistent order
+        if isinstance(val, float):
+            val = round(val, 3)  # round floats to 3 decimals
+        elif isinstance(val, (list, tuple)):
+            # join lists into compact form, e.g. beta[-0.5_-0.5_1.0]
+            val = "_".join(str(round(v, 3)) if isinstance(v, float) else str(v) for v in val)
+        elif val is None:
+            val = "none"
+
+        # sanitize for filenames (remove spaces, brackets, commas, etc.)
+        sval = re.sub(r"[^A-Za-z0-9._-]", "", str(val))
+        parts.append(f"{key}{sval}")
+
+    return "_".join(parts)
 
 def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_col: str, max_lag: int) -> pd.DataFrame:
     """
