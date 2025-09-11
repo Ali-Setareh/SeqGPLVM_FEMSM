@@ -2,8 +2,6 @@ from typing import Dict, Any, Iterable, List
 import numpy as np
 import pandas as pd
 
-def rng_from_seed(seed: int | None) -> np.random.Generator:
-    return np.random.default_rng(None if seed is None else int(seed))
 
 def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_col: str, max_lag: int) -> pd.DataFrame:
     """

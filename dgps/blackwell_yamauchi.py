@@ -2,7 +2,8 @@ from typing import Dict, Any
 import numpy as np
 import pandas as pd
 
-from .base import rng_from_seed, add_lag_columns, make_equicorr_cov
+
+from .base import add_lag_columns, make_equicorr_cov
 
 def simulate(params: Dict[str, Any], rng: np.random.Generator | None = None) -> pd.DataFrame:
     """
