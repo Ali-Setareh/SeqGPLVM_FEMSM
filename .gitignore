@@ -213,16 +213,16 @@ marimo/_lsp/
 __marimo__/
 
 # --- Project data & experiments ---
-Data/raw/
-Data/processed/
+data/raw/
+data/processed/
 *.csv
 *.parquet
 *.tsv
 *.xlsx
 
 # Keep small config/metadata (override the above)
-!Data/**/metadata.json
-!Data/**/splits.json
+!data/**/metadata.json
+!data/**/splits.json
 
 results/
 checkpoints/
