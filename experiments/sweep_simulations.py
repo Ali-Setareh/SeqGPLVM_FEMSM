@@ -5,9 +5,9 @@ from pathlib import Path
 def run(cmd): subprocess.check_call(cmd, shell=True)
 
 params_grid = {
-    "n": [500, 1000],
-    "T": [20, 40],
-    "seed": [1, 2, 3], 
+    "n": [500],
+    "T": [20],
+    "seed": [1], 
     "max_lag_d": 3,  # unused in this DGP
 }
 for n, T, seed in product(params_grid["n"], params_grid["T"], params_grid["seed"]):

@@ -3,8 +3,9 @@
   "params": {
     "n": 500,
     "T": 20,
-    "seed": 2
+    "max_lag_d": 3,
+    "seed": 1
   },
   "script": "experiments/run_simulation.py",
-  "data_file": "blackwell_yamauchi_T20_n500_seed2.parquet"
+  "data_file": "blackwell_yamauchi_T20_max_lag_d3_n500_seed1.parquet"
 }
