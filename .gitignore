@@ -221,6 +221,9 @@ data/processed/
 *.xlsx
 
 # Keep small config/metadata
+!data/raw/**/
+!data/processed/**/
+
 !data/**/*.json
 !data/**/*.txt
 !data/**/*.metadata
