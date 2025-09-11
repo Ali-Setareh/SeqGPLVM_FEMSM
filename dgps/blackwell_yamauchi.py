@@ -4,7 +4,7 @@ import pandas as pd
 
 from .base import rng_from_seed, add_lag_columns, make_equicorr_cov
 
-def simulate(params: Dict[str, Any]) -> pd.DataFrame:
+def simulate(params: Dict[str, Any], rng: np.random.Generator | None = None) -> pd.DataFrame:
     """
     Blackwell & Yamauchi (2024) simulation DGP.
 
@@ -57,7 +57,7 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     if T < 2:
         raise ValueError("T must be at least 2.")
 
-    rng = rng_from_seed(seed)
+    rng = rng or np.random.default_rng(params.get("seed", 0)) 
 
     # --- Draw unit-level heterogeneity alpha_i ~ Uniform[-a, a] ---
     alpha = rng.uniform(-a, a, size=n)  # (n,)
