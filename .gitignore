@@ -214,14 +214,14 @@ __marimo__/
 
 
 # Ignore everything inside these dirs
-data/raw/*
-data/processed/*
+data/**/*.parquet  
+
 
 # …but keep the dirs themselves so Git can descend
-!data/raw/
-!data/processed/
-!data/raw/**/
-!data/processed/**/
+#!data/raw/
+#!data/processed/
+#!data/raw/**/
+#!data/processed/**/
 
 # Keep small config/metadata
 !data/raw/*.metadata.json          # files at the top of data/raw
