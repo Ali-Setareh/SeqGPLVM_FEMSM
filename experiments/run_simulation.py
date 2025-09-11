@@ -7,7 +7,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--dgp", required=True, help="module name in dgps/, e.g. hatt_feuerriegel")
     p.add_argument("--config", required=True, help="JSON or YAML with params")
-    p.add_argument("--outdir", default="Data/processed")
+    p.add_argument("--outdir", default="data/raw")
     args = p.parse_args()
 
     # Read params

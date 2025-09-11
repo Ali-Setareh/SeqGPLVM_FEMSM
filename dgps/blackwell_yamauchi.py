@@ -58,7 +58,7 @@ def simulate(params: Dict[str, Any], rng: np.random.Generator | None = None) -> 
     if T < 2:
         raise ValueError("T must be at least 2.")
 
-    rng = rng or np.random.default_rng(params.get("seed", 0)) 
+    rng = rng or np.random.default_rng(seed) 
 
     # --- Draw unit-level heterogeneity alpha_i ~ Uniform[-a, a] ---
     alpha = rng.uniform(-a, a, size=n)  # (n,)
