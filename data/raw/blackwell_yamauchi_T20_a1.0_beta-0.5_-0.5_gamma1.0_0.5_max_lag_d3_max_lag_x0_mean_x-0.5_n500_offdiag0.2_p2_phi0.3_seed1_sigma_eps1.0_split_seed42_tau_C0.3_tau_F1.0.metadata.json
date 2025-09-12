@@ -1,0 +1,34 @@
+{
+  "dgp": "blackwell_yamauchi",
+  "params": {
+    "n": 500,
+    "T": 20,
+    "seed": 1,
+    "a": 1.0,
+    "p": 2,
+    "beta": [
+      -0.5,
+      -0.5
+    ],
+    "gamma": [
+      1.0,
+      0.5
+    ],
+    "phi": 0.3,
+    "tau_F": 1.0,
+    "tau_C": 0.3,
+    "mean_x": -0.5,
+    "offdiag": 0.2,
+    "sigma_eps": 1.0,
+    "max_lag_x": 0,
+    "max_lag_d": 3,
+    "split_seed": 42
+  },
+  "script": "experiments/run_simulation.py",
+  "data_file": "blackwell_yamauchi_T20_a1.0_beta-0.5_-0.5_gamma1.0_0.5_max_lag_d3_max_lag_x0_mean_x-0.5_n500_offdiag0.2_p2_phi0.3_seed1_sigma_eps1.0_split_seed42_tau_C0.3_tau_F1.0.parquet",
+  "split_file": "data\\splits\\blackwell_yamauchi\\N500_T20_p2_splitseed42.json",
+  "split_info": {
+    "by": "unit",
+    "split_seed": 42
+  }
+}
