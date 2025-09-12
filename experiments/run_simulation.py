@@ -3,6 +3,8 @@ from pathlib import Path
 import numpy as np
 from dgps import get_simulator
 from dgps.base import make_stem 
+from utils.splits import make_or_load_split, split_path
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -39,6 +41,19 @@ def main():
         "script": "experiments/run_simulation.py",
         "data_file": f"{stem}.parquet",
     }
+
+    N = int(params["n"])
+    T = int(params.get("T", 0)) or None
+    p = int(params.get("p", 0)) or None
+    split_seed = int(params.get("split_seed", 42))   # optional, separate from data seed
+
+    _ = make_or_load_split(args.dgp, N, split_seed, T=T, p=p)
+    split_file = str(split_path(args.dgp, N, split_seed, T=T, p=p))
+
+    # add to metadata you already write:
+    meta["split_file"] = split_file
+    meta["split_info"] = {"by": "unit", "split_seed": split_seed}
+
     (outdir / f"{stem}.metadata.json").write_text(json.dumps(meta, indent=2))
 
 if __name__ == "__main__":
