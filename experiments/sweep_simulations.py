@@ -4,6 +4,8 @@ from pathlib import Path
 
 def run(cmd): subprocess.check_call(cmd, shell=True)
 
+dgp = "blackwell_yamauchi"
+
 params_grid = {
     "n": [500],
     "T": [20],
@@ -33,4 +35,4 @@ for n, T, seed, a, p in product(*params_grid.values()):
     
     cfg_path = Path("configs/_tmp.json")
     cfg_path.write_text(json.dumps(cfg))
-    run(f"python experiments/run_simulation.py --dgp blackwell_yamauchi --config {cfg_path} --outdir data/raw")
+    run(f"python experiments/run_simulation.py --dgp blackwell_yamauchi --config {cfg_path} --outdir data/raw/{dgp}")
