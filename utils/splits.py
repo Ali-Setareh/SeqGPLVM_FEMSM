@@ -21,7 +21,7 @@ def split_path(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: 
     if T is not None: parts.append(f"T{T}")
     if p is not None: parts.append(f"p{p}")
     parts.append(f"splitseed{split_seed}.json")
-    return Path("data") / "splits" / dgp / "_".join(parts)
+    return Path(f"{dgp}") / "_".join(parts)
 
 def make_or_load_split(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: int | None = None,
                        train=0.7, val=0.15, test=0.15) -> dict:

@@ -26,7 +26,7 @@
   },
   "script": "experiments/run_simulation.py",
   "data_file": "blackwell_yamauchi_T20_a1.0_beta-0.5_-0.5_gamma1.0_0.5_max_lag_d3_max_lag_x0_mean_x-0.5_n500_offdiag0.2_p2_phi0.3_seed1_sigma_eps1.0_split_seed42_tau_C0.3_tau_F1.0.parquet",
-  "split_file": "data\\splits\\blackwell_yamauchi\\N500_T20_p2_splitseed42.json",
+  "split_file": "blackwell_yamauchi\\N500_T20_p2_splitseed42.json",
   "split_info": {
     "by": "unit",
     "split_seed": 42
