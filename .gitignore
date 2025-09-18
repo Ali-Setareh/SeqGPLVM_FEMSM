@@ -275,3 +275,15 @@ tmp/
 !paper/**.tex
 !paper/**.bib
 !paper/**.pdf
+
+# data artifacts
+data/raw/
+data/processed/
+data/splits/
+results/
+checkpoints/
+logs/
+*.parquet
+*.jsonl
+*.npz
+*.npy
