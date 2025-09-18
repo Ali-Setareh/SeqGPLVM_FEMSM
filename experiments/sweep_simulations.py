@@ -39,4 +39,4 @@ for n, T, seed, a, p in product(*params_grid.values()):
     
     cfg_path = Path("configs/_tmp.json")
     cfg_path.write_text(json.dumps(cfg))
-    run(f"python experiments/run_simulation.py --dgp blackwell_yamauchi --config {cfg_path} --outdir data/raw/{dgp}")
+    run(f"python experiments/run_simulation.py --dgp {dgp} --config {cfg_path} --outdir data/raw/{dgp}")

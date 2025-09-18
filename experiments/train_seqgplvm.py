@@ -4,6 +4,8 @@ import os
 import numpy as np
 import pandas as pd
 import shutil
+import gpytorch
+from tqdm.auto import trange
 from gpytorch.likelihoods import BernoulliLikelihood
 from gpytorch.utils.cholesky import NotPSDError
 from pathlib import Path
@@ -65,7 +67,6 @@ def train_seqgplvm(df: pd.DataFrame,
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
     num_epochs = optimize_hyperparams["num_epochs"]
     
-
     iterator = trange(num_epochs, leave=True)
 
     keywords = ["chol_variational_covar", "variational_mean"] # these two are too big to save so we ommit them during the book keeping
@@ -102,8 +103,6 @@ def train_seqgplvm(df: pd.DataFrame,
                     if not any(kw in name for kw in keywords):
                         param_hist[name].append(p.data.clone().detach().cpu().numpy())
                 loss_list.append(loss.item())
-
-
 
                 real_params = get_actuals_via_getters(model)
                 for key,item in real_params.items():
