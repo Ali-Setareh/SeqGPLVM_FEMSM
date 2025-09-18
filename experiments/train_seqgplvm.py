@@ -31,10 +31,6 @@ def train_seqgplvm(df: pd.DataFrame,
                    checkpoint_folder: str = "results/logs"
                    ):
 
-    #N = df_with_lags[pid_col].nunique()
-    #K = df_meta_data[metadata_cov_num_key]
-    #max_T = df_with_lags[time_col].max()
-
     X,A,id2row = get_training_tensors(df,
                                       id_col=pid_col,
                                       time_col=time_col,
