@@ -51,11 +51,11 @@ def main():
     p = int(params.get("p", 0)) or None
     split_seed = int(params.get("split_seed", 42))   # optional, separate from data seed
 
-    _ = make_or_load_split(args.dgp, N, split_seed, T=T, p=p, outdir=splits_outdir)
-    split_file = str(split_path(args.dgp, N, split_seed, T=T, p=p))
+    _,split_file = make_or_load_split(dgp = args.dgp, N = N, split_seed = split_seed, T=T, p=p, output_dir=splits_outdir)
+    
 
     # add to metadata you already write:
-    meta["split_file"] = split_file
+    meta["split_file"] = str(split_file)
     meta["split_info"] = {"by": "unit", "split_seed": split_seed}
 
     (outdir / f"{stem}.metadata.json").write_text(json.dumps(meta, indent=2))
