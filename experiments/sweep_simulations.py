@@ -29,6 +29,10 @@ params = {
     "split_seed": 42
     }
 
+treatment_model = "logit"
+
+params["treatment_model"] = treatment_model
+
 for n, T, seed, a, p in product(*params_grid.values()):
     cfg = {"n": n, "T": T, "seed": seed, "a": a, "p": p,
            "beta": beta_dict[p], "gamma": gamma_dict[p], **params}

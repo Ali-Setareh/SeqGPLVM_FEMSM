@@ -23,8 +23,4 @@ def train_seqgplvm(df,
     N = df_with_lags[pid_col].nunique()
     K = df_meta_data[covariate_num_in_metadata_key]
 
-    model = SeqGPLVM(X, Y, latent_dim, num_inducing, num_inducing_hidden, device=device).to(device)
-
-    checkpoints = Checkpoints(model, "seqgplvm", save_dir="checkpoints")
-
-    model.fit(num_iters=1000, lr=0.01, checkpoints=checkpoints, checkpoint_interval=100)
+    
