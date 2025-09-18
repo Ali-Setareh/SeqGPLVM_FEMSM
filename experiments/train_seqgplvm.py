@@ -2,21 +2,26 @@ import torch
 import json 
 import os
 import numpy as np
-from utils.checkpoints import save_checkpoint, get
-latent_dim = 1
-num_inducing = 50
-num_inducing_hidden = 5 #7
+from models.SeqGPLVM import SeqGPLVM
+from utils.checkpoints import save_checkpoint 
+from utils.inspectors import get_actuals_via_getters 
 
-def train_seqgplvm():
-    from models.seqgplvm import SeqGPLVM
-    from utils.checkpoints import Checkpoints
-    from utils.data import Data
-    import torch
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def train_seqgplvm(df,
+                   df_meta_data,
+                   latent_dim=1,
+                   num_inducing=50, 
+                   num_inducing_hidden=5,
+                   pid_col = "patient_id",
+                   time_col = "t",
+                   covariate_num_in_metadata_key = "p",
+                   device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                   ):
+    
+    df_with_lags = df[df[time_col]!=0]
 
-    data = Data()
-    X, Y = data.load_data()
+    N = df_with_lags[pid_col].nunique()
+    K = df_meta_data[covariate_num_in_metadata_key]
 
     model = SeqGPLVM(X, Y, latent_dim, num_inducing, num_inducing_hidden, device=device).to(device)
 
