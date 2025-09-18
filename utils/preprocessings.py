@@ -1,5 +1,4 @@
  import torch
-import numpy as np
 import pandas as pd
 
 def get_training_tensors(df: pd.DataFrame, 
