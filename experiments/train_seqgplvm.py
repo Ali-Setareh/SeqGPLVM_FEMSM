@@ -18,14 +18,12 @@ def train_seqgplvm(df,
                    metadata_cov_num_key = "p",
                    device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
                    ):
-    
-    df_with_lags = df[df[time_col]!=0]
 
     N = df_with_lags[pid_col].nunique()
     K = df_meta_data[metadata_cov_num_key]
     max_T = df_with_lags[time_col].max()
 
-    
+
 
 
 
