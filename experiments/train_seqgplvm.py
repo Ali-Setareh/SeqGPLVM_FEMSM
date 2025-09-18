@@ -75,12 +75,12 @@ def train_seqgplvm(df: pd.DataFrame,
     actual_params = {key: [item] for key,item in actual_params.items()}
 
 
-    print(f"Training for DGP with paramters: \n {item[1]}")
+    print(f"Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
 
     data_file_name = df_meta_data["data_file"]
     base, _ = os.path.splitext(data_file_name)
 
-    ckpt_dir = checkpoint_folder/ df_meta_data["dgp"] /f"{base}"
+    ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
     # remove the already existing directory
     if os.path.isdir(ckpt_dir):
         shutil.rmtree(ckpt_dir)
@@ -131,7 +131,7 @@ def train_seqgplvm(df: pd.DataFrame,
             # re-raise so you see exactly where it happened:
             raise
         finally:
-            iterator.set_description(f"Loss: {loss_list[-1]:.4f}, iter {i}")
+            iterator.set_description(f"Loss: {loss.item():.4f}, iter {i}")
 
     # final save
     if (i + 1) % checkpoint_interval != 0:        
