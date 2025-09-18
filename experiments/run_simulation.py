@@ -51,7 +51,7 @@ def main():
     p = int(params.get("p", 0)) or None
     split_seed = int(params.get("split_seed", 42))   # optional, separate from data seed
 
-    _ = make_or_load_split(args.dgp, N, split_seed, T=T, p=p)
+    _ = make_or_load_split(args.dgp, N, split_seed, T=T, p=p, outdir=splits_outdir)
     split_file = str(split_path(args.dgp, N, split_seed, T=T, p=p))
 
     # add to metadata you already write:
