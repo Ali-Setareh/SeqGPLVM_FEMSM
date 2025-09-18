@@ -102,7 +102,7 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     for i in range(n):
         for t in range(T):
             rec = {
-                "patient_id": i + 1,
+                "patient_id": i,
                 "t": t + 1,
                 "D": int(D[i, t]),
                 "Y": float(Y[i]) if (t == T - 1) else np.nan
