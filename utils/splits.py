@@ -16,16 +16,17 @@ def split_ids(dgp: str, N: int, split_seed: int = 42, train=0.7, val=0.15, test=
             "proportions": {"train": train, "val": val, "test": test},
             "split_seed": split_seed, "by": "unit"}
 
-def split_path(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: int | None = None) -> Path:
+def split_path(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: int | None = None, output_dir:str| None = None) -> Path:
     parts = [f"N{N}"]
     if T is not None: parts.append(f"T{T}")
     if p is not None: parts.append(f"p{p}")
     parts.append(f"splitseed{split_seed}.json")
-    return Path(f"{dgp}") / "_".join(parts)
+    return Path(output_dir)/ "_".join(parts)
 
 def make_or_load_split(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: int | None = None,
-                       train=0.7, val=0.15, test=0.15) -> dict:
-    path = split_path(dgp, N, split_seed, T, p)
+                       train=0.7, val=0.15, test=0.15,
+                       output_dir: str|None = None) -> dict:
+    path = split_path(dgp, N, split_seed, T, p,output_dir=output_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         return json.loads(path.read_text())

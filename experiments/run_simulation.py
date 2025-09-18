@@ -11,6 +11,8 @@ def main():
     p.add_argument("--dgp", required=True, help="module name in dgps/, e.g. hatt_feuerriegel")
     p.add_argument("--config", required=True, help="JSON or YAML with params")
     p.add_argument("--outdir", default="data/raw")
+    p.add_argument("--splits_outdir", default="data/splits")
+
     args = p.parse_args()
 
     # Read params
@@ -32,6 +34,8 @@ def main():
     # Save data + metadata
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
+    splits_outdir = Path(args.splits_outdir)
+    splits_outdir.mkdir(parents=True, exist_ok=True)
     stem = make_stem(args.dgp, params)
     df.to_parquet(outdir / f"{stem}.parquet", index=False)
 
@@ -39,7 +43,7 @@ def main():
         "dgp": args.dgp,
         "params": params,
         "script": "experiments/run_simulation.py",
-        "data_file": f"{stem}.parquet",
+        "data_file":f"{str(outdir)} /{stem}.parquet",
     }
 
     N = int(params["n"])
