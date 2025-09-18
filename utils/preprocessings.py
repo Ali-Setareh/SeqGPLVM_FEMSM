@@ -7,7 +7,7 @@ def get_training_tensors(df: pd.DataFrame,
                          time_col: str  = "t", 
                          treatment_col: str = "D", 
                          covariate_cols_prefix: str = "x", 
-                         treatment_lag: int = 1) -> tuple[torch.FloatTensor, torch.FloatTensor]:
+                         treatment_lag: int = 1) -> tuple[torch.FloatTensor, torch.FloatTensor, dict[int, int]]:
     """
     Convert a DataFrame into training tensors for a SeqGPLVM model.
 
