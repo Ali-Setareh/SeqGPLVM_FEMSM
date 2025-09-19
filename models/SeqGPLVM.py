@@ -435,7 +435,7 @@ def forward_val(model):      #, batch_idx: torch.Tensor):
 
 
 
-from helpers import get_actuals_via_getters
+from utils.inspectors import get_actuals_via_getters
 
 def fit_Z_posterior(model, steps=500, lr=0.01):
     keywords = ["chol_variational_covar", "variational_mean"] # these two are too big to save so we ommit them during the book keeping

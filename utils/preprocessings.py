@@ -3,6 +3,7 @@ import pandas as pd
 
 def get_training_tensors(df: pd.DataFrame, 
                          id_col: str = "patient_id", 
+                         K: int | None = None,
                          time_col: str  = "t", 
                          treatment_col: str = "D", 
                          covariate_cols_prefix: str = "x", 
@@ -55,7 +56,7 @@ def get_training_tensors(df: pd.DataFrame,
         X[r, t_idx, :K] = x_vals
 
         prev_treat_cols = [f"lag{treatment_lag}_{treatment_col}" for treatment_lag in range(1, treatment_lag+1)]
-        X[r, t_idx, K:] = torch.as_tensor(df[prev_treat_cols].to_numpy(), dtype=torch.float32)
+        X[r, t_idx, K:] = torch.as_tensor(g[prev_treat_cols].to_numpy(), dtype=torch.float32)
 
     return X.contiguous(), A.contiguous(), id2row 
 

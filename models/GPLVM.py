@@ -15,7 +15,7 @@ from torch.distributions import Gamma
 
 import torch 
 import numpy as np 
-from helpers import grid_helper
+from utils.preprocessings import grid_helper
 
 class GPLVM(ApproximateGP):
     def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "RBF"):

@@ -42,7 +42,7 @@ def train_seqgplvm(df: pd.DataFrame,
                                       )
     
     metadata_file_path = df_meta_data["split_file"]
-    with open(Path(split_folder)/metadata_file_path) as f:
+    with open(Path(metadata_file_path)) as f:
         train_ids = json.load(f)["train_ids"]
 
     train_rows = [id2row[pid] for pid in train_ids if pid in id2row]
@@ -50,7 +50,7 @@ def train_seqgplvm(df: pd.DataFrame,
     A_train = A[train_rows].to(device)
 
     # Modol:
-    if df_meta_data["treatment_likelihood"] in ["logit", "probit"]:
+    if df_meta_data["params"]["treatment_model"] in ["logit", "probit"]:
         #init_z = torch.nn.Parameter(torch.zeros(A_train.shape[0], latent_dim))
         init_z = None # the model will assign them N(0,1)
 
@@ -75,10 +75,11 @@ def train_seqgplvm(df: pd.DataFrame,
     actual_params = {key: [item] for key,item in actual_params.items()}
 
 
-    print(f"Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
+    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
 
-    data_file_name = df_meta_data["data_file"]
-    base, _ = os.path.splitext(data_file_name)
+    data_file_path = df_meta_data["data_file"]
+    base = Path(data_file_path).stem
+    
 
     ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
     # remove the already existing directory
@@ -131,7 +132,8 @@ def train_seqgplvm(df: pd.DataFrame,
             # re-raise so you see exactly where it happened:
             raise
         finally:
-            iterator.set_description(f"Loss: {loss.item():.4f}, iter {i}")
+            if loss_list:
+                iterator.set_description(f"Loss: {loss_list[-1]:.4f}, iter {i}")
 
     # final save
     if (i + 1) % checkpoint_interval != 0:        

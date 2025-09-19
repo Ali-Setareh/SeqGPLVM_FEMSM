@@ -118,6 +118,6 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     if max_lag_x > 0:
         df = add_lag_columns(df, cols=x_cols, group_col="patient_id", time_col="t", max_lag=max_lag_x)
     if max_lag_d > 0:
-        df = add_lag_columns(df, cols=["D"], group_col="patient_id", time_col="t", max_lag=max_lag_d)
+        df = add_lag_columns(df, cols=["D"], group_col="patient_id", time_col="t", max_lag=max_lag_d, treatment_col=True)
 
     return df

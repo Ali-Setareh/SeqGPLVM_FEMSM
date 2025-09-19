@@ -29,7 +29,7 @@ def make_stem(dgp: str, params: dict) -> str:
 
     return "_".join(parts)
 
-def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_col: str, max_lag: int) -> pd.DataFrame:
+def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_col: str, max_lag: int, treatment_col: bool = False) -> pd.DataFrame:
     """
     Add lag columns for `cols` within groups defined by `group_col`, ordered by `time_col`.
     New columns follow the scheme: lag{L}_{col}, e.g., lag1_x0, lag2_x1, ...
@@ -43,6 +43,8 @@ def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_
     for col in cols:
         for L in range(1, max_lag + 1):
             df[f"lag{L}_{col}"] = grp[col].shift(L)
+            if treatment_col:
+                df[f"lag{L}_{col}"] = df[f"lag{L}_{col}"].fillna(0)  # fill NaN with 0 for treatment lags
 
     return df
 

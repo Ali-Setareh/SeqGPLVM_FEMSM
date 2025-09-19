@@ -1,3 +1,4 @@
+import torch
 def get_actuals_via_getters(module: torch.nn.Module) -> dict:
     """
     Scans `module` (and its submodules) for any Parameter named 'raw_*',
