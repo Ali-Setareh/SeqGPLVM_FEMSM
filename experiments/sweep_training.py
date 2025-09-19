@@ -40,7 +40,7 @@ treatment_model = "logit"
 params["treatment_model"] = treatment_model
 
 raw_dfs_direct =  Path("data") / "raw" / dgp 
-
+checkpoint_folder =  "results/logs"
 
 #for parquet in RAW_DIR.glob("*.parquet"):
 
@@ -56,11 +56,10 @@ training_cfg = {"latent_dim": 1,
                 "treatment_col": "D",
                 "covariate_cols_prefix": "x",
                 "split_folder": "data/splits", 
-                "device": "auto", 
-                "checkpoint_folder": "results/logs"
-
+                "device": "auto"
 }
-  
+
+training_cfg["checkpoint_folder"] = checkpoint_folder
 
 for n, T, seed, a, p in product(*params_grid.values()):
     cfg = {"n": n, "T": T, "seed": seed, "a": a, "p": p,

@@ -1,4 +1,3 @@
-from CustomizedLatentVariable import Optional_KL_LV
 from gpytorch.likelihoods import GaussianLikelihood, BernoulliLikelihood
 from gpytorch.priors import NormalPrior, GammaPrior
 from gpytorch.models.gplvm import  VariationalLatentVariable
@@ -8,7 +7,7 @@ from torch.distributions import Distribution
 import gpytorch
 import torch 
 import torch.nn as nn
-from GPLVM import GPLVM, SGPRModel
+from models.GPLVM import GPLVM, SGPRModel
 from copy import deepcopy
 from tqdm.notebook import trange
 from typing import Optional
