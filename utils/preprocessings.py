@@ -1,4 +1,4 @@
- import torch
+import torch
 import pandas as pd
 
 def get_training_tensors(df: pd.DataFrame, 
@@ -59,3 +59,11 @@ def get_training_tensors(df: pd.DataFrame,
 
     return X.contiguous(), A.contiguous(), id2row 
 
+
+def grid_helper(a, b):
+    nrow_a = a.size()[0]
+    nrow_b = b.size()[0]
+    ncol_b = b.size()[1]
+    x = a.repeat(nrow_b, 1)
+    y = b.repeat(1, nrow_a).view(-1, ncol_b)
+    return x, y
