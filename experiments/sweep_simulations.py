@@ -43,7 +43,7 @@ for n, T, seed, a, p in product(*params_grid.values()):
     "python", "experiments/run_simulation.py",
     "--dgp", dgp,
     "--config", str(cfg_path),
-    "--outdir", f"data/raw/{dgp}",
+    "--project_root", ".",
     "--splits_outdir", f"data/splits/{dgp}",
     ]
     run(cmd)
