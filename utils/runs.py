@@ -86,3 +86,20 @@ def find_by_params(root: Path, dgp: str, query_params: dict):
         if k in query_params and k in df.columns:
             df = df[df[k] == query_params[k]]
     return df.iloc[0].to_dict() if not df.empty else None
+
+
+def load_by_run_id(root: str | Path, dgp: str, run_id: str, *, columns=None):
+    """Load data.parquet + manifest for a known run_id."""
+    import pandas as pd, json
+    root = Path(root)
+    run_path = run_dir(root, dgp, run_id)
+    df = pd.read_parquet(run_path / "data.parquet", columns=columns)
+    manifest = json.loads((run_path / "manifest.json").read_text(encoding="utf-8"))
+    return df, manifest
+
+def load_by_params(root: str | Path, dgp: str, params: dict, *, columns=None):
+    """Find the run via params (hash) and load its dataframe."""
+    hit = find_by_params(root, dgp, params)
+    if not hit:
+        raise FileNotFoundError(f"No indexed run for dgp={dgp} with params={params}")
+    return load_by_run_id(root, dgp, hit["run_id"], columns=columns)
