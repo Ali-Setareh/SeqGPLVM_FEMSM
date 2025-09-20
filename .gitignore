@@ -214,7 +214,7 @@ __marimo__/
 
 
 # Ignore everything inside these dirs
-data/**/*.parquet  
+#data/**/*.parquet  
 
 
 # …but keep the dirs themselves so Git can descend
