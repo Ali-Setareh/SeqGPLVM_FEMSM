@@ -48,6 +48,7 @@ def add_lag_columns(df: pd.DataFrame, cols: Iterable[str], group_col: str, time_
 
     return df
 
+
 def make_equicorr_cov(p: int, offdiag: float) -> np.ndarray:
     """covariance with 1 on the diagonal and `offdiag` off-diagonal."""
     if p <= 0:
