@@ -12,8 +12,11 @@ def main():
     
     data_path = Path(args.data)
 
-    cfg = yaml.safe_load(data_path.data.read_text()) if data_path.suffix in {".yml",".yaml"} else json.loads(data_path.read_text())
-    df, manifest = load_by_params(".", cfg)
+    data_cfg = yaml.safe_load(data_path.data.read_text()) if data_path.suffix in {".yml",".yaml"} else json.loads(data_path.read_text())
+    df, manifest = load_by_params(".", data_cfg)
+
+    train_cfg = Path(args.config)
+    cfg = yaml.safe_load(train_cfg.read_text()) if train_cfg.suffix in {".yml",".yaml"} else json.loads(train_cfg.read_text())
 
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
