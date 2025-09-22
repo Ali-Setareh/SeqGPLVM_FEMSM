@@ -222,6 +222,9 @@ __marimo__/
 #!data/processed/
 #!data/raw/**/
 #!data/processed/**/
+#!data/splits/
+#!data/splits/**/
+!data/**/
 
 # Keep small config/metadata
 #!data/raw/*.metadata.json          # files at the top of data/raw
