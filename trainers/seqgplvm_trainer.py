@@ -82,12 +82,45 @@ def train_seqgplvm(df: pd.DataFrame,
     
 
     #ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
-    
-    # remove the already existing directory
-    if os.path.isdir(ckpt_dir):
-        shutil.rmtree(ckpt_dir)
 
-    os.makedirs(ckpt_dir,exist_ok=True)
+    # derive a dataset ID from params 
+    params = df_meta_data["params"]
+    data_run_id = df_meta_data.get("run_id") 
+    model_name = "seqgplvm"
+
+    # build a compact training config dict that determines the training identity
+    _train_cfg_identity = {
+        "latent_dim": latent_dim,
+        "num_inducing": num_inducing,
+        "num_inducing_hidden": num_inducing_hidden,
+        "treatment_lag": treatment_lag,
+        "optimize_hyperparams": optimize_hyperparams,
+        "pid_col": pid_col, "time_col": time_col, "treatment_col": treatment_col,
+        "covariate_cols_prefix": covariate_cols_prefix,
+    }
+
+    train_id = make_train_id(
+        data_run_id=data_run_id,
+        model_name=model_name,
+        train_cfg=_train_cfg_identity,
+    )
+
+    # data reference for provenance
+    data_ref = {
+        "dgp": df_meta_data["dgp"],
+        "data_file": df_meta_data["path"],      
+        "split_file": df_meta_data.get("split_file"),
+        "data_run_id": data_run_id,
+    }
+
+    # create output folder and write configs/manifest
+    train_out = write_train_files(
+        root=Path("."),
+        model_name=model_name,
+        train_id=train_id,
+        train_cfg=_train_cfg_identity,
+        data_ref=data_ref,
+    )
 
     loss_list = []
 
@@ -112,24 +145,25 @@ def train_seqgplvm(df: pd.DataFrame,
 
             # periodic checkpoint
             if (i + 1) % checkpoint_interval == 0:
-                save_checkpoint(model, optimizer,
-                                {'param_hist': param_hist,
-                                'actual_params': actual_params,
-                                'loss_list': loss_list},
-                                step=i+1,
-                                base=base,
-                                dir_path=ckpt_dir)
+                save_ckpt(
+                    train_out,
+                    step=i+1,
+                    model_state=model.state_dict(),
+                    optimizer_state=optimizer.state_dict(),
+                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                )
+
         except (NotPSDError, RuntimeError) as e:
             if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
                 print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
                 # save right before quitting
-                save_checkpoint(model, optimizer,
-                                {'param_hist': param_hist,
-                                'actual_params': actual_params,
-                                'loss_list': loss_list},
-                                step=i+1,
-                                base = base,
-                                dir_path = ckpt_dir)
+                save_ckpt(
+                    train_out,
+                    step=i+1,
+                    model_state=model.state_dict(),
+                    optimizer_state=optimizer.state_dict(),
+                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                )
             # re-raise so you see exactly where it happened:
             raise
         finally:
@@ -138,13 +172,13 @@ def train_seqgplvm(df: pd.DataFrame,
 
     # final save
     if (i + 1) % checkpoint_interval != 0:        
-        save_checkpoint(model, optimizer,
-                                    {'param_hist': param_hist,
-                                    'actual_params': actual_params,
-                                    'loss_list': loss_list},
-                                    step=i+1,
-                                    base = base,
-                                    dir_path = ckpt_dir)
+        save_ckpt(
+                    train_out,
+                    step=i+1,
+                    model_state=model.state_dict(),
+                    optimizer_state=optimizer.state_dict(),
+                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                )
 
 
     
