@@ -57,7 +57,7 @@ def append_global_index(root: Path, manifest_row: dict):
 
     # explode a few common params for filtering
     params = row.get("params", {})
-    for k in ("N", "n", "T", "K", "p", "seed", "split_seed"):
+    for k in ("N", "n", "T", "K", "p","a" ,"seed", "split_seed"):
         if k in params:
             row[k] = params[k]
 
@@ -82,7 +82,7 @@ def find_by_params(root: Path, dgp: str, query_params: dict):
     if not hit.empty:
         return hit.iloc[0].to_dict()
     # fallback: filter by keys that we exploded
-    for k in ("N","n","T","K","p","seed","split_seed"):
+    for k in ("N","n","T","K","p","a","seed","split_seed"):
         if k in query_params and k in df.columns:
             df = df[df[k] == query_params[k]]
     return df.iloc[0].to_dict() if not df.empty else None
