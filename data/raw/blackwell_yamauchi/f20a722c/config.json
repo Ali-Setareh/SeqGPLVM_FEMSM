@@ -1,1 +1,0 @@
-{"T":20,"a":1.0,"beta":[-0.5,-0.5,1.0,-0.5],"dgp":"blackwell_yamauchi","gamma":[1.0,0.5,1.0,1.0],"max_lag_d":3,"max_lag_x":0,"mean_x":-0.5,"n":200,"offdiag":0.2,"p":4,"phi":0.3,"seed":1,"sigma_eps":1.0,"split_seed":42,"tau_C":0.3,"tau_F":1.0,"treatment_model":"logit"}
