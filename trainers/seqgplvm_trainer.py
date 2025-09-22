@@ -13,7 +13,7 @@ from models.SeqGPLVM import SeqGPLVM
 from utils.checkpoints import save_checkpoint 
 from utils.inspectors import get_actuals_via_getters 
 from utils.preprocessings import get_training_tensors 
-
+from utils.checkpoints import make_train_id, write_train_files, save_ckpt
 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,
@@ -77,11 +77,12 @@ def train_seqgplvm(df: pd.DataFrame,
 
     print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
 
-    data_file_path = df_meta_data["data_file"]
-    base = Path(data_file_path).stem
+    #data_file_path = df_meta_data["path"]
+    #base = Path(data_file_path).stem
     
 
-    ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
+    #ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
+    
     # remove the already existing directory
     if os.path.isdir(ckpt_dir):
         shutil.rmtree(ckpt_dir)
