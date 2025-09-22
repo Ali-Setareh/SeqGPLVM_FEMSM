@@ -224,6 +224,7 @@ __marimo__/
 #!data/processed/**/
 #!data/splits/
 #!data/splits/**/
+
 data/
 
 # Keep small config/metadata
