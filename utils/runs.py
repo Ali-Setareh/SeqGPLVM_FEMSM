@@ -97,9 +97,9 @@ def load_by_run_id(root: str | Path, dgp: str, run_id: str, *, columns=None):
     manifest = json.loads((run_path / "manifest.json").read_text(encoding="utf-8"))
     return df, manifest
 
-def load_by_params(root: str | Path, dgp: str, params: dict, *, columns=None):
+def load_by_params(root: str | Path, params: dict, *, columns=None):
     """Find the run via params (hash) and load its dataframe."""
-    hit = find_by_params(root, dgp, params)
+    hit = find_by_params(root, params["dgp"], params)
     if not hit:
-        raise FileNotFoundError(f"No indexed run for dgp={dgp} with params={params}")
-    return load_by_run_id(root, dgp, hit["run_id"], columns=columns)
+        raise FileNotFoundError(f"No indexed run for dgp={params["dgp"]} with params={params}")
+    return load_by_run_id(root, params["dgp"], hit["run_id"], columns=columns)

@@ -1,19 +1,32 @@
 import torch 
 import json 
-import os
 import numpy as np
 import pandas as pd
-import shutil
 import gpytorch
 from tqdm.auto import trange
 from gpytorch.likelihoods import BernoulliLikelihood
 from gpytorch.utils.cholesky import NotPSDError
 from pathlib import Path
 from models.SeqGPLVM import SeqGPLVM
-from utils.checkpoints import save_checkpoint 
 from utils.inspectors import get_actuals_via_getters 
 from utils.preprocessings import get_training_tensors 
-from utils.checkpoints import make_train_id, write_train_files, save_ckpt
+from utils.checkpoints import make_train_id, write_train_files, save_ckpt, make_training_index_row, train_dir
+from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, get_epochs_completed_prior
+import shutil
+
+import time, traceback
+
+def _safe_write_json(path: Path, obj: dict):
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+def _update_manifest(train_out: Path, patch: dict):
+    mani_path = train_out / "manifest.json"
+    mani = json.loads(mani_path.read_text(encoding="utf-8"))
+    mani.update(patch)
+    _safe_write_json(mani_path, mani)
+    return mani  # handy if you need it
 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,
@@ -29,8 +42,7 @@ def train_seqgplvm(df: pd.DataFrame,
                    optimize_hyperparams: dict = {"lr": 1e-2, "num_epochs": 20000},
                    checkpoint_interval: int = 2000,
                    param_logging_freq = 50,
-                   split_folder: str = "data/splits",
-                   checkpoint_folder: str = "results/logs"
+                   resume_mode: str = "auto" # "auto" | "yes" | "no"
                    ):
 
     X,A,id2row = get_training_tensors(df,
@@ -69,22 +81,14 @@ def train_seqgplvm(df: pd.DataFrame,
     
     iterator = trange(num_epochs, leave=True)
 
+    # bookkeeping structures
+
     keywords = ["chol_variational_covar", "variational_mean"] # these two are too big to save so we ommit them during the book keeping
     param_hist = {name: [] for name, _ in model.named_parameters() if not any(kw in name for kw in keywords) }
     actual_params = get_actuals_via_getters(model)
     actual_params = {key: [item] for key,item in actual_params.items()}
 
-
-    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
-
-    #data_file_path = df_meta_data["path"]
-    #base = Path(data_file_path).stem
-    
-
-    #ckpt_dir = Path(checkpoint_folder)/ df_meta_data["dgp"] /f"{base}"
-
     # derive a dataset ID from params 
-    params = df_meta_data["params"]
     data_run_id = df_meta_data.get("run_id") 
     model_name = "seqgplvm"
 
@@ -105,6 +109,25 @@ def train_seqgplvm(df: pd.DataFrame,
         train_cfg=_train_cfg_identity,
     )
 
+    project_root = Path(".")
+    train_out = train_dir(project_root, model_name, train_id)
+
+    # Fresh vs resume decision
+    resume = False
+    if resume_mode == "no":
+        if train_out.exists():
+            # DANGEROUS: hard reset of this run directory
+            shutil.rmtree(train_out)
+        # fresh run
+    elif resume_mode in ("auto", "yes"):
+        if train_out.exists():
+            last_ckpt = latest_checkpoint_path(train_out)
+            resume = last_ckpt is not None
+    else:
+        raise ValueError("resume_mode must be one of: 'auto', 'yes', 'no'")
+
+
+
     # data reference for provenance
     data_ref = {
         "dgp": df_meta_data["dgp"],
@@ -124,15 +147,39 @@ def train_seqgplvm(df: pd.DataFrame,
 
     loss_list = []
 
-    for i in iterator:
+    epochs_completed_prior = 0  # will set properly below
+    epochs_completed = 0        # running counter this session
+    status = "success"
+    error_info = None
 
-        optimizer.zero_grad()
-        try:
+    # If resuming, read prior progress from manifest if it exists
+    if resume:
+        ckpt_path = latest_checkpoint_path(train_out)
+        payload = load_checkpoint(ckpt_path, map_location=device)
+        model.load_state_dict(payload["model_state"])
+        if "optimizer_state" in payload:
+            optimizer.load_state_dict(payload["optimizer_state"])
+        extra = payload.get("extra") or {}
+        loss_list     = extra.get("loss_list", loss_list)
+        param_hist    = extra.get("param_hist", param_hist)
+        actual_params = extra.get("actual_params", actual_params)
+        epochs_completed_prior = get_epochs_completed_prior(train_out)
+        print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
+    
+    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
+
+    try:
+
+        for i in iterator:
+
+            optimizer.zero_grad()
+        
             with gpytorch.settings.cholesky_jitter(double_value=1e-3):
-              loss = model()
+                loss = model()
             iterator.set_description('Loss: ' + str(float(np.round(loss.item(),2))) + ", iter no: " + str(i))
             loss.backward()
             optimizer.step()
+            epochs_completed = i + 1
             if (i+1) %param_logging_freq == 0:
                 for name, p in model.named_parameters():
                     if not any(kw in name for kw in keywords):
@@ -147,38 +194,76 @@ def train_seqgplvm(df: pd.DataFrame,
             if (i + 1) % checkpoint_interval == 0:
                 save_ckpt(
                     train_out,
-                    step=i+1,
+                    step=epochs_completed + epochs_completed_prior,
                     model_state=model.state_dict(),
                     optimizer_state=optimizer.state_dict(),
                     extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
                 )
 
-        except (NotPSDError, RuntimeError) as e:
-            if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
-                print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
-                # save right before quitting
-                save_ckpt(
-                    train_out,
-                    step=i+1,
-                    model_state=model.state_dict(),
-                    optimizer_state=optimizer.state_dict(),
-                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
-                )
-            # re-raise so you see exactly where it happened:
-            raise
-        finally:
-            if loss_list:
-                iterator.set_description(f"Loss: {loss_list[-1]:.4f}, iter {i}")
+    except (NotPSDError, RuntimeError) as e:
+        if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
+            print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
+            # save right before quitting
+            save_ckpt(
+                train_out,
+                step=epochs_completed + epochs_completed_prior,
+                model_state=model.state_dict(),
+                optimizer_state=optimizer.state_dict(),
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+            )
 
-    # final save
-    if (i + 1) % checkpoint_interval != 0:        
-        save_ckpt(
-                    train_out,
-                    step=i+1,
-                    model_state=model.state_dict(),
-                    optimizer_state=optimizer.state_dict(),
-                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
-                )
+        status = "failed"
+        error_info = {
+            "type": type(e).__name__,
+            "message": str(e),
+            "traceback": traceback.format_exc(),
+            "failed_at_iter": int(i),
+            "failed_at_global_step": int((i + 1) + epochs_completed_prior),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+            # mark failure in manifest immediately
+        _update_manifest(train_out, {"status": status, "error": error_info})
+                        # re-raise so you see exactly where it happened:
+        raise
+    finally:
+        # final save if we didn't land exactly on a checkpoint
+        if epochs_completed > 0 and (epochs_completed % checkpoint_interval) != 0:
+            save_ckpt(
+                train_out,
+                step=epochs_completed + epochs_completed_prior,
+                model_state=model.state_dict(),
+                optimizer_state=optimizer.state_dict(),
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+            )
+
+        # update manifest with progress & status (success path will overwrite failed → success if no exception)
+        mani_patch = {
+            "status": status,
+            "epochs_completed": int(epochs_completed_prior + epochs_completed),
+            "last_updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        if error_info:
+            mani_patch["error"] = error_info
+        _update_manifest(train_out, mani_patch)
+
+    final_epochs = int(epochs_completed_prior + epochs_completed)
+    final_loss = float(loss_list[-1]) if loss_list else None
+
+    metrics = {
+        "final_loss": final_loss,
+        "epochs_completed": final_epochs,
+        "status": status,
+    }
+
+    row = make_training_index_row(
+        root=".",
+        model_name="seqgplvm",
+        train_id=train_id,
+        train_cfg=_train_cfg_identity,
+        data_run_id=data_run_id,
+        metrics=metrics,
+    )
+    upsert_training_index(".", row)
 
 
     

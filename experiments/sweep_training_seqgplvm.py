@@ -39,8 +39,8 @@ treatment_model = "logit"
 
 params["treatment_model"] = treatment_model
 
-raw_dfs_direct =  Path("data") / "raw" / dgp 
-checkpoint_folder =  "results/logs"
+#raw_dfs_direct =  Path("data") / "raw" / dgp 
+#checkpoint_folder =  "results/logs"
 
 #for parquet in RAW_DIR.glob("*.parquet"):
 
@@ -55,19 +55,22 @@ training_cfg = {"latent_dim": 1,
                 "time_col": "t",
                 "treatment_col": "D",
                 "covariate_cols_prefix": "x",
-                "split_folder": "data/splits", 
-                "device": "auto"
+                "split_folder": "data/splits"
 }
 
-training_cfg["checkpoint_folder"] = checkpoint_folder
+device = "auto"
+
+training_cfg["resume_mode"] = "no"
+#training_cfg["checkpoint_folder"] = checkpoint_folder
 
 for n, T, seed, a, p in product(*params_grid.values()):
-    cfg = {"n": n, "T": T, "seed": seed, "a": a, "p": p,
+    dgp_cfg = {"dgp": dgp, "n": n, "T": T, "seed": seed, "a": a, "p": p,
            "beta": beta_dict[p], "gamma": gamma_dict[p], **params}
-    raw_file_path = raw_dfs_direct / f"{make_stem(dgp,cfg)}.parquet"
-    meta_file_path = raw_dfs_direct / f"{make_stem(dgp,cfg)}.metadata.json"
-    cfg_path = Path("configs/_tmp.json")
-    cfg_path.write_text(json.dumps(training_cfg))
+    dgp_cfg_path = Path("configs/_data_tmp.json")
+    dgp_cfg_path.write_text(json.dumps(dgp_cfg))
+
+    train_cfg_path = Path("configs/_train_tmp.json")
+    train_cfg_path.write_text(json.dumps(training_cfg))
 
 
     #stem = parquet.stem
@@ -75,8 +78,8 @@ for n, T, seed, a, p in product(*params_grid.values()):
    
     run([
         "python", "-m", "experiments.train_seqgplvm",
-        "--data", str(raw_file_path),
-        "--meta", str(meta_file_path),
-        "--config", f"{cfg_path}",
-        "--outdir", f"{training_cfg['checkpoint_folder']}"
+        "--data", dgp_cfg_path,
+        "--config", train_cfg_path,
+        "--device", device
+
     ])
