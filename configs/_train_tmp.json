@@ -1,1 +1,0 @@
-{"latent_dim": 1, "num_inducing": 50, "num_inducing_hidden": 5, "treatment_lag": 1, "optimize_hyperparams": {"lr": 0.01, "num_epochs": 100}, "checkpoint_interval": 50, "param_logging_freq": 10, "pid_col": "patient_id", "time_col": "t", "treatment_col": "D", "covariate_cols_prefix": "x", "resume_mode": "no"}

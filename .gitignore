@@ -234,6 +234,8 @@ data/
 #!data/**/*.metadata.json
 #!data/**/splits.json
 
+configs/
+
 
 results/
 checkpoints/
