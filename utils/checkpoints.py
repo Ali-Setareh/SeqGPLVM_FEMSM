@@ -195,6 +195,7 @@ def write_train_files(root: Path | str,
                       train_id: str,
                       *,
                       train_cfg: dict,
+                      data_ref: dict,
                       metrics: dict | None = None):
     root = Path(root)
     out = train_dir(root, model_name, train_id)
@@ -217,7 +218,7 @@ def write_train_files(root: Path | str,
         "git_commit": git_commit,
         "python": platform.python_version(),
         "node": platform.node(),
-        
+        "data_ref": data_ref,
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
