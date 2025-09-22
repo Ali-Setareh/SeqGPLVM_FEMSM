@@ -4,7 +4,7 @@ import json, numpy as np
 
 def split_ids(dgp: str, N: int, split_seed: int = 42, train=0.7, val=0.15, test=0.15):
     assert abs(train + val + test - 1) < 1e-9
-    ids = np.arange(1, N+1)                 # patient IDs assumed 1..N+1 in sims
+    ids = np.arange(0, N)                 # patient IDs assumed 0..N-1 in sims
     rng = np.random.default_rng(split_seed)
     perm = rng.permutation(ids)
     n_train = int(round(train * N))

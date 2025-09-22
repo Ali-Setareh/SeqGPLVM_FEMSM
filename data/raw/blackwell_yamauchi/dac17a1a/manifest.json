@@ -1,0 +1,45 @@
+{
+  "dgp": "blackwell_yamauchi",
+  "run_id": "dac17a1a",
+  "created_at": "2025-09-22T21:17:36Z",
+  "path": "data\\raw\\blackwell_yamauchi\\dac17a1a",
+  "git_commit": "d5e5e85",
+  "python": "3.12.3",
+  "node": "Ali-Setareh",
+  "params": {
+    "dgp": "blackwell_yamauchi",
+    "n": 3000,
+    "T": 300,
+    "seed": 1,
+    "a": 1.0,
+    "p": 4,
+    "beta": [
+      -0.5,
+      -0.5,
+      1.0,
+      -0.5
+    ],
+    "gamma": [
+      1.0,
+      0.5,
+      1.0,
+      1.0
+    ],
+    "phi": 0.3,
+    "tau_F": 1.0,
+    "tau_C": 0.3,
+    "mean_x": -0.5,
+    "offdiag": 0.2,
+    "sigma_eps": 1.0,
+    "max_lag_x": 0,
+    "max_lag_d": 3,
+    "split_seed": 42,
+    "treatment_model": "logit"
+  },
+  "script": "experiments/run_simulation.py",
+  "split_file": "data\\splits\\blackwell_yamauchi\\N3000_T300_p4_splitseed42.json",
+  "split_info": {
+    "by": "unit",
+    "split_seed": 42
+  }
+}

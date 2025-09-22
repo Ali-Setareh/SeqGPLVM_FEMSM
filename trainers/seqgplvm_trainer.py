@@ -98,9 +98,7 @@ def train_seqgplvm(df: pd.DataFrame,
         "num_inducing": num_inducing,
         "num_inducing_hidden": num_inducing_hidden,
         "treatment_lag": treatment_lag,
-        "optimize_hyperparams": optimize_hyperparams,
-        "pid_col": pid_col, "time_col": time_col, "treatment_col": treatment_col,
-        "covariate_cols_prefix": covariate_cols_prefix,
+        "optimize_hyperparams": optimize_hyperparams["lr"]
     }
 
     train_id = make_train_id(
@@ -136,15 +134,20 @@ def train_seqgplvm(df: pd.DataFrame,
         "data_run_id": data_run_id,
     }
 
-    # create output folder and write configs/manifest
-    train_out = write_train_files(
-        root=Path("."),
-        model_name=model_name,
-        train_id=train_id,
-        train_cfg=_train_cfg_identity,
-        data_ref=data_ref,
-    )
-
+    if not resume:
+        _train_cfg_identity["logging"] = {
+        "param_logging_freq": param_logging_freq,
+        "checkpoint_interval": checkpoint_interval
+        }
+        # create output folder and write configs/manifest
+        train_out = write_train_files(
+            root=Path("."),
+            model_name=model_name,
+            train_id=train_id,
+            train_cfg=_train_cfg_identity,
+            data_ref=data_ref,
+        )
+    
     loss_list = []
 
     epochs_completed_prior = 0  # will set properly below
@@ -180,7 +183,7 @@ def train_seqgplvm(df: pd.DataFrame,
             loss.backward()
             optimizer.step()
             epochs_completed = i + 1
-            if (i+1) %param_logging_freq == 0:
+            if i % param_logging_freq == 0:
                 for name, p in model.named_parameters():
                     if not any(kw in name for kw in keywords):
                         param_hist[name].append(p.data.clone().detach().cpu().numpy())
@@ -218,7 +221,7 @@ def train_seqgplvm(df: pd.DataFrame,
             "message": str(e),
             "traceback": traceback.format_exc(),
             "failed_at_iter": int(i),
-            "failed_at_global_step": int((i + 1) + epochs_completed_prior),
+            "failed_at_global_step": int(epochs_completed + epochs_completed_prior),
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             # mark failure in manifest immediately
@@ -246,24 +249,24 @@ def train_seqgplvm(df: pd.DataFrame,
             mani_patch["error"] = error_info
         _update_manifest(train_out, mani_patch)
 
-    final_epochs = int(epochs_completed_prior + epochs_completed)
-    final_loss = float(loss_list[-1]) if loss_list else None
+        final_epochs = int(epochs_completed_prior + epochs_completed)
+        final_loss = float(loss_list[-1]) if loss_list else None
 
-    metrics = {
-        "final_loss": final_loss,
-        "epochs_completed": final_epochs,
-        "status": status,
-    }
+        metrics = {
+            "final_loss": final_loss,
+            "epochs_completed": final_epochs,
+            "status": status,
+        }
 
-    row = make_training_index_row(
-        root=".",
-        model_name="seqgplvm",
-        train_id=train_id,
-        train_cfg=_train_cfg_identity,
-        data_run_id=data_run_id,
-        metrics=metrics,
-    )
-    upsert_training_index(".", row)
+        row = make_training_index_row(
+            root=".",
+            model_name="seqgplvm",
+            train_id=train_id,
+            train_cfg=_train_cfg_identity,
+            data_run_id=data_run_id,
+            metrics=metrics,
+        )
+        upsert_training_index(".", row)
 
 
     

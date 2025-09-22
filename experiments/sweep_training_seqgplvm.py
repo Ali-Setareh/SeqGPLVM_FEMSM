@@ -7,9 +7,6 @@ import json
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
 
-#RAW_DIR = Path("data/raw/blackwell_yamauchi")
-#SPLIT_DIR = Path("data/splits")
-
 dgp = "blackwell_yamauchi"
 
 params_grid = {
@@ -39,29 +36,25 @@ treatment_model = "logit"
 
 params["treatment_model"] = treatment_model
 
-#raw_dfs_direct =  Path("data") / "raw" / dgp 
-#checkpoint_folder =  "results/logs"
-
-#for parquet in RAW_DIR.glob("*.parquet"):
 
 training_cfg = {"latent_dim": 1,
                 "num_inducing": 50,
                 "num_inducing_hidden": 5,
                 "treatment_lag": 1,
-                "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 20},
-                "checkpoint_interval": 10,
-                "param_logging_freq": 5,
+                "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+                "checkpoint_interval": 50,
+                "param_logging_freq": 10,
                 "pid_col": "patient_id",
                 "time_col": "t",
                 "treatment_col": "D",
-                "covariate_cols_prefix": "x",
-                "split_folder": "data/splits"
+                "covariate_cols_prefix": "x"
 }
+
+training_cfg["resume_mode"] = "no"
 
 device = "auto"
 
-training_cfg["resume_mode"] = "no"
-#training_cfg["checkpoint_folder"] = checkpoint_folder
+
 
 for n, T, seed, a, p in product(*params_grid.values()):
     dgp_cfg = {"dgp": dgp, "n": n, "T": T, "seed": seed, "a": a, "p": p,
@@ -71,15 +64,10 @@ for n, T, seed, a, p in product(*params_grid.values()):
 
     train_cfg_path = Path("configs/_train_tmp.json")
     train_cfg_path.write_text(json.dumps(training_cfg))
-
-
-    #stem = parquet.stem
-    #meta = SPLIT_DIR / f"{stem}.split.json"
    
     run([
         "python", "-m", "experiments.train_seqgplvm",
         "--data", dgp_cfg_path,
         "--config", train_cfg_path,
         "--device", device
-
     ])

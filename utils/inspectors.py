@@ -39,7 +39,9 @@ def plot_param_history(param_hist: dict,
                        key: str,
                        ls_num: int = 0,
                        width: int = 1000,
-                       height: int = 500) -> go.Figure:
+                       height: int = 500, 
+                       x_start: int | float = 0,      # ← add
+                       x_step: int | float = 1) -> go.Figure:
     """
     Plot the history of parameters stored in param_hist.
 
@@ -73,8 +75,12 @@ def plot_param_history(param_hist: dict,
 
     plot_list = np.array(arrays).squeeze()
 
+    n_iters = plot_list.shape[1] if plot_list.ndim >= 2 else plot_list.shape[0]
+    x_vals = x_start + np.arange(n_iters) * x_step
+
     # 2) for z_mu / z_logsigma we want to transpose so “i‐over‐iterations” matches
     if key in ('Z_val.q_mu', 'Z_val.q_log_sigma','Z.q_mu', 'Z.q_log_sigma'):
+        
         plot_list = plot_list.T
 
     # 3) build the figure
@@ -85,6 +91,7 @@ def plot_param_history(param_hist: dict,
             y = plot_list[i, :, ls_num]
             fig.add_trace(go.Scatter(
                 y=y,
+                x=x_vals,
                 mode='lines',            
                 #marker=dict(size=8, opacity=0),
                 name=f"{key}_{i}"
@@ -96,6 +103,7 @@ def plot_param_history(param_hist: dict,
             y = plot_list[i, :]
             fig.add_trace(go.Scatter(
                 y=y,
+                x=x_vals,
                 mode='lines',
                 name=f"{key}_{i}"
             ))
