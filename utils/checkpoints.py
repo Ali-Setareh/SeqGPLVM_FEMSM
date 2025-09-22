@@ -1,5 +1,11 @@
 import os 
 import glob
+from datetime import datetime
+from pathlib import Path 
+import json, platform, subprocess
+from dgps.base import canonicalize, short_hash
+import torch 
+
 
 def save_checkpoint(
     model, 
@@ -175,3 +181,59 @@ def format_param_key_val(key, val):
     else:
         val_str = str(val).replace('-', '-').replace('.', 'p')
     return f"{key_str}{val_str}"
+
+def make_train_id(*, data_run_id: str, model_name: str, train_cfg: dict, extra: dict | None = None, length: int = 10) -> str:
+    payload = {"data": data_run_id, "model": model_name, "cfg": train_cfg}
+    if extra: payload["extra"] = extra
+    return short_hash(payload, length=length)
+
+def train_dir(root: Path | str, model_name: str, train_id: str) -> Path:
+    return Path(root) / "results" / "models" / model_name / train_id
+
+def write_train_files(root: Path | str,
+                      model_name: str,
+                      train_id: str,
+                      *,
+                      train_cfg: dict,
+                      data_ref: dict,
+                      metrics: dict | None = None):
+    root = Path(root)
+    out = train_dir(root, model_name, train_id)
+    (out / "ckpts").mkdir(parents=True, exist_ok=True)
+
+    # Save configs / refs
+    (out / "config.json").write_text(canonicalize(train_cfg), encoding="utf-8")
+    (out / "data_ref.json").write_text(canonicalize(data_ref), encoding="utf-8")
+
+    # manifest
+    git_commit = None
+    try:
+        git_commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=root).decode().strip()
+    except Exception:
+        pass
+    manifest = {
+        "model": model_name,
+        "train_id": train_id,
+        "created_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "git_commit": git_commit,
+        "python": platform.python_version(),
+        "node": platform.node(),
+        "data_ref": data_ref,
+    }
+    (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    if metrics is not None:
+        (out / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+
+    return out
+
+def save_ckpt(path: Path, step: int, model_state: dict, optimizer_state: dict | None = None, extra: dict | None = None):
+    payload = {"model_state": model_state}
+    if optimizer_state is not None:
+        payload["optimizer_state"] = optimizer_state
+    if extra:
+        payload["extra"] = extra
+    ckpt_path = path / "ckpts" / f"step_{step:07d}.pt"
+    import torch
+    torch.save(payload, ckpt_path)
+    return ckpt_path
