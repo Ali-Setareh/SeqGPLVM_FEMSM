@@ -2,7 +2,7 @@
 from pathlib import Path
 import subprocess, os, json
 from itertools import product
-from dgps.base import make_stem  # you already use this elsewhere, optional
+
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
 
@@ -63,7 +63,8 @@ else:
 # Unique scratch dir per task to avoid config filename clashes
 job_id   = os.environ.get("SLURM_JOB_ID", "nojid")
 task_tag = os.environ.get("SLURM_ARRAY_TASK_ID", "single")
-scratch  = Path(f"/tmp/sweep_{job_id}_{task_tag}")
+tmp = os.environ.get("TMPDIR", "/tmp")
+scratch = Path(tmp) / f"sweep_{job_id}_{task_tag}"
 scratch.mkdir(parents=True, exist_ok=True)
 
 # Ensure project-local configs dir exists (for logs/checks, optional)

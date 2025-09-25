@@ -185,7 +185,7 @@ def train_seqgplvm(df: pd.DataFrame,
         }
         # create output folder and write configs/manifest
         train_out = write_train_files(
-            root=Path("."),
+            root=scratch_root,
             model_name=model_name,
             train_id=train_id,
             train_cfg=_train_cfg_identity,

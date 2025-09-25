@@ -12,7 +12,7 @@ def main():
     
     data_path = Path(args.data)
 
-    data_cfg = yaml.safe_load(data_path.data.read_text()) if data_path.suffix in {".yml",".yaml"} else json.loads(data_path.read_text())
+    data_cfg = yaml.safe_load(data_path.read_text()) if data_path.suffix in {".yml",".yaml"} else json.loads(data_path.read_text())
     df, manifest = load_by_params(".", data_cfg)
 
     train_cfg = Path(args.config)
