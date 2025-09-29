@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=24G
 #SBATCH --time=06:00:00
-#SBATCH --array=1-48                     # <-- grid size
+#SBATCH --array=1                     # <-- grid size
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
 
