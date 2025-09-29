@@ -22,7 +22,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate seqdecon
 
 # (optional) persistent place for results + progress heartbeats
-export FINAL_ROOT=/work/ws/hd_<your_account>/<you>/seqdecon_results
+export FINAL_ROOT="$HOME/seqdecon_results"
 mkdir -p "$FINAL_ROOT/progress"
 
 # make Python output stream line-by-line
