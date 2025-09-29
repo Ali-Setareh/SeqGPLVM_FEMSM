@@ -8,11 +8,11 @@
 #SBATCH --time=06:00:00
 #SBATCH --array=1                  # set to 1-48 when you’re ready
 #SBATCH --export=NONE              # don't inherit a messy login env
-#SBATCH --chdir=${SLURM_SUBMIT_DIR}
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
 
 set -euo pipefail
+cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 
 # Clean env, load conda, activate env INSIDE the job
