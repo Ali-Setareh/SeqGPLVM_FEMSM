@@ -12,8 +12,9 @@ from utils.inspectors import get_actuals_via_getters
 from utils.preprocessings import get_training_tensors 
 from utils.checkpoints import make_train_id, write_train_files, save_ckpt, make_training_index_row, train_dir
 from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, get_epochs_completed_prior
-import shutil,os
+import shutil,os, sys
 from utils.pathing import as_path
+from utils.progress import ProgressLogger
 
 import time, traceback
 
@@ -118,7 +119,21 @@ def train_seqgplvm(df: pd.DataFrame,
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
     num_epochs = optimize_hyperparams["num_epochs"]
     
-    iterator = trange(num_epochs, leave=True)
+    #iterator = trange(num_epochs, leave=True)
+
+    # tqdm: pretty (interactive), quiet (batch logs)
+    is_tty = sys.stderr.isatty()
+    iterator = trange(
+        num_epochs,
+        leave=is_tty,
+        disable=not is_tty,
+        dynamic_ncols=True
+    )
+
+    # alternatively, use custom progress logger that works well in both interactive and batch modes
+    # Heartbeat progress logger: writes JSON files under $FINAL_ROOT/progress/
+    progress_root = Path(os.environ.get("FINAL_ROOT", "."))
+    plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=100) 
 
     # bookkeeping structures
 
@@ -228,6 +243,14 @@ def train_seqgplvm(df: pd.DataFrame,
             loss.backward()
             optimizer.step()
             epochs_completed = i + 1
+            # Heartbeat (global step = prior + current)
+            global_step = epochs_completed + epochs_completed_prior
+            try:
+                current_lr = optimizer.param_groups[0].get("lr", None)
+            except Exception:
+                current_lr = None
+            plog.update(step=global_step, loss=float(loss.item()), lr=current_lr)
+
             if i % param_logging_freq == 0:
                 for name, p in model.named_parameters():
                     if not any(kw in name for kw in keywords):
@@ -283,6 +306,13 @@ def train_seqgplvm(df: pd.DataFrame,
                 optimizer_state=optimizer.state_dict(),
                 extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
             )
+        # finalize progress log
+        # final heartbeat (best-effort)
+        try:
+            plog.update(step=epochs_completed + epochs_completed_prior,
+                        loss=(float(loss_list[-1]) if loss_list else None))
+        except Exception:
+            pass
 
         # update manifest with progress & status (success path will overwrite failed → success if no exception)
         mani_patch = {
