@@ -13,6 +13,7 @@ from utils.preprocessings import get_training_tensors
 from utils.checkpoints import make_train_id, write_train_files, save_ckpt, make_training_index_row, train_dir
 from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, get_epochs_completed_prior
 import shutil,os
+from utils.pathing import as_path
 
 import time, traceback
 
@@ -92,7 +93,7 @@ def train_seqgplvm(df: pd.DataFrame,
                                       )
     
     metadata_file_path = df_meta_data["split_file"]
-    with open(Path(metadata_file_path)) as f:
+    with open(as_path(metadata_file_path)) as f:
         train_ids = json.load(f)["train_ids"]
 
     train_rows = [id2row[pid] for pid in train_ids if pid in id2row]
