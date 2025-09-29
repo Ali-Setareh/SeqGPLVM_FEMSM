@@ -12,10 +12,10 @@
 set -euo pipefail
 
 module purge
-module load devel/miniconda/3
+module load devel/miniforge
 conda activate seqdecon
 
 export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 mkdir -p logs
 
-python slurm_sweep_training.py
+python experiments/slurm_sweep_training.py
