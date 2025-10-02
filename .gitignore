@@ -293,3 +293,6 @@ tmp/
 #*.jsonl
 #*.npz
 #*.npy
+
+# slurm commands 
+slurm_commands.txt

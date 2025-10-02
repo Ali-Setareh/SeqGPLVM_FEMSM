@@ -133,7 +133,7 @@ def train_seqgplvm(df: pd.DataFrame,
     # alternatively, use custom progress logger that works well in both interactive and batch modes
     # Heartbeat progress logger: writes JSON files under $FINAL_ROOT/progress/
     progress_root = Path(os.environ.get("FINAL_ROOT", "."))
-    plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=100) 
+    plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20) 
 
     # bookkeeping structures
 
