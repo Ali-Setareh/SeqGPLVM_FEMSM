@@ -350,7 +350,8 @@ def train_seqgplvm(df: pd.DataFrame,
 
             # destination in $HOME (or wherever FINAL_ROOT points to)
             final_out = train_dir(final_root, model_name, train_id)
-            final_out.parent.mkdir(parents=True, exist_ok=True)
+            #final_out.parent.mkdir(parents=True, exist_ok=True)
+            final_out.mkdir(parents=True, exist_ok=True)
 
             # copy lightweight files first
             for fname in ("manifest.json","config.json","data_ref.json","metrics.json"):
