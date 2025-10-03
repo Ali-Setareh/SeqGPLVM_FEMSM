@@ -58,16 +58,115 @@ def write_train_files(root: Path | str,
 
     return out
 
-def save_ckpt(path: Path, step: int, model_state: dict, optimizer_state: dict | None = None, extra: dict | None = None):
+def save_ckpt(path: Path,
+              step: int,
+              model_state: dict,
+              optimizer_state: dict | None = None,
+              extra: dict | None = None,
+              *,
+              keep_last: int = 3,
+              milestone_every: int = 10000,
+              compress_older: bool = True) -> Path:
+    """
+    Save a checkpoint atomically, then prune + (optionally) compress older ones.
+    - Keeps the newest .pt uncompressed so latest_checkpoint_path / load_checkpoint continue to work unchanged.
+    - Retains 'milestone' steps (multiples of milestone_every) in addition to the last K.
+    """
+    ckpt_dir = Path(path) / "ckpts"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) Atomic write of the new checkpoint
+    fname = f"step_{int(step):07d}.pt"
+    final_path = ckpt_dir / fname
+    tmp_path = final_path.with_suffix(".pt.tmp")
     payload = {"model_state": model_state}
     if optimizer_state is not None:
         payload["optimizer_state"] = optimizer_state
     if extra:
         payload["extra"] = extra
-    ckpt_path = path / "ckpts" / f"step_{step:07d}.pt"
-    import torch
-    torch.save(payload, ckpt_path)
-    return ckpt_path
+    torch.save(payload, tmp_path)
+    os.replace(tmp_path, final_path)  # atomic rename on same filesystem
+
+    # 2) Prune+compress older checkpoints
+    _prune_and_compress_inline(
+        ckpt_dir=ckpt_dir,
+        newest=final_path,
+        keep_last=keep_last,
+        milestone_every=milestone_every,
+        compress_older=compress_older
+    )
+    return final_path
+
+def _prune_and_compress_inline(ckpt_dir: Path,
+                               newest: Path,
+                               *,
+                               keep_last: int = 3,
+                               milestone_every: int = 10000,
+                               compress_older: bool = True) -> None:
+    if not ckpt_dir.is_dir():
+        return
+
+    # Collect plain .pt checkpoints and sort by step
+    ckpts = sorted(ckpt_dir.glob("step_*.pt"),
+                   key=lambda p: int(p.stem.split("_")[1]))
+    if not ckpts:
+        return
+
+    # Survivors: last K
+    survivors = set(ckpts[-keep_last:]) if keep_last > 0 else set()
+
+    # Add milestones
+    if milestone_every and milestone_every > 0:
+        for p in ckpts:
+            step = int(p.stem.split("_")[1])
+            if step % milestone_every == 0:
+                survivors.add(p)
+
+    # Always keep the newest plain .pt
+    survivors.add(newest)
+
+    # Delete all other plain .pt files (compressed ones are ignored here)
+    for p in ckpt_dir.glob("step_*.pt"):
+        if p not in survivors:
+            try:
+                p.unlink()
+            except FileNotFoundError:
+                pass
+
+    if not compress_older:
+        return
+
+    # Compress survivors except the newest (only .pt files)
+    to_compress = [p for p in survivors if p != newest and p.suffix == ".pt"]
+
+    # Prefer zstd; fallback to Python gzip (cross-platform)
+    try:
+        import zstandard as zstd
+        def _compress(p: Path):
+            out = p.with_suffix(p.suffix + ".zst")     # .pt.zst
+            tmp = out.with_suffix(out.suffix + ".tmp")
+            c = zstd.ZstdCompressor(level=19)
+            with open(p, "rb") as fin, open(tmp, "wb") as fout:
+                fout.write(c.compress(fin.read()))
+            os.replace(tmp, out)
+            p.unlink()
+    except Exception:
+        import gzip, shutil
+        def _compress(p: Path):
+            out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
+            tmp = out.with_suffix(out.suffix + ".tmp")
+            with open(p, "rb") as fin, gzip.open(tmp, "wb") as fout:
+                shutil.copyfileobj(fin, fout)
+            os.replace(tmp, out)
+            p.unlink()
+
+    for p in to_compress:
+        try:
+            _compress(p)
+        except Exception:
+            # best-effort: ignore compression errors
+            pass
+
 
 ######### Indexing Trainings #########
 def _explode_for_filtering(row: dict, keys: tuple[str, ...], source: dict, prefix: str | None = None):

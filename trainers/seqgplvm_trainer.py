@@ -30,43 +30,6 @@ def _update_manifest(train_out: Path, patch: dict):
     _safe_write_json(mani_path, mani)
     return mani  # handy if you need it
 
-def _prune_and_compress_ckpts(ckpt_dir: Path, keep_last=2, milestone_every=10000):
-    ckpts = sorted(ckpt_dir.glob("step_*.pt"),
-                   key=lambda p: int(p.stem.split("_")[1]))
-    # keep last K
-    survivors = set(ckpts[-keep_last:])
-    for p in ckpts[:-keep_last]:
-        step = int(p.stem.split("_")[1])
-        if milestone_every and step % milestone_every == 0:
-            continue
-        if p not in survivors:
-            try:
-                p.unlink()
-            except FileNotFoundError:
-                pass
-
-    # compress whatever remains if zstd is available
-    try:
-        import shutil as _sh
-        # if zstandard lib is installed:
-        import zstandard as zstd  
-    except Exception:
-        # fallback to gzip if present on system
-        for p in ckpt_dir.glob("*.pt"):
-            os.system(f"gzip -f \"{p}\"")  # produces *.pt.gz
-        return
-
-    # python zstd path (if you actually have zstandard pip); else skip
-    for p in ckpt_dir.glob("*.pt"):
-        try:
-            import zstandard as zstd
-            c = zstd.ZstdCompressor(level=19)
-            with open(p, "rb") as fin, open(str(p) + ".zst", "wb") as fout:
-                fout.write(c.compress(fin.read()))
-            p.unlink()
-        except Exception:
-            # best-effort: ignore compression errors
-            pass
 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,
@@ -132,8 +95,16 @@ def train_seqgplvm(df: pd.DataFrame,
 
     # alternatively, use custom progress logger that works well in both interactive and batch modes
     # Heartbeat progress logger: writes JSON files under $FINAL_ROOT/progress/
-    progress_root = Path(os.environ.get("FINAL_ROOT", "."))
-    plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20) 
+    #progress_root = Path(os.environ.get("FINAL_ROOT", "."))
+    #plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20) 
+
+    if os.environ.get("SLURM_JOB_ID"):
+        progress_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+        plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20)
+    else:
+        class _NoopProgress:
+            def update(self, *args, **kwargs): pass
+        plog = _NoopProgress()
 
     # bookkeeping structures
 
@@ -146,10 +117,15 @@ def train_seqgplvm(df: pd.DataFrame,
     data_run_id = df_meta_data.get("run_id") 
     model_name = "seqgplvm"
 
-    run_tag = f"run_{os.environ.get('SLURM_JOB_ID','nojid')}_{os.environ.get('SLURM_ARRAY_TASK_ID','single')}"
-    scratch_root = Path(os.environ.get("RUN_DIR", os.environ.get("TMPDIR", "/tmp"))) / run_tag
-    scratch_root.mkdir(parents=True, exist_ok=True)
-    final_root = Path(os.environ.get("FINAL_ROOT", "."))  # default: repo root in $HOME
+    #run_tag = f"run_{os.environ.get('SLURM_JOB_ID','nojid')}_{os.environ.get('SLURM_ARRAY_TASK_ID','single')}"
+    #scratch_root = Path(os.environ.get("RUN_DIR", os.environ.get("TMPDIR", "/tmp"))) / run_tag
+    #scratch_root.mkdir(parents=True, exist_ok=True)
+    #final_root = Path(os.environ.get("FINAL_ROOT", "."))  # default: repo root in $HOME
+
+    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+    final_root.mkdir(parents=True, exist_ok=True)
+    scratch_root = final_root
+
 
     # build a compact training config dict that determines the training identity
     _train_cfg_identity = {
@@ -157,7 +133,7 @@ def train_seqgplvm(df: pd.DataFrame,
         "num_inducing": num_inducing,
         "num_inducing_hidden": num_inducing_hidden,
         "treatment_lag": treatment_lag,
-        "optimize_hyperparams": optimize_hyperparams["lr"]
+        "lr": optimize_hyperparams["lr"]
     }
 
     train_id = make_train_id(
@@ -342,41 +318,7 @@ def train_seqgplvm(df: pd.DataFrame,
             metrics=metrics,
         )
         upsert_training_index(".", row)
-        
-        try:
-            ckpt_dir = train_out / "ckpts"
-            if ckpt_dir.exists():
-                _prune_and_compress_ckpts(ckpt_dir, keep_last=3, milestone_every=10000)
 
-            # destination in $HOME (or wherever FINAL_ROOT points to)
-            final_out = train_dir(final_root, model_name, train_id)
-            #final_out.parent.mkdir(parents=True, exist_ok=True)
-            final_out.mkdir(parents=True, exist_ok=True)
-
-            # copy lightweight files first
-            for fname in ("manifest.json","config.json","data_ref.json","metrics.json"):
-                src = train_out / fname
-                if src.exists():
-                    shutil.copy2(src, final_out / fname)
-
-            # copy pruned/compressed ckpts and logs if present
-            for sub in ("ckpts","logs"):
-                srcd = train_out / sub
-                if srcd.exists():
-                    dstd = final_out / sub
-                    dstd.mkdir(parents=True, exist_ok=True)
-                    for p in srcd.iterdir():
-                        if p.is_file():
-                            shutil.copy2(p, dstd / p.name)
-
-            # (optional) clean scratch run dir to be nice to the node
-            try:
-                shutil.rmtree(scratch_root, ignore_errors=True)
-            except Exception:
-                pass
-
-        except Exception as _e:
-            print(f"[stage-out warning] {type(_e).__name__}: {_e}")
 
 
     
