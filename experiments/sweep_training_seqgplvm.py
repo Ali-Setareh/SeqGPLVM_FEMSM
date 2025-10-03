@@ -51,7 +51,7 @@ training_cfg = {"latent_dim": 1,
                 "covariate_cols_prefix": "x"
 }
 
-training_cfg["resume_mode"] = "no"
+training_cfg["resume_mode"] = "yes"
 
 device = "auto"
 

@@ -19,7 +19,7 @@ def make_train_id(*, data_run_id: str, model_name: str, train_cfg: dict, extra: 
     return short_hash(payload, length=length)
 
 def train_dir(root: Path | str, model_name: str, train_id: str) -> Path:
-    return Path(root) / "results" / "models" / model_name / train_id
+    return Path(root) / "models" / model_name / train_id
 
 def write_train_files(root: Path | str,
                       model_name: str,
@@ -97,6 +97,12 @@ def save_ckpt(path: Path,
     )
     return final_path
 
+_step_re = re.compile(r"^step_(\d+)\.pt(?:\.(?:zst|gz))?$")  # ^ anchor (optional but nice)
+
+def _stepnum(p: Path) -> int:
+    m = _step_re.match(p.name)
+    return int(m.group(1)) if m else -1
+
 def _prune_and_compress_inline(ckpt_dir: Path,
                                newest: Path,
                                *,
@@ -106,28 +112,21 @@ def _prune_and_compress_inline(ckpt_dir: Path,
     if not ckpt_dir.is_dir():
         return
 
-    # Collect plain .pt checkpoints and sort by step
-    ckpts = sorted(ckpt_dir.glob("step_*.pt"),
-                   key=lambda p: int(p.stem.split("_")[1]))
-    if not ckpts:
-        return
+    # include plain, compressed, and even stray *.pt.tmp so we can clean them
+    all_ckpts = sorted(ckpt_dir.glob("step_*.pt*"), key=_stepnum)
 
-    # Survivors: last K
-    survivors = set(ckpts[-keep_last:]) if keep_last > 0 else set()
+    # decide survivor STEPS (newest, last K, milestones)
+    newest_step = _stepnum(newest)
+    steps_desc = sorted({s for s in (_stepnum(p) for p in all_ckpts) if s >= 0}, reverse=True)
 
-    # Add milestones
-    if milestone_every and milestone_every > 0:
-        for p in ckpts:
-            step = int(p.stem.split("_")[1])
-            if step % milestone_every == 0:
-                survivors.add(p)
+    survivor_steps = set(steps_desc[:keep_last]) if keep_last > 0 else set()
+    if milestone_every:
+        survivor_steps |= {s for s in steps_desc if s % milestone_every == 0}
+    survivor_steps.add(newest_step)
 
-    # Always keep the newest plain .pt
-    survivors.add(newest)
-
-    # Delete all other plain .pt files (compressed ones are ignored here)
-    for p in ckpt_dir.glob("step_*.pt"):
-        if p not in survivors:
+    # delete any file whose step not in survivor_steps (covers .pt, .pt.zst, .pt.gz, .pt.tmp)
+    for p in all_ckpts:
+        if _stepnum(p) not in survivor_steps:
             try:
                 p.unlink()
             except FileNotFoundError:
@@ -136,15 +135,18 @@ def _prune_and_compress_inline(ckpt_dir: Path,
     if not compress_older:
         return
 
-    # Compress survivors except the newest (only .pt files)
-    to_compress = [p for p in survivors if p != newest and p.suffix == ".pt"]
+    # survivors (files) after deletion, for compression decision
+    survivors_files = [p for p in (ckpt_dir.glob("step_*.pt*")) if _stepnum(p) in survivor_steps]
 
-    # Prefer zstd; fallback to Python gzip (cross-platform)
+    # compress survivors except the newest — only when they are plain .pt
+    to_compress = [p for p in survivors_files if p.suffix == ".pt" and _stepnum(p) != newest_step]
+
+    # Prefer zstd; fallback to gzip (pure Python)
     try:
         import zstandard as zstd
         def _compress(p: Path):
             out = p.with_suffix(p.suffix + ".zst")     # .pt.zst
-            tmp = out.with_suffix(out.suffix + ".tmp")
+            tmp = out.with_suffix(out.suffix + ".tmp") # .zst.tmp
             c = zstd.ZstdCompressor(level=19)
             with open(p, "rb") as fin, open(tmp, "wb") as fout:
                 fout.write(c.compress(fin.read()))
@@ -154,7 +156,7 @@ def _prune_and_compress_inline(ckpt_dir: Path,
         import gzip, shutil
         def _compress(p: Path):
             out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
-            tmp = out.with_suffix(out.suffix + ".tmp")
+            tmp = out.with_suffix(out.suffix + ".tmp") # .gz.tmp
             with open(p, "rb") as fin, gzip.open(tmp, "wb") as fout:
                 shutil.copyfileobj(fin, fout)
             os.replace(tmp, out)
@@ -164,9 +166,8 @@ def _prune_and_compress_inline(ckpt_dir: Path,
         try:
             _compress(p)
         except Exception:
-            # best-effort: ignore compression errors
+            # best-effort; ignore compression errors
             pass
-
 
 ######### Indexing Trainings #########
 def _explode_for_filtering(row: dict, keys: tuple[str, ...], source: dict, prefix: str | None = None):
