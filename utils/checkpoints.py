@@ -108,7 +108,7 @@ def _prune_and_compress_inline(ckpt_dir: Path,
                                newest: Path,
                                *,
                                keep_last: int = 3,
-                               milestone_every: int = 10000,
+                               milestone_every: int = 0,
                                compress_older: bool = True) -> None:
     if not ckpt_dir.is_dir():
         return
