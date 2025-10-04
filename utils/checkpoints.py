@@ -5,6 +5,7 @@ from pathlib import Path
 import json, platform, subprocess
 import hashlib
 import torch 
+import re
 
 def canonicalize(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)

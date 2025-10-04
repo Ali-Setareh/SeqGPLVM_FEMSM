@@ -42,16 +42,16 @@ training_cfg = {"latent_dim": 1,
                 "num_inducing": 50,
                 "num_inducing_hidden": 5,
                 "treatment_lag": 1,
-                "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 10},
-                "checkpoint_interval": 5,
-                "param_logging_freq": 4,
+                "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+                "checkpoint_interval": 20,
+                "param_logging_freq": 20,
                 "pid_col": "patient_id",
                 "time_col": "t",
                 "treatment_col": "D",
                 "covariate_cols_prefix": "x"
 }
 
-training_cfg["resume_mode"] = "yes"
+training_cfg["resume_mode"] = "no"
 
 device = "auto"
 
