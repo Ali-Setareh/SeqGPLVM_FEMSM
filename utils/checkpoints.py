@@ -65,7 +65,7 @@ def save_ckpt(path: Path,
               optimizer_state: dict | None = None,
               extra: dict | None = None,
               *,
-              keep_last: int = 3,
+              keep_last: int = 2,
               milestone_every: int = 10000,
               compress_older: bool = True) -> Path:
     """
