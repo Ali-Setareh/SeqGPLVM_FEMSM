@@ -22,7 +22,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate seqdecon
 
 # (optional) persistent place for results + progress heartbeats
-export FINAL_ROOT="$SLURM_SUBMIT_DIR/seqdecon_results"
+export FINAL_ROOT="$SLURM_SUBMIT_DIR/results"
 mkdir -p "$FINAL_ROOT/progress"
 
 # make Python output stream line-by-line
