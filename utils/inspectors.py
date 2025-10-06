@@ -75,8 +75,6 @@ def plot_param_history(param_hist: dict,
 
     plot_list = np.array(arrays).squeeze()
 
-    
-
     # 2) for z_mu / z_logsigma we want to transpose so “i‐over‐iterations” matches
     if key in ('Z_val.q_mu', 'Z_val.q_log_sigma','Z.q_mu', 'Z.q_log_sigma'):
         
