@@ -31,17 +31,18 @@ params = {
     "sigma_eps": 1.0, 
     "max_lag_x": 0, 
     "max_lag_d": 3,
-    "split_seed": 42
+    "split_seed": 42, 
+    "treatment_model": "logit"
     }
-
-treatment_model = "logit"
-
-params["treatment_model"] = treatment_model
 
 training_cfg = {"latent_dim": 1,
                 "num_inducing": 50,
                 "num_inducing_hidden": 5,
                 "treatment_lag": 1,
+                "init_z": None,
+                "treatment_model": "bernoulli",
+                "learn_inducing_locations": True,
+                "use_titsias": False,
                 "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
                 "checkpoint_interval": 20,
                 "param_logging_freq": 20,

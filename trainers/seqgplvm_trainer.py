@@ -37,6 +37,10 @@ def train_seqgplvm(df: pd.DataFrame,
                    num_inducing: int = 50, 
                    num_inducing_hidden: int =5,
                    treatment_lag: int =1,
+                   treatment_model: str = "bernoulli", # "bernoulli" | "gaussian"
+                   init_z: torch.Tensor = None, # optional initial Z if none  the model will assign them N(0,1)
+                   learn_inducing_locations: bool = True, # whether to optimize the inducing locations or keep them fixed
+                   use_titsias: bool = False, # whether to use Titsias' trick for inducing points
                    pid_col: str = "patient_id",
                    time_col: str = "t",
                    treatment_col: str = "D",
@@ -64,19 +68,19 @@ def train_seqgplvm(df: pd.DataFrame,
     X_train = X[train_rows].to(device)
     A_train = A[train_rows].to(device)
 
-    # Modol:
-    if df_meta_data["params"]["treatment_model"] in ["logit", "probit"]:
-        #init_z = torch.nn.Parameter(torch.zeros(A_train.shape[0], latent_dim))
-        init_z = None # the model will assign them N(0,1)
-
-        model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
+    # Model:
+    lik = None
+    if treatment_model == "bernoulli":
+        lik = BernoulliLikelihood
+        
+    if lik is None:
+        raise ValueError("your specified treatment model is not supported. Choose one of: 'bernoulli' ")
+    
+    model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
                         init_z=init_z, device=device,
-                        lik=BernoulliLikelihood,
-                        learn_inducing_locations = True,
-                        use_titsias=False).to(device)
-
-    else:
-        raise ValueError("Only binary model is available")
+                        lik=lik,
+                        learn_inducing_locations = learn_inducing_locations,
+                        use_titsias=use_titsias).to(device)
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
