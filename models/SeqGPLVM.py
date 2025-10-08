@@ -41,8 +41,6 @@ class SeqGPLVM(nn.Module):
         super().__init__()
 
         self.config = {
-            'Y': Y,
-            'X_cov': X_cov,
             'latent_dim': latent_dim,
             'n_inducing_x': n_inducing_x,
             'n_inducing_hidden': n_inducing_hidden,
