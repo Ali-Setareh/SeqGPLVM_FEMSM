@@ -3,6 +3,8 @@ import subprocess
 from itertools import product
 from dgps.base import make_stem
 import json
+from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
+from utils.training import dump_train_cfg_json
 
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
@@ -40,7 +42,7 @@ training_cfg = {"latent_dim": 1,
                 "num_inducing_hidden": 5,
                 "treatment_lag": 1,
                 "init_z": None,
-                "treatment_model": "bernoulli",
+                "treatment_model": BernoulliLikelihood,
                 "learn_inducing_locations": True,
                 "use_titsias": False,
                 "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
@@ -56,6 +58,8 @@ training_cfg["resume_mode"] = "no"
 
 device = "auto"
 
+train_cfg_path = Path("configs/_train_tmp.json")
+
 for n, seed, a, p in product(*params_grid.values()):
     for t in T[n]:
         dgp_cfg = {"dgp": dgp,"n": n, "T": t, "seed": seed, "a": a, "p": p,
@@ -63,8 +67,7 @@ for n, seed, a, p in product(*params_grid.values()):
         dgp_cfg_path = Path("configs/_data_tmp.json")
         dgp_cfg_path.write_text(json.dumps(dgp_cfg))
 
-        train_cfg_path = Path("configs/_train_tmp.json")
-        train_cfg_path.write_text(json.dumps(training_cfg))
+        dump_train_cfg_json(train_cfg_path, training_cfg)
     
         run([
             "python", "-m", "experiments.train_seqgplvm",

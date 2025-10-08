@@ -15,12 +15,8 @@ from tqdm import trange
 from utils.runs import write_train_files, _update_manifest, load_by_params
 import time
 
-def train_seqgplvm_val(df: pd.DataFrame,
-                       df_meta_data: dict,
-                       latent_dim : int = 1,
-                       num_inducing: int = 50, 
-                       num_inducing_hidden: int = 5,
-                       treatment_lag: int = 1,
+def train_seqgplvm_val(project_root: Path,
+                       train_id: str,
                        pid_col: str = "patient_id",
                        time_col: str = "t",
                        treatment_col: str = "D",
@@ -30,23 +26,27 @@ def train_seqgplvm_val(df: pd.DataFrame,
                        checkpoint_interval: int = 2000,
                        param_logging_freq: int = 50,
                        resume_mode: str = "auto",
-                       parent_resume_mode: str = "auto"   # how to treat the parent train run
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
     freeze all base params, and optimize only Z_val on the validation split.
     """
     # 1) Build *both* splits so we can reconstruct the trained model shape
+    train_out = project_root / train_dir(Path(os.environ.get("FINAL_ROOT", "./results")).expanduser(), "seqgplvm", train_id)
+    data_ref  = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
+    train_conf = json.loads((train_out / "config.json").read_text(encoding="utf-8"))
+    
+
+    df = pd.read_parquet(as_path(project_root/ data_ref["data_file"] / "data.parquet"))
+    split = json.loads(as_path(project_root/ data_ref["split_file"]).read_text(encoding="utf-8"))
+
     X, A, id2row = get_training_tensors(
         df,
         id_col=pid_col, time_col=time_col,
         treatment_col=treatment_col,
         covariate_cols_prefix=covariate_cols_prefix,
-        treatment_lag=treatment_lag,
+        treatment_lag=train_conf["treatment_lag"],
     )
-
-    with open(as_path(df_meta_data["split_file"])) as f:
-        split = json.load(f)
     
     # prefer "val_ids" if present; fall back to "test_ids"
     val_ids = split.get("val_ids", [])
@@ -60,27 +60,25 @@ def train_seqgplvm_val(df: pd.DataFrame,
     X_val   = X[val_rows].to(device)
     A_val   = A[val_rows].to(device)
 
+    dummy_y = 
+    dummy_x = 
+
     # 2) Rebuild the *trained* base model with TRAIN shapes and load its weights
+    model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
+                        init_z=init_z, device=device,
+                        lik=lik,
+                        learn_inducing_locations = learn_inducing_locations,
+                        use_titsias=use_titsias).to(device)
     model_base = SeqGPLVM(
-        Y=A_train, X_cov=X_train, latent_dim=latent_dim,
-        n_inducing_x=num_inducing, n_inducing_hidden=num_inducing_hidden,
-        init_z=None, device=device, lik=BernoulliLikelihood,
-        learn_inducing_locations=True, use_titsias=False
+        Y = dummy_y, X_cov = dummy_x, latent_dim=train_conf["latent_dim"],
+        n_inducing_x=train_conf["num_inducing"], n_inducing_hidden=train_conf["num_inducing_hidden"],
+        init_z=train_conf["init_z"], device=device, lik=train_conf["treatment_model"],
+        learn_inducing_locations=train_conf["learn_inducing_locations"], use_titsias=train_conf["use_titsias"]
     ).to(device)
 
     # Resolve parent train directory and checkpoint
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-    train_id = make_train_id(
-        data_run_id=df_meta_data.get("run_id"),
-        model_name="seqgplvm",
-        train_cfg={
-            "latent_dim": latent_dim,
-            "num_inducing": num_inducing,
-            "num_inducing_hidden": num_inducing_hidden,
-            "treatment_lag": treatment_lag,
-            "lr": None,  # lr not needed to reconstruct id; keep None to match training
-        },
-    )
+    
     parent_out = train_dir(final_root, "seqgplvm", train_id)
 
     if not parent_out.exists():

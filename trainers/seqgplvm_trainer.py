@@ -1,10 +1,11 @@
+import hashlib
 import torch 
 import json 
 import numpy as np
 import pandas as pd
 import gpytorch
 from tqdm.auto import trange
-from gpytorch.likelihoods import BernoulliLikelihood
+from gpytorch.likelihoods import Likelihood
 from gpytorch.utils.cholesky import NotPSDError
 from pathlib import Path
 from models.SeqGPLVM import SeqGPLVM
@@ -15,6 +16,8 @@ from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load
 import shutil,os, sys
 from utils.pathing import as_path
 from utils.progress import ProgressLogger
+from typing import  Type 
+from utils.training import class_to_id
 
 import time, traceback
 
@@ -30,14 +33,18 @@ def _update_manifest(train_out: Path, patch: dict):
     _safe_write_json(mani_path, mani)
     return mani  # handy if you need it
 
+def tensor_fingerprint(t: torch.Tensor) -> dict:
+    b = t.detach().cpu().contiguous().numpy().tobytes()
+    h = hashlib.sha256(b).hexdigest()[:16]
+    return {"shape": list(t.shape), "dtype": str(t.dtype), "sha256": h}
 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,
                    latent_dim : int = 1,
                    num_inducing: int = 50, 
-                   num_inducing_hidden: int =5,
-                   treatment_lag: int =1,
-                   treatment_model: str = "bernoulli", # "bernoulli" | "gaussian"
+                   num_inducing_hidden: int = 5,
+                   treatment_lag: int = 1,
+                   treatment_model: Type[Likelihood] = None, # "bernoulli" | "gaussian"
                    init_z: torch.Tensor = None, # optional initial Z if none  the model will assign them N(0,1)
                    learn_inducing_locations: bool = True, # whether to optimize the inducing locations or keep them fixed
                    use_titsias: bool = False, # whether to use Titsias' trick for inducing points
@@ -69,24 +76,19 @@ def train_seqgplvm(df: pd.DataFrame,
     A_train = A[train_rows].to(device)
 
     # Model:
-    lik = None
-    if treatment_model == "bernoulli":
-        lik = BernoulliLikelihood
         
-    if lik is None:
-        raise ValueError("your specified treatment model is not supported. Choose one of: 'bernoulli' ")
+    if treatment_model is None:
+        raise ValueError("your treatment model must be specified")
     
     model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
                         init_z=init_z, device=device,
-                        lik=lik,
+                        lik=treatment_model,
                         learn_inducing_locations = learn_inducing_locations,
                         use_titsias=use_titsias).to(device)
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
     num_epochs = optimize_hyperparams["num_epochs"]
-    
-    #iterator = trange(num_epochs, leave=True)
 
     # tqdm: pretty (interactive), quiet (batch logs)
     is_tty = sys.stderr.isatty()
@@ -130,8 +132,8 @@ def train_seqgplvm(df: pd.DataFrame,
         "num_inducing": num_inducing,
         "num_inducing_hidden": num_inducing_hidden,
         "treatment_lag": treatment_lag,
-        "treatment_model": treatment_model,
-        "init_z": init_z,
+        "treatment_model": class_to_id(treatment_model),
+        "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
         "learn_inducing_locations": learn_inducing_locations,
         "use_titsias": use_titsias,
         "lr": optimize_hyperparams["lr"]

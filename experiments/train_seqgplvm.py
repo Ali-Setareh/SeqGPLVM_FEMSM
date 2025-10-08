@@ -2,6 +2,7 @@ from trainers.seqgplvm_trainer import train_seqgplvm
 import argparse, json, yaml, torch, pandas as pd
 from pathlib import Path
 from utils.runs import load_by_params
+from utils.training import materialize_cfg
 
 def main():
     p = argparse.ArgumentParser()
@@ -21,13 +22,16 @@ def main():
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
+    cfg = materialize_cfg(cfg, device)
+
     train_seqgplvm(
         df=df, df_meta_data=manifest, device=device,
         latent_dim=cfg.get("latent_dim", 1),
         num_inducing=cfg.get("num_inducing", 50),
         num_inducing_hidden=cfg.get("num_inducing_hidden", 5),
         treatment_lag=cfg.get("treatment_lag", 1),
-        treatment_model = cfg.get("treatment_model", ""),
+        treatment_model = cfg.get("treatment_model", None),
+        init_z=cfg.get("init_z", None),
         learn_inducing_locations=cfg.get("learn_inducing_locations", True),
         use_titsias=cfg.get("use_titsias", False),
         pid_col=cfg.get("pid_col", "patient_id"),
