@@ -86,8 +86,6 @@ def train_seqgplvm(df: pd.DataFrame,
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
     num_epochs = optimize_hyperparams["num_epochs"]
     
-    #iterator = trange(num_epochs, leave=True)
-
     # tqdm: pretty (interactive), quiet (batch logs)
     is_tty = sys.stderr.isatty()
     iterator = trange(
@@ -167,8 +165,6 @@ def train_seqgplvm(df: pd.DataFrame,
             resume = last_ckpt is not None
     else:
         raise ValueError("resume_mode must be one of: 'auto', 'yes', 'no'")
-
-
 
     # data reference for provenance
     data_ref = {

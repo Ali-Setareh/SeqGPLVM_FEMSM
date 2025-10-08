@@ -19,7 +19,7 @@ from utils.preprocessings import grid_helper
 
 class GPLVM(ApproximateGP):
     def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "RBF"):
-        self.n = n
+        #self.n = n
         #self.batch_shape = torch.Size([data_dim])
 
         # Locations of inducing points in both covariate and latent space 
@@ -77,10 +77,10 @@ class GPLVM(ApproximateGP):
         dist = MultivariateNormal(mean_x, covar_x)
         return dist
 
-    def _get_batch_idx(self, batch_size):
-        valid_indices = np.arange(self.n)
-        batch_indices = np.random.choice(valid_indices, size=batch_size, replace=False)
-        return np.sort(batch_indices)
+    #def _get_batch_idx(self, batch_size):
+     #   valid_indices = np.arange(self.n)
+      #  batch_indices = np.random.choice(valid_indices, size=batch_size, replace=False)
+       # return np.sort(batch_indices)
     
 
 class SGPRModel(ExactGP):

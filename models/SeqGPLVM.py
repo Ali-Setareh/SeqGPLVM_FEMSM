@@ -20,12 +20,14 @@ class SeqGPLVM(nn.Module):
     '''
     def __init__(
         self,
-        Y: torch.Tensor,
-        X_cov: torch.Tensor,
-        latent_dim: int,
-        n_inducing_x: int,
-        n_inducing_hidden: int, 
-        init_z: torch.Tensor = None, 
+        *,
+        N: int, # number of patients
+        T: int, # number of time points
+        C: int, # number of covariates
+        latent_dim: int, # latent dimension Q
+        n_inducing_x: int, # number of inducing points in the covariate space
+        n_inducing_hidden: int, # number of inducing points in the hidden (latent) space
+        init_z: torch.Tensor = None, # optional initial Z if none  the model will assign them N(0,1)
         device = None, 
         lik = None, #gpytorch.likelihoods.GaussianLikelihood()
         learn_inducing_locations = False , 
@@ -41,8 +43,9 @@ class SeqGPLVM(nn.Module):
         super().__init__()
 
         self.config = {
-            'Y': Y,
-            'X_cov': X_cov,
+            'N': N,
+            'T': T,
+            'C': C,
             'latent_dim': latent_dim,
             'n_inducing_x': n_inducing_x,
             'n_inducing_hidden': n_inducing_hidden,
@@ -57,11 +60,7 @@ class SeqGPLVM(nn.Module):
             raise TypeError("Titsias bound requires a GaussianLikelihood class")
         
         self.use_titsias = use_titsias
-        N, T = Y.shape
-        C = X_cov.shape[-1]
         self.N, self.T, self.C, self.Q = N, T, C, latent_dim
-        self.Y = Y
-        self.X_cov = X_cov
         self.lik = lik
 
         # LatentVariable
@@ -85,14 +84,7 @@ class SeqGPLVM(nn.Module):
         self.gps = nn.ModuleList()
         self.likelihoods = nn.ModuleList()
         self.mlls = []
-        # choose some of the non nan Xs to be the inducing points. 
-        #covs = X_cov.reshape(-1,C)
-        #mask  = ~torch.isnan(covs).any(dim=1)
-        #covs = covs[mask]
-
-        #perm = torch.randperm(covs.size(0))[:n_inducing_x]
-
-        #Xu_X  = covs [perm].to(device)
+        
         Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
 
         for t in range(T):
@@ -100,6 +92,7 @@ class SeqGPLVM(nn.Module):
             mask  = ~torch.isnan(X_cov[:,t,:]).any(dim=1)
             covs = X_cov[:,t,:][mask]
             perm = torch.randperm(covs.size(0))[:n_inducing_x]
+            # choose some of the non nan Xs to be the inducing points. 
             Xu_X  = covs [perm].to(device)
             ### NEW ###
 
