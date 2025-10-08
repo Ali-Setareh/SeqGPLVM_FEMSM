@@ -216,10 +216,13 @@ def make_training_index_row(
         "created_at": mani["created_at"],
         "git_commit": mani.get("git_commit"),
     }
+    
     # explode a few train_cfg keys for easy filtering
     keys_to_explode = (
+        "N", "T", "C",
         "latent_dim", "num_inducing", "num_inducing_hidden",
-        "treatment_lag", "optimize_hyperparams",
+        "treatment_lag", "treatment_model",
+        "init_z", "learn_inducing_locations", "use_titsias",
         "epochs", "batch_size", "lr", "weight_decay", "seed"
     )
     _explode_for_filtering(row, keys_to_explode, train_cfg, prefix="cfg")
