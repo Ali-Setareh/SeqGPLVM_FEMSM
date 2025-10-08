@@ -17,26 +17,9 @@ import shutil,os, sys
 from utils.pathing import as_path
 from utils.progress import ProgressLogger
 from typing import  Type 
-from utils.training import class_to_id
-
+from utils.training import class_to_id, _update_manifest, tensor_fingerprint
 import time, traceback
 
-def _safe_write_json(path: Path, obj: dict):
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(obj, indent=2), encoding="utf-8")
-    tmp.replace(path)
-
-def _update_manifest(train_out: Path, patch: dict):
-    mani_path = train_out / "manifest.json"
-    mani = json.loads(mani_path.read_text(encoding="utf-8"))
-    mani.update(patch)
-    _safe_write_json(mani_path, mani)
-    return mani  # handy if you need it
-
-def tensor_fingerprint(t: torch.Tensor) -> dict:
-    b = t.detach().cpu().contiguous().numpy().tobytes()
-    h = hashlib.sha256(b).hexdigest()[:16]
-    return {"shape": list(t.shape), "dtype": str(t.dtype), "sha256": h}
 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,

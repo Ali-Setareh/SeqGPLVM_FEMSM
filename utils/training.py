@@ -88,3 +88,20 @@ def materialize_cfg(cfg: dict, device: torch.device) -> dict:
     if isinstance(iz, dict) and "path" in iz:
         cfg["init_z"] = torch.load(iz["path"], map_location=device)
     return cfg
+
+def _safe_write_json(path: Path, obj: dict):
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2), encoding="utf-8")
+    tmp.replace(path)
+
+def _update_manifest(train_out: Path, patch: dict):
+    mani_path = train_out / "manifest.json"
+    mani = json.loads(mani_path.read_text(encoding="utf-8"))
+    mani.update(patch)
+    _safe_write_json(mani_path, mani)
+    return mani  # handy if you need it
+
+def tensor_fingerprint(t: torch.Tensor) -> dict:
+    b = t.detach().cpu().contiguous().numpy().tobytes()
+    h = hashlib.sha256(b).hexdigest()[:16]
+    return {"shape": list(t.shape), "dtype": str(t.dtype), "sha256": h}

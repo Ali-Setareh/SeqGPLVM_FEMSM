@@ -1,19 +1,20 @@
 import torch
-from utils.checkpoints import latest_checkpoint_path, load_checkpoint, lates, load_checkpointt_checkpoint_path, make_train_id, train_dir, train_dir
+from utils.checkpoints import latest_checkpoint_path, load_checkpoint, train_dir, train_dir
 from utils.preprocessings import get_training_tensors
 import pandas as pd
 from utils.pathing import as_path
 from pathlib import Path
-import os
-import json
 from models.SeqGPLVM import SeqGPLVM, SeqGPLVMVal
-from gpytorch.likelihoods import BernoulliLikelihood
 import gpytorch
 from gpytorch.utils.errors import NotPSDError
 import numpy as np
 from tqdm import trange
-from utils.runs import write_train_files, _update_manifest, load_by_params
-import time
+from utils.runs import write_train_files, _update_manifest
+from utils.training import actualize_cfg
+from utils.inspectors import get_actuals_via_getters
+import time, sys, os, traceback, json 
+from utils.checkpoints import save_ckpt 
+
 
 def train_seqgplvm_val(project_root: Path,
                        train_id: str,
@@ -35,9 +36,11 @@ def train_seqgplvm_val(project_root: Path,
     train_out = project_root / train_dir(Path(os.environ.get("FINAL_ROOT", "./results")).expanduser(), "seqgplvm", train_id)
     data_ref  = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
     train_conf = json.loads((train_out / "config.json").read_text(encoding="utf-8"))
+    train_conf = actualize_cfg(train_conf, device)
     
 
     df = pd.read_parquet(as_path(project_root/ data_ref["data_file"] / "data.parquet"))
+    df_manifest = json.loads(as_path(project_root/ data_ref["data_file"] / "manifest.json").read_text(encoding="utf-8"))
     split = json.loads(as_path(project_root/ data_ref["split_file"]).read_text(encoding="utf-8"))
 
     X, A, id2row = get_training_tensors(
@@ -49,6 +52,11 @@ def train_seqgplvm_val(project_root: Path,
     )
     
     # prefer "val_ids" if present; fall back to "test_ids"
+    train_ids = split.get("train_ids", [])
+    train_rows = [id2row[pid] for pid in train_ids if pid in id2row] 
+    X_train = X[train_rows].to(device)
+    A_train = A[train_rows].to(device)
+
     val_ids = split.get("val_ids", [])
     test_ids = split.get("test_ids", [])
     test_val_ids = val_ids + test_ids 
@@ -60,21 +68,13 @@ def train_seqgplvm_val(project_root: Path,
     X_val   = X[val_rows].to(device)
     A_val   = A[val_rows].to(device)
 
-    dummy_y = 
-    dummy_x = 
-
     # 2) Rebuild the *trained* base model with TRAIN shapes and load its weights
-    model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
-                        init_z=init_z, device=device,
-                        lik=lik,
-                        learn_inducing_locations = learn_inducing_locations,
-                        use_titsias=use_titsias).to(device)
-    model_base = SeqGPLVM(
-        Y = dummy_y, X_cov = dummy_x, latent_dim=train_conf["latent_dim"],
-        n_inducing_x=train_conf["num_inducing"], n_inducing_hidden=train_conf["num_inducing_hidden"],
-        init_z=train_conf["init_z"], device=device, lik=train_conf["treatment_model"],
-        learn_inducing_locations=train_conf["learn_inducing_locations"], use_titsias=train_conf["use_titsias"]
-    ).to(device)
+    model_base = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = train_conf["latent_dim"], 
+                     n_inducing_x = train_conf["num_inducing"], n_inducing_hidden = train_conf["num_inducing_hidden"],
+                     init_z=None, device=device,
+                     lik= train_conf["treatment_model"],
+                     learn_inducing_locations = train_conf["learn_inducing_locations"],
+                     use_titsias=train_conf["use_titsias"]).to(device)
 
     # Resolve parent train directory and checkpoint
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
@@ -94,59 +94,34 @@ def train_seqgplvm_val(project_root: Path,
     # 3) Wrap the trained model for validation and expose Z_val
     model = SeqGPLVMVal.from_trained(model_base, X_val=X_val, Y_val=A_val).to(device)
 
-    # 4) Freeze everything except the validation latents
-    for n, p in model.named_parameters():
-        p.requires_grad = False
-    # Many repos expose Z_val as a small submodule; if not, fall back to name filter.
-    try:
-        trainables = list(model.Z_val.parameters())
-    except Exception:
-        trainables = [p for n, p in model.named_parameters() if "Z_val" in n]
-        for p in trainables: p.requires_grad = True
+    model.train()    # turn on training mode for ELBO/lik
+    for lik in model.likelihoods: lik.train()
 
-    optimizer = torch.optim.Adam(trainables, lr=optimize_hyperparams_val["lr"])
+    optimizer = torch.optim.Adam(model.Z_val.parameters(), lr=optimize_hyperparams_val["lr"])
     num_epochs = optimize_hyperparams_val["num_epochs"]
 
     # Progress logger (same behavior as train)
     is_tty = sys.stderr.isatty()
     iterator = trange(num_epochs, leave=is_tty, disable=not is_tty, dynamic_ncols=True)
 
-    # progress/heartbeat
-    if os.environ.get("SLURM_JOB_ID"):
-        plog = ProgressLogger(max_iters=num_epochs,
-                              root=final_root, every=20)
-    else:
-        class _NoopProgress:
-            def update(self, *a, **k): pass
-        plog = _NoopProgress()
-
     # 5) Create a *new* run directory for validation, linked to its parent
     val_tag = {"mode": "val", "parent_train_id": train_id}
     val_cfg_identity = {
-        "latent_dim": latent_dim,
-        "num_inducing": num_inducing,
-        "num_inducing_hidden": num_inducing_hidden,
-        "treatment_lag": treatment_lag,
         "lr_val": optimize_hyperparams_val["lr"],
         "logging": {"param_logging_freq": param_logging_freq,
                     "checkpoint_interval": checkpoint_interval},
     }
 
-    val_train_id = make_train_id(
-        data_run_id=df_meta_data.get("run_id"),
-        model_name="seqgplvm_val",
-        train_cfg=val_cfg_identity,
-    )
     val_out = write_train_files(
-        root=final_root,
+        root=final_root/"validation_models",
         model_name="seqgplvm_val",
-        train_id=val_train_id,
-        train_cfg={**val_cfg_identity, **val_tag},
+        train_id=train_id,
+        train_cfg={**val_tag, **val_cfg_identity},
         data_ref={
-            "dgp": df_meta_data["dgp"],
-            "data_file": df_meta_data["path"],
-            "split_file": df_meta_data.get("split_file"),
-            "data_run_id": df_meta_data.get("run_id"),
+            "dgp": df_manifest["dgp"],
+            "data_file": df_manifest["path"],
+            "split_file": df_manifest.get("split_file"),
+            "data_run_id": df_manifest.get("run_id"),
         },
     )
 
@@ -165,13 +140,6 @@ def train_seqgplvm_val(project_root: Path,
             iterator.set_description(f"Loss: {float(np.round(loss.item(), 2))}, iter {i}")
             loss.backward()
             optimizer.step()
-
-            # progress heartbeat
-            try:
-                plog.update(step=i+1, loss=float(loss.item()),
-                            lr=optimizer.param_groups[0].get("lr", None))
-            except Exception:
-                pass
 
             if i % param_logging_freq == 0:
                 for n, p in model.named_parameters():
