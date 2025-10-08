@@ -87,16 +87,20 @@ class SeqGPLVM(nn.Module):
         
         Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
 
+        X_cov_dummy = torch.zeros(N,T,C).to(device)
+        Y_dummy     = torch.zeros(N,T).to(device)
+
+
         for t in range(T):
             ### NEW ###
-            mask  = ~torch.isnan(X_cov[:,t,:]).any(dim=1)
-            covs = X_cov[:,t,:][mask]
+            #mask  = ~torch.isnan(X_cov[:,t,:]).any(dim=1)
+            covs = X_cov_dummy[:,t,:]
             perm = torch.randperm(covs.size(0))[:n_inducing_x]
             # choose some of the non nan Xs to be the inducing points. 
             Xu_X  = covs [perm].to(device)
             ### NEW ###
 
-            subset = ~(torch.isnan(Y[:,t]).reshape(-1).detach().cpu())
+            subset = ~(torch.isnan(Y_dummy[:,t]).reshape(-1).detach().cpu())
             n = subset.float().sum()
     
             # likelihood and ELBO
@@ -107,10 +111,10 @@ class SeqGPLVM(nn.Module):
 
             self.likelihoods.append(lik_t)
             if use_titsias: 
-                mean_init = Y[subset, t:t+1].mean().item()
+                mean_init = Y_dummy[subset, t:t+1].mean().item()
                 gp = SGPRModel(
-                    train_x = torch.cat([X_cov[subset, t, :], Z_prior_mean[subset,:]], dim=1), # the z part will be override in the forward method
-                    train_y = Y[subset, t],
+                    train_x = torch.cat([X_cov_dummy[subset, t, :], Z_prior_mean[subset,:]], dim=1), # the z part will be override in the forward method
+                    train_y = Y_dummy[subset, t],
                     likelihood=lik_t,
                     x_inducing = Xu_X ,
                     z_inducing = Xu_Z,
@@ -123,13 +127,59 @@ class SeqGPLVM(nn.Module):
                 
             
             else: 
-                gp = GPLVM(n, x_inducing = Xu_X, z_inducing = Xu_Z,
+                gp = GPLVM(x_inducing = Xu_X, z_inducing = Xu_Z,
                            learn_inducing_locations = learn_inducing_locations)
                 mll = VariationalELBO(lik_t, gp, num_data=n)
 
             self.gps.append(gp)
             self.mlls.append(mll)
     
+    
+    def set_training_data(self, Y: torch.Tensor, X_cov: torch.Tensor, *, reseed_inducing=True):
+        """
+        Attach real train data and update any data-dependent settings.
+        Optionally reseed X-inducing locations from actual covariates.
+        """
+        assert Y.shape == (self.N, self.T)
+        assert X_cov.shape == (self.N, self.T, self.C)
+        self.Y = Y
+        self.X_cov = X_cov
+
+        if not self.use_titsias:
+            for t, mll in enumerate(self.mlls):
+                Yt = self.Y[:, t]
+                subset = ~torch.isnan(Yt).reshape(-1).detach().cpu()
+                n_t = int(subset.float().sum().item())
+                # gpytorch.mlls.VariationalELBO exposes num_data (can be reassigned)
+                mll.num_data = n_t
+        
+        if not reseed_inducing:
+            return
+        
+        with torch.no_grad(): 
+            for t, gp in enumerate(self.gps):
+                # pick valid covariates at time t
+                mask = ~torch.isnan(self.X_cov[:, t, :]).any(dim=1)
+                covs = self.X_cov[mask, t, :]
+                if covs.numel() == 0:
+                    continue
+                # sample/choose M_x rows
+                Mx = gp._mx
+                idx = torch.randperm(covs.size(0), device=covs.device)[:Mx]
+                x_u_new = covs[idx]
+                # type-switch and reseed
+                if isinstance(gp, GPLVM):
+                    gp.reseed_x_inducing(x_u_new)
+                elif isinstance(gp, SGPRModel):
+                    gp.reseed_x_inducing(x_u_new)
+
+        if reseed_inducing:
+            with torch.no_grad():
+                for t, gp in enumerate(self.gps):
+                    covs = self.X_cov[:,t,:]
+                    perm = torch.randperm(covs.size(0))[:self.gps[t].n_inducing]
+                    gp.covar_module.inducing_points[:,:self.C] = covs[perm].to(gp.covar_module.inducing_points.device)
+
     def sample_latent_variable(self):
         sample = self.Z()
         return sample
@@ -137,9 +187,7 @@ class SeqGPLVM(nn.Module):
     def forward(self):      #, batch_idx: torch.Tensor):
         # Sample shared latent for batch
         Z_sample = self.sample_latent_variable()
-        #Z_sample_batch = Z_sample[batch_idx]            # (B, Q)
-        #Xcov_batch = self.X_cov[batch_idx]                  # (B, T, C)
-        #losses = []
+
         loss = 0.0
         
         for t, (gp, mll) in enumerate(zip(self.gps, self.mlls)):
