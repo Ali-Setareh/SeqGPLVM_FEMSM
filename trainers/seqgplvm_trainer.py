@@ -137,9 +137,13 @@ def train_seqgplvm(df: pd.DataFrame,
         "num_inducing": num_inducing,
         "num_inducing_hidden": num_inducing_hidden,
         "treatment_lag": treatment_lag,
+        "treatment_model": treatment_model,
+        "init_z": init_z,
+        "learn_inducing_locations": learn_inducing_locations,
+        "use_titsias": use_titsias,
         "lr": optimize_hyperparams["lr"]
     }
-
+     
     train_id = make_train_id(
         data_run_id=data_run_id,
         model_name=model_name,
