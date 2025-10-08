@@ -97,11 +97,6 @@ def train_seqgplvm(df: pd.DataFrame,
         dynamic_ncols=True
     )
 
-    # alternatively, use custom progress logger that works well in both interactive and batch modes
-    # Heartbeat progress logger: writes JSON files under $FINAL_ROOT/progress/
-    #progress_root = Path(os.environ.get("FINAL_ROOT", "."))
-    #plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20) 
-
     if os.environ.get("SLURM_JOB_ID"):
         progress_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
         plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20)
@@ -121,11 +116,6 @@ def train_seqgplvm(df: pd.DataFrame,
     data_run_id = df_meta_data.get("run_id") 
     model_name = "seqgplvm"
 
-    #run_tag = f"run_{os.environ.get('SLURM_JOB_ID','nojid')}_{os.environ.get('SLURM_ARRAY_TASK_ID','single')}"
-    #scratch_root = Path(os.environ.get("RUN_DIR", os.environ.get("TMPDIR", "/tmp"))) / run_tag
-    #scratch_root.mkdir(parents=True, exist_ok=True)
-    #final_root = Path(os.environ.get("FINAL_ROOT", "."))  # default: repo root in $HOME
-
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
     final_root.mkdir(parents=True, exist_ok=True)
     scratch_root = final_root
@@ -133,6 +123,9 @@ def train_seqgplvm(df: pd.DataFrame,
 
     # build a compact training config dict that determines the training identity
     _train_cfg_identity = {
+        "N": X_train.size(0),
+        "T": X_train.size(1),
+        "C": X_train.size(2),
         "latent_dim": latent_dim,
         "num_inducing": num_inducing,
         "num_inducing_hidden": num_inducing_hidden,

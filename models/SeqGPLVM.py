@@ -20,6 +20,7 @@ class SeqGPLVM(nn.Module):
     '''
     def __init__(
         self,
+        *,
         Y: torch.Tensor,
         X_cov: torch.Tensor,
         latent_dim: int,
@@ -83,14 +84,7 @@ class SeqGPLVM(nn.Module):
         self.gps = nn.ModuleList()
         self.likelihoods = nn.ModuleList()
         self.mlls = []
-        # choose some of the non nan Xs to be the inducing points. 
-        #covs = X_cov.reshape(-1,C)
-        #mask  = ~torch.isnan(covs).any(dim=1)
-        #covs = covs[mask]
-
-        #perm = torch.randperm(covs.size(0))[:n_inducing_x]
-
-        #Xu_X  = covs [perm].to(device)
+       
         Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
 
         for t in range(T):
@@ -98,6 +92,7 @@ class SeqGPLVM(nn.Module):
             mask  = ~torch.isnan(X_cov[:,t,:]).any(dim=1)
             covs = X_cov[:,t,:][mask]
             perm = torch.randperm(covs.size(0))[:n_inducing_x]
+            # choose some of the non nan Xs to be the inducing points. 
             Xu_X  = covs [perm].to(device)
             ### NEW ###
 
@@ -142,9 +137,6 @@ class SeqGPLVM(nn.Module):
     def forward(self):      #, batch_idx: torch.Tensor):
         # Sample shared latent for batch
         Z_sample = self.sample_latent_variable()
-        #Z_sample_batch = Z_sample[batch_idx]            # (B, Q)
-        #Xcov_batch = self.X_cov[batch_idx]                  # (B, T, C)
-        #losses = []
         loss = 0.0
         
         for t, (gp, mll) in enumerate(zip(self.gps, self.mlls)):
