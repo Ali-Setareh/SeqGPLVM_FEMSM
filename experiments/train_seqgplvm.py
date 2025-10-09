@@ -22,8 +22,6 @@ def main():
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
-    cfg = materialize_cfg(cfg, device)
-
     train_seqgplvm(
         df=df, df_meta_data=manifest, device=device,
         latent_dim=cfg.get("latent_dim", 1),
