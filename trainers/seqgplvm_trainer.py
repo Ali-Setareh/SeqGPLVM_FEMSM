@@ -20,7 +20,8 @@ from typing import  Type
 from utils.training import class_to_id, _update_manifest, tensor_fingerprint
 import time, traceback
 
-# to do : resume for val trainer and check to see if everything works fine because I changed sth to be able to get a class as the treatment model and init z 
+# to do : resume option for val trainer and check to see if everything works fine because I changed sth to be able to get a class as the treatment model and init z 
+# to do : also remove init z from the train identity 
 def train_seqgplvm(df: pd.DataFrame,
                    df_meta_data: dict,
                    latent_dim : int = 1,

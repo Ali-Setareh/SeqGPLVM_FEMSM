@@ -1,5 +1,6 @@
+import shutil
 import torch
-from utils.checkpoints import latest_checkpoint_path, load_checkpoint, train_dir, train_dir
+from utils.checkpoints import latest_checkpoint_path, load_checkpoint, train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
 from utils.preprocessings import get_training_tensors
 import pandas as pd
 from utils.pathing import as_path
@@ -16,8 +17,7 @@ import time, sys, os, traceback, json
 from utils.checkpoints import save_ckpt 
 
 
-def train_seqgplvm_val(project_root: Path,
-                       train_id: str,
+def train_seqgplvm_val(train_id: str,
                        pid_col: str = "patient_id",
                        time_col: str = "t",
                        treatment_col: str = "D",
@@ -33,15 +33,19 @@ def train_seqgplvm_val(project_root: Path,
     freeze all base params, and optimize only Z_val on the validation split.
     """
     # 1) Build *both* splits so we can reconstruct the trained model shape
-    train_out = project_root / train_dir(Path(os.environ.get("FINAL_ROOT", "./results")).expanduser(), "seqgplvm", train_id)
+    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+    train_out = train_dir(final_root, "seqgplvm", train_id)
+    if not train_out.exists():
+        raise FileNotFoundError(f"Parent train run not found: {train_out}")
+    
     data_ref  = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
     train_conf = json.loads((train_out / "config.json").read_text(encoding="utf-8"))
     train_conf = actualize_cfg(train_conf, device)
     
 
-    df = pd.read_parquet(as_path(project_root/ data_ref["data_file"] / "data.parquet"))
-    df_manifest = json.loads(as_path(project_root/ data_ref["data_file"] / "manifest.json").read_text(encoding="utf-8"))
-    split = json.loads(as_path(project_root/ data_ref["split_file"]).read_text(encoding="utf-8"))
+    df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
+    df_manifest = json.loads(as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8")
+    split = json.loads(as_path(data_ref["split_file"]).read_text(encoding="utf-8"))
 
     X, A, id2row = get_training_tensors(
         df,
@@ -76,17 +80,10 @@ def train_seqgplvm_val(project_root: Path,
                      learn_inducing_locations = train_conf["learn_inducing_locations"],
                      use_titsias=train_conf["use_titsias"]).to(device)
 
-    # Resolve parent train directory and checkpoint
-    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-    
-    parent_out = train_dir(final_root, "seqgplvm", train_id)
 
-    if not parent_out.exists():
-        raise FileNotFoundError(f"Parent train run not found: {parent_out}")
-
-    ckpt_path = latest_checkpoint_path(parent_out)
+    ckpt_path = latest_checkpoint_path(train_out)
     if ckpt_path is None:
-        raise FileNotFoundError(f"No checkpoint found in parent run: {parent_out}")
+        raise FileNotFoundError(f"No checkpoint found in parent run: {train_out}")
 
     payload = load_checkpoint(ckpt_path, map_location=device)
     model_base.load_state_dict(payload["model_state"], strict=True)
@@ -105,25 +102,45 @@ def train_seqgplvm_val(project_root: Path,
     iterator = trange(num_epochs, leave=is_tty, disable=not is_tty, dynamic_ncols=True)
 
     # 5) Create a *new* run directory for validation, linked to its parent
-    val_tag = {"mode": "val", "parent_train_id": train_id}
     val_cfg_identity = {
+        "mode": "val", 
+        "parent_train_id": train_id,
         "lr_val": optimize_hyperparams_val["lr"],
-        "logging": {"param_logging_freq": param_logging_freq,
-                    "checkpoint_interval": checkpoint_interval},
     }
+    
+    model_name = "seqgplvm_val"
+    val_out = train_dir(final_root, model_name, train_id)
 
-    val_out = write_train_files(
-        root=final_root/"validation_models",
-        model_name="seqgplvm_val",
-        train_id=train_id,
-        train_cfg={**val_tag, **val_cfg_identity},
-        data_ref={
-            "dgp": df_manifest["dgp"],
-            "data_file": df_manifest["path"],
-            "split_file": df_manifest.get("split_file"),
-            "data_run_id": df_manifest.get("run_id"),
-        },
-    )
+    # Fresh vs resume decision
+    resume = False
+    if resume_mode == "no":
+        if val_out.exists():
+            # DANGEROUS: hard reset of this run directory
+            shutil.rmtree(val_out)
+        # fresh run
+    elif resume_mode in ("auto", "yes"):
+        if val_out.exists():
+            last_ckpt = latest_checkpoint_path(val_out)
+            resume = last_ckpt is not None
+    else:
+        raise ValueError("resume_mode must be one of: 'auto', 'yes', 'no'")
+    
+    if not resume:
+        val_cfg_identity["logging"] = {"param_logging_freq": param_logging_freq,
+                                         "checkpoint_interval": checkpoint_interval}
+
+        val_out = write_train_files(
+            root = final_root,
+            model_name = model_name,
+            train_id=train_id,
+            train_cfg=val_cfg_identity,
+            data_ref={
+                "dgp": df_manifest["dgp"],
+                "data_file": df_manifest["path"],
+                "split_file": df_manifest.get("split_file"),
+                "data_run_id": df_manifest.get("run_id"),
+            },
+        )
 
     # 6) Lightweight bookkeeping (mirror your training function)
     keywords = ["chol_variational_covar", "variational_mean"]
@@ -131,6 +148,24 @@ def train_seqgplvm_val(project_root: Path,
     actual_params = get_actuals_via_getters(model); actual_params = {k: [v] for k, v in actual_params.items()}
     loss_list = []
     status, error_info = "success", None
+    epochs_completed_prior = 0  # will set properly below
+    epochs_completed = 0        # running counter this session
+
+    # If resuming, read prior progress from manifest if it exists
+    if resume:
+        ckpt_path = latest_checkpoint_path(train_out)
+        payload = load_checkpoint(ckpt_path, map_location=device)
+        model.load_state_dict(payload["model_state"])
+        if "optimizer_state" in payload:
+            optimizer.load_state_dict(payload["optimizer_state"])
+        extra = payload.get("extra") or {}
+        loss_list     = extra.get("loss_list", loss_list)
+        param_hist    = extra.get("param_hist", param_hist)
+        actual_params = extra.get("actual_params", actual_params)
+        epochs_completed_prior = get_epochs_completed_prior(train_out)
+        print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
+    
+    print(f"\n Validation training for DGP with paramters: \n {df_manifest} \n on device {device}")
 
     try:
         for i in iterator:
@@ -140,6 +175,9 @@ def train_seqgplvm_val(project_root: Path,
             iterator.set_description(f"Loss: {float(np.round(loss.item(), 2))}, iter {i}")
             loss.backward()
             optimizer.step()
+            epochs_completed = i + 1
+            # Heartbeat (global step = prior + current)
+            global_step = epochs_completed + epochs_completed_prior
 
             if i % param_logging_freq == 0:
                 for n, p in model.named_parameters():
@@ -188,14 +226,39 @@ def train_seqgplvm_val(project_root: Path,
                 optimizer_state=optimizer.state_dict(),
                 extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
             )
-        try:
-            plog.update(step=i+1, loss=(float(loss_list[-1]) if loss_list else None))
-        except Exception:
-            pass
+        
         _update_manifest(val_out, {
             "status": status,
             "epochs_completed": int(i+1),
-            "parent_train_dir": str(parent_out),
+            "parent_train_dir": str(train_out),
             "last_updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         })
 
+        # update manifest with progress & status (success path will overwrite failed → success if no exception)
+        mani_patch = {
+            "status": status,
+            "epochs_completed": int(epochs_completed_prior + epochs_completed),
+            "last_updated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        if error_info:
+            mani_patch["error"] = error_info
+        _update_manifest(train_out, mani_patch)
+
+        final_epochs = int(epochs_completed_prior + epochs_completed)
+        final_loss = float(loss_list[-1]) if loss_list else None
+
+        metrics = {
+            "final_loss": final_loss,
+            "epochs_completed": final_epochs,
+            "status": status,
+        }
+
+        row = make_training_index_row(
+            root=final_root,
+            model_name=model_name,
+            train_id=train_id,
+            train_cfg=val_cfg_identity,
+            data_run_id=df_manifest.get("run_id"),
+            metrics=metrics,
+        )
+        upsert_training_index(".", row)
