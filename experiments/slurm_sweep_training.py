@@ -8,12 +8,12 @@ def run(cmd_list): subprocess.run(cmd_list, check=True)
 
 dgp = "blackwell_yamauchi"
 
-rho = [5,10,50]  # n/T
+rho = [5] #[5,10,50]  # n/T
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
     "seed": [1],
-    "a": [1,2],
-    "p": [2,4],
+    "a": [1], # a = [1,2]
+    "p": [2], # p = [2,4]
 }
 
 T = {n: [int(n/r) for r in rho] for n in params_grid["n"]}

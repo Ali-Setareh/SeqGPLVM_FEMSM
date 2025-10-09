@@ -2,7 +2,7 @@ from trainers.seqgplvm_trainer import train_seqgplvm
 import argparse, json, yaml, torch, pandas as pd
 from pathlib import Path
 from utils.runs import load_by_params
-from utils.training import materialize_cfg
+from utils.training import load_train_cfg_from_json, materialize_cfg
 
 def main():
     p = argparse.ArgumentParser()
@@ -17,8 +17,8 @@ def main():
     df, manifest = load_by_params(".", data_cfg)
 
     train_cfg = Path(args.config)
-    cfg = yaml.safe_load(train_cfg.read_text()) if train_cfg.suffix in {".yml",".yaml"} else json.loads(train_cfg.read_text())
-
+    cfg = load_train_cfg_from_json(train_cfg)  # <-- replaces the yaml/json manual load
+    cfg = materialize_cfg(cfg, device)
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
