@@ -9,7 +9,7 @@ def run(cmd): subprocess.run(cmd, check=True)
 
 def main():
     cfg = {
-        "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 100},
         "checkpoint_interval": 20,
         "param_logging_freq": 10,
         "resume_mode": "no"
