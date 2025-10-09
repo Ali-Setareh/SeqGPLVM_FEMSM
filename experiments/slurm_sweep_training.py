@@ -1,8 +1,8 @@
-# sweep_training.py
 from pathlib import Path
-import subprocess, os, json
+import subprocess, os, json, tempfile   
 from itertools import product
-
+from utils.training import dump_train_cfg_json
+from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
 
@@ -32,7 +32,7 @@ training_cfg = {
     "num_inducing_hidden": 5,
     "treatment_lag": 1,
     "init_z": None,
-    "treatment_model": "bernoulli",
+    "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": True,
     "use_titsias": False,
     "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 20000},
@@ -64,15 +64,22 @@ else:
         raise SystemExit(f"Task id {task_id} out of range (grid size={len(full_grid)})")
     selected = [full_grid[idx]]
 
-# Unique scratch dir per task to avoid config filename clashes
-job_id   = os.environ.get("SLURM_JOB_ID", "nojid")
-task_tag = os.environ.get("SLURM_ARRAY_TASK_ID", "single")
-tmp = os.environ.get("TMPDIR", "/tmp")
-scratch = Path(tmp) / f"sweep_{job_id}_{task_tag}"
-scratch.mkdir(parents=True, exist_ok=True)
+# Scratch selection: Slurm uses TMPDIR; local uses repo configs/ and deletes after run
+is_slurm = task_id is not None
+if is_slurm:
+    job_id   = os.environ.get("SLURM_JOB_ID", "nojid")
+    task_tag = os.environ.get("SLURM_ARRAY_TASK_ID", "single")
+    tmp_root = os.environ.get("TMPDIR") or tempfile.gettempdir()   # ← cross-platform fallback
+    scratch  = Path(tmp_root) / f"sweep_{job_id}_{task_tag}"
+    scratch.mkdir(parents=True, exist_ok=True)
+    delete_after = False
+else:
+    scratch = Path("configs")
+    scratch.mkdir(exist_ok=True)
+    delete_after = True
 
 # Ensure project-local configs dir exists (for logs/checks, optional)
-Path("configs").mkdir(exist_ok=True)
+#Path("configs").mkdir(exist_ok=True)
 
 for combo in selected:
     n, seed, a, p, t = combo["n"], combo["seed"], combo["a"], combo["p"], combo["T"]
@@ -87,12 +94,21 @@ for combo in selected:
     dgp_cfg_path   = scratch / f"{stem}._data_tmp.json"
     train_cfg_path = scratch / f"{stem}._train_tmp.json"
 
-    dgp_cfg_path.write_text(json.dumps(dgp_cfg))
-    train_cfg_path.write_text(json.dumps(training_cfg))
+    try:
+        dgp_cfg_path.write_text(json.dumps(dgp_cfg))
+        dump_train_cfg_json(train_cfg_path, training_cfg)
 
-    run([
-        "python", "-m", "experiments.train_seqgplvm",
-        "--data",   str(dgp_cfg_path),
-        "--config", str(train_cfg_path),
-        "--device", device
-    ])
+
+        run([
+            "python", "-m", "experiments.train_seqgplvm",
+            "--data",   str(dgp_cfg_path),
+            "--config", str(train_cfg_path),
+            "--device", device
+        ])
+    finally:
+        if delete_after:
+                # keep local workspace clean
+                try: dgp_cfg_path.unlink(missing_ok=True)
+                except Exception: pass
+                try: train_cfg_path.unlink(missing_ok=True)
+                except Exception: pass

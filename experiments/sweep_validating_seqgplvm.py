@@ -13,7 +13,7 @@ def main():
     validated_ids = set(df.loc[df["model"] == "seqgplvm_val", "train_id"].unique())
     to_validate = sorted(train_ids - validated_ids)
     if not to_validate:
-        print("✅ Nothing to do — all training runs already have seqgplvm_val.")
+        print("Nothing to do — all training runs already have seqgplvm_val.")
         return
 
     is_slurm = "SLURM_ARRAY_TASK_ID" in os.environ
