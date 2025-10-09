@@ -18,7 +18,7 @@ def main():
 
     train_cfg = Path(args.config)
     cfg = load_train_cfg_from_json(train_cfg)  # <-- replaces the yaml/json manual load
-    cfg = materialize_cfg(cfg, device)
+    cfg = materialize_cfg(cfg, args.device)  # <-- ensures all objects are in place
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
