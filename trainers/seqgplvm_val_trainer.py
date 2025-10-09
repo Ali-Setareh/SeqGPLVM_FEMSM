@@ -45,7 +45,7 @@ def train_seqgplvm_val(train_id: str,
     
 
     df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
-    df_manifest = json.loads(as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8")
+    df_manifest = json.loads((as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8"))
     split = json.loads(as_path(data_ref["split_file"]).read_text(encoding="utf-8"))
 
     X, A, id2row = get_training_tensors(

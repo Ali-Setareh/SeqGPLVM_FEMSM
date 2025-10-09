@@ -15,13 +15,13 @@ def main():
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
     train_seqgplvm_val(
-        device=cfg.get("device", device),
+        device= device,
         train_id=cfg.get("train_id", None),
         pid_col=cfg.get("pid_col", "patient_id"),
         time_col=cfg.get("time_col", "t"),
         treatment_col=cfg.get("treatment_col", "D"),
         covariate_cols_prefix=cfg.get("covariate_cols_prefix", "x"),
-        optimize_hyperparams=cfg.get("optimize_hyperparams", {"lr":1e-2,"num_epochs":10000}),
+        optimize_hyperparams_val=cfg.get("optimize_hyperparams_val", {"lr":1e-2,"num_epochs":10000}),
         checkpoint_interval=cfg.get("checkpoint_interval", 2000),
         param_logging_freq=cfg.get("param_logging_freq", 50),
         resume_mode=cfg.get("resume_mode", "auto")

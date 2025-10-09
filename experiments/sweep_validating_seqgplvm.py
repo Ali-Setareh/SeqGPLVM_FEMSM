@@ -8,6 +8,13 @@ DEVICE = "auto"
 def run(cmd): subprocess.run(cmd, check=True)
 
 def main():
+    cfg = {
+        "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+        "checkpoint_interval": 20,
+        "param_logging_freq": 10,
+        "resume_mode": "no"
+        }
+    
     df = pd.read_parquet(INDEX_PATH)
     train_ids = set(df.loc[df["model"] == "seqgplvm", "train_id"].unique())
     validated_ids = set(df.loc[df["model"] == "seqgplvm_val", "train_id"].unique())
@@ -39,12 +46,7 @@ def main():
         delete_after = True
 
     for tid in selected:
-        cfg = {
-            "train_id": tid,
-            "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 10000},
-            "resume_mode": "no",
-            "device": DEVICE,
-        }
+        cfg["train_id"] = tid # the training run to validate
         cfg_path = scratch / f"val_{tid}.json"
         try:
             cfg_path.write_text(json.dumps(cfg))
