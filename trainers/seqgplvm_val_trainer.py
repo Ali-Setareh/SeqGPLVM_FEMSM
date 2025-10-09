@@ -10,8 +10,9 @@ import gpytorch
 from gpytorch.utils.errors import NotPSDError
 import numpy as np
 from tqdm import trange
-from utils.runs import write_train_files, _update_manifest
-from utils.training import actualize_cfg, load_train_cfg_from_json
+from utils.checkpoints import write_train_files
+
+from utils.training import _update_manifest, materialize_cfg, load_train_cfg_from_json
 from utils.inspectors import get_actuals_via_getters
 import time, sys, os, traceback, json 
 from utils.checkpoints import save_ckpt 
@@ -40,7 +41,7 @@ def train_seqgplvm_val(train_id: str,
     
     data_ref  = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
     train_conf = load_train_cfg_from_json((train_out / "config.json"))
-    train_conf = actualize_cfg(train_conf, device)
+    train_conf = materialize_cfg(train_conf, device)
     
 
     df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")

@@ -2,7 +2,7 @@ from pathlib import Path
 import subprocess, os, json, tempfile
 import pandas as pd
 
-INDEX_PATH = Path("results/index.parquet")
+INDEX_PATH = Path("results/index/training.parquet")
 DEVICE = "auto"
 
 def run(cmd): subprocess.run(cmd, check=True)
@@ -49,7 +49,7 @@ def main():
         try:
             cfg_path.write_text(json.dumps(cfg))
             run([
-                "python", "-m", "experiments.train_seqgplvm_val",
+                "python", "-m", "experiments.validate_seqgplvm",
                 "--config", str(cfg_path),
                 "--device", DEVICE,
             ])
