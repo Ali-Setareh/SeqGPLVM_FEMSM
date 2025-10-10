@@ -66,7 +66,7 @@ def save_ckpt(path: Path,
               extra: dict | None = None,
               *,
               keep_last: int = 2,
-              milestone_every: int = 10000,
+              milestone_every: int = 0,
               compress_older: bool = True) -> Path:
     """
     Save a checkpoint atomically, then prune + (optionally) compress older ones.

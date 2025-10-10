@@ -38,4 +38,4 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export PYTHONUNBUFFERED=1
 
 # Run the sweep (1 task = first combo). Use stdbuf for live-ish logs.
-stdbuf -oL -eL python experiments/slurm_sweep_training.py
+stdbuf -oL -eL python experiments/sweep_training_seqgplvm.py
