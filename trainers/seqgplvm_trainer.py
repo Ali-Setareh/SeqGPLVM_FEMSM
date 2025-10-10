@@ -231,7 +231,9 @@ def train_seqgplvm(df: pd.DataFrame,
                     step=epochs_completed + epochs_completed_prior,
                     model_state=model.state_dict(),
                     optimizer_state=optimizer.state_dict(),
-                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                    #extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                    keep_last=1, 
+                    milestone_every=10000
                 )
 
     except (NotPSDError, RuntimeError) as e:
@@ -243,7 +245,9 @@ def train_seqgplvm(df: pd.DataFrame,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}, 
+                keep_last=1, 
+                milestone_every=10000
             )
 
         status = "failed"
@@ -261,13 +265,15 @@ def train_seqgplvm(df: pd.DataFrame,
         raise
     finally:
         # final save if we didn't land exactly on a checkpoint
-        if epochs_completed > 0 and (epochs_completed % checkpoint_interval) != 0:
-            save_ckpt(
+        if epochs_completed > 0: # and (epochs_completed % checkpoint_interval) != 0:
+        save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}, 
+                keep_last=1, 
+                milestone_every=10000
             )
         # finalize progress log
         # final heartbeat (best-effort)

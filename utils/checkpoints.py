@@ -70,7 +70,6 @@ def save_ckpt(path: Path,
               compress_older: bool = True) -> Path:
     """
     Save a checkpoint atomically, then prune + (optionally) compress older ones.
-    - Keeps the newest .pt uncompressed so latest_checkpoint_path / load_checkpoint continue to work unchanged.
     - Retains 'milestone' steps (multiples of milestone_every) in addition to the last K.
     """
     ckpt_dir = Path(path) / "ckpts"

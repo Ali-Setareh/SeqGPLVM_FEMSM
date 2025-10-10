@@ -195,7 +195,9 @@ def train_seqgplvm_val(train_id: str,
                     step=i+1,
                     model_state=model.state_dict(),
                     optimizer_state=optimizer.state_dict(),
-                    extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                    #extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                    keep_last=1,
+                    milestone_every=0
                 )
 
     except (NotPSDError, RuntimeError) as e:
@@ -206,7 +208,9 @@ def train_seqgplvm_val(train_id: str,
                 step=i+1,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                keep_last=1, 
+                milestone_every=0
             )
         status = "failed"
         error_info = {
@@ -219,13 +223,15 @@ def train_seqgplvm_val(train_id: str,
         _update_manifest(val_out, {"status": status, "error": error_info})
         raise
     finally:
-        if (len(loss_list) == 0) or ((i + 1) % checkpoint_interval != 0):
-            save_ckpt(
+        #if (len(loss_list) == 0) or ((i + 1) % checkpoint_interval != 0):
+        save_ckpt(
                 val_out,
                 step=i+1,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}
+                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                keep_last=1, 
+                milestone_every=0
             )
         
         _update_manifest(val_out, {
