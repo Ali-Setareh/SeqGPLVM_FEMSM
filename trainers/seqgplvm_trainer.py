@@ -12,7 +12,7 @@ from models.SeqGPLVM import SeqGPLVM
 from utils.inspectors import get_actuals_via_getters 
 from utils.preprocessings import get_training_tensors 
 from utils.checkpoints import make_train_id, write_train_files, save_ckpt, make_training_index_row, train_dir
-from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, get_epochs_completed_prior
+from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, load_ckpt_any,get_epochs_completed_prior
 import shutil,os, sys
 from utils.pathing import as_path
 from utils.progress import ProgressLogger
@@ -181,7 +181,7 @@ def train_seqgplvm(df: pd.DataFrame,
     # If resuming, read prior progress from manifest if it exists
     if resume:
         ckpt_path = latest_checkpoint_path(train_out)
-        payload = load_checkpoint(ckpt_path, map_location=device)
+        payload = load_ckpt_any(ckpt_path, map_location=device)
         model.load_state_dict(payload["model_state"])
         if "optimizer_state" in payload:
             optimizer.load_state_dict(payload["optimizer_state"])

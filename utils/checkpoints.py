@@ -65,8 +65,8 @@ def save_ckpt(path: Path,
               optimizer_state: dict | None = None,
               extra: dict | None = None,
               *,
-              keep_last: int = 2,
-              milestone_every: int = 0,
+              keep_last: int = 1,
+              milestone_every: int = 10000,
               compress_older: bool = True) -> Path:
     """
     Save a checkpoint atomically, then prune + (optionally) compress older ones.
@@ -108,7 +108,7 @@ def _prune_and_compress_inline(ckpt_dir: Path,
                                newest: Path,
                                *,
                                keep_last: int = 3,
-                               milestone_every: int = 0,
+                               milestone_every: int = 10000,
                                compress_older: bool = True) -> None:
     if not ckpt_dir.is_dir():
         return
@@ -281,16 +281,17 @@ def upsert_training_index(root: str | Path, row: dict):
 
 ######### Loading Models #########
 import re 
-_ckpt_re = re.compile(r"step_(\d+)\.pt$")
+_step_re = re.compile(r"^step_(\d+)\.pt(?:\.(?:zst|gz))?$")
 
 def latest_checkpoint_path(run_dir: Path) -> Path | None:
-    ckpts = list((run_dir / "ckpts").glob("step_*.pt"))
-    if not ckpts:
+    ckpt_dir = run_dir / "ckpts"
+    cands = [p for p in ckpt_dir.glob("step_*.pt*") if _step_re.match(p.name)]
+    if not cands:
         return None
-    def stepnum(p: Path):
-        m = _ckpt_re.search(p.name)
-        return int(m.group(1)) if m else -1
-    return max(ckpts, key=stepnum)
+    # prefer higher step; if tie (same step exists plain+compressed), prefer plain .pt
+    def key(p: Path):
+        return (_stepnum(p), 1 if p.suffix == ".pt" else 0)
+    return max(cands, key=key)
 
 def load_checkpoint(ckpt_path: Path, map_location="cpu"):
     payload = torch.load(ckpt_path, map_location=map_location)

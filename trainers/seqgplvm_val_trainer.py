@@ -1,6 +1,6 @@
 import shutil
 import torch
-from utils.checkpoints import latest_checkpoint_path, load_checkpoint, train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
+from utils.checkpoints import latest_checkpoint_path, load_checkpoint, load_ckpt_any,train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
 from utils.preprocessings import get_training_tensors
 import pandas as pd
 from utils.pathing import as_path
@@ -86,7 +86,7 @@ def train_seqgplvm_val(train_id: str,
     if ckpt_path is None:
         raise FileNotFoundError(f"No checkpoint found in parent run: {train_out}")
 
-    payload = load_checkpoint(ckpt_path, map_location=device)
+    payload = load_ckpt_any(ckpt_path, map_location=device)
     model_base.load_state_dict(payload["model_state"], strict=True)
 
     # 3) Wrap the trained model for validation and expose Z_val
@@ -155,7 +155,7 @@ def train_seqgplvm_val(train_id: str,
     # If resuming, read prior progress from manifest if it exists
     if resume:
         ckpt_path = latest_checkpoint_path(train_out)
-        payload = load_checkpoint(ckpt_path, map_location=device)
+        payload = load_ckpt_any(ckpt_path, map_location=device)
         model.load_state_dict(payload["model_state"])
         if "optimizer_state" in payload:
             optimizer.load_state_dict(payload["optimizer_state"])
