@@ -266,7 +266,7 @@ def train_seqgplvm(df: pd.DataFrame,
     finally:
         # final save if we didn't land exactly on a checkpoint
         if epochs_completed > 0: # and (epochs_completed % checkpoint_interval) != 0:
-        save_ckpt(
+            save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
