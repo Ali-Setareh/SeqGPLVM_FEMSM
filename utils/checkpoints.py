@@ -140,7 +140,7 @@ def _prune_and_compress_inline(ckpt_dir: Path,
     survivors_files = [p for p in (ckpt_dir.glob("step_*.pt*")) if _stepnum(p) in survivor_steps]
 
     # compress survivors except the newest — only when they are plain .pt
-    to_compress = [p for p in survivors_files if p.suffix == ".pt" and _stepnum(p) != newest_step]
+    to_compress = [p for p in survivors_files if p.suffix == ".pt"]# and _stepnum(p) != newest_step]
 
     # Prefer zstd; fallback to gzip (pure Python)
     try:
