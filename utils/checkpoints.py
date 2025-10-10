@@ -2,7 +2,7 @@ import os
 import glob
 from datetime import datetime
 from pathlib import Path 
-import json, platform, subprocess
+import json, platform, subprocess, gzip
 import hashlib
 import torch 
 import re
@@ -295,6 +295,22 @@ def latest_checkpoint_path(run_dir: Path) -> Path | None:
 def load_checkpoint(ckpt_path: Path, map_location="cpu"):
     payload = torch.load(ckpt_path, map_location=map_location)
     return payload  # contains model_state, optimizer_state, maybe "extra"
+
+def load_ckpt_any(p: Path, map_location=None):
+    p = Path(p)
+    suf = p.suffixes[-2:]  # e.g., ['.pt', '.zst'] or ['.pt', '.gz']
+    if p.suffix == ".pt":
+        return torch.load(p, map_location=map_location)
+    if suf == ['.pt', '.zst']:
+        import zstandard as zstd
+        with open(p, "rb") as fh:
+            dctx = zstd.ZstdDecompressor()
+            with dctx.stream_reader(fh) as rfh:
+                return torch.load(rfh, map_location=map_location)
+    if suf == ['.pt', '.gz']:
+        with gzip.open(p, "rb") as fh:
+            return torch.load(fh, map_location=map_location)
+    raise ValueError(f"Unrecognized checkpoint format: {p}")
 
 def get_epochs_completed_prior(run_dir: Path) -> int:
     mani = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
