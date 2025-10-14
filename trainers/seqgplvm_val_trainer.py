@@ -154,7 +154,7 @@ def train_seqgplvm_val(train_id: str,
 
     # If resuming, read prior progress from manifest if it exists
     if resume:
-        ckpt_path = latest_checkpoint_path(train_out)
+        ckpt_path = latest_checkpoint_path(val_out)
         payload = load_ckpt_any(ckpt_path, map_location=device)
         model.load_state_dict(payload["model_state"])
         if "optimizer_state" in payload:
@@ -163,7 +163,7 @@ def train_seqgplvm_val(train_id: str,
         loss_list     = extra.get("loss_list", loss_list)
         param_hist    = extra.get("param_hist", param_hist)
         actual_params = extra.get("actual_params", actual_params)
-        epochs_completed_prior = get_epochs_completed_prior(train_out)
+        epochs_completed_prior = get_epochs_completed_prior(val_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
     print(f"\n Validation training for DGP with paramters: \n {df_manifest} \n on device {device}")
@@ -192,7 +192,7 @@ def train_seqgplvm_val(train_id: str,
             if (i + 1) % checkpoint_interval == 0:
                 save_ckpt(
                     val_out,
-                    step=i+1,
+                    step=epochs_completed + epochs_completed_prior,
                     model_state=model.state_dict(),
                     optimizer_state=optimizer.state_dict(),
                     #extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
@@ -205,7 +205,7 @@ def train_seqgplvm_val(train_id: str,
             print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
             save_ckpt(
                 val_out,
-                step=i+1,
+                step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
                 extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
@@ -226,7 +226,7 @@ def train_seqgplvm_val(train_id: str,
         #if (len(loss_list) == 0) or ((i + 1) % checkpoint_interval != 0):
         save_ckpt(
                 val_out,
-                step=i+1,
+                step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
                 extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},

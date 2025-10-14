@@ -6,6 +6,7 @@ import json, platform, subprocess, gzip
 import hashlib
 import torch 
 import re
+import tempfile
 
 def canonicalize(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -296,20 +297,34 @@ def load_checkpoint(ckpt_path: Path, map_location="cpu"):
     payload = torch.load(ckpt_path, map_location=map_location)
     return payload  # contains model_state, optimizer_state, maybe "extra"
 
-def load_ckpt_any(p: Path, map_location=None):
+def load_ckpt_any(p: Path, map_location=None, *, keep_temp=False):
     p = Path(p)
-    suf = p.suffixes[-2:]  # e.g., ['.pt', '.zst'] or ['.pt', '.gz']
     if p.suffix == ".pt":
         return torch.load(p, map_location=map_location)
-    if suf == ['.pt', '.zst']:
+
+    if p.suffixes[-2:] == [".pt", ".zst"]:
         import zstandard as zstd
         with open(p, "rb") as fh:
             dctx = zstd.ZstdDecompressor()
-            with dctx.stream_reader(fh) as rfh:
-                return torch.load(rfh, map_location=map_location)
-    if suf == ['.pt', '.gz']:
-        with gzip.open(p, "rb") as fh:
-            return torch.load(fh, map_location=map_location)
+            with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
+                tmp.write(dctx.decompress(fh.read()))
+                tmp_path = tmp.name
+        try:
+            return torch.load(tmp_path, map_location=map_location)
+        finally:
+            if not keep_temp:
+                os.remove(tmp_path)
+
+    if p.suffixes[-2:] == [".pt", ".gz"]:
+        with gzip.open(p, "rb") as fh, tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as tmp:
+            tmp.write(fh.read())
+            tmp_path = tmp.name
+        try:
+            return torch.load(tmp_path, map_location=map_location)
+        finally:
+            if not keep_temp:
+                os.remove(tmp_path)
+
     raise ValueError(f"Unrecognized checkpoint format: {p}")
 
 def get_epochs_completed_prior(run_dir: Path) -> int:

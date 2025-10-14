@@ -11,6 +11,7 @@ from models.GPLVM import GPLVM, SGPRModel
 from copy import deepcopy
 from tqdm.notebook import trange
 from typing import Optional
+from utils.inspectors import get_actuals_via_getters
 
 class SeqGPLVM(nn.Module):
     '''
@@ -350,6 +351,126 @@ class SeqGPLVM(nn.Module):
             return a_pred #mean, sd
     
 
+    @torch.no_grad()
+    def propensity(
+        self,
+        X_cov_star: torch.Tensor,      # (N*, T, C)
+        z_star:     torch.Tensor,      # (K, N*, Q)
+        *,
+        A_obs: Optional[torch.Tensor] = None,  # (N*, T) observed treatment for GPS/log-prop; optional
+        add_lik_var: bool = True,              # must be True for Gaussian GPS (use obs noise)
+        z_integral: int = 100,
+    ) -> dict:
+        """
+        Returns a dict with per-(n,t,k) quantities for treatment models:
+
+        - For BernoulliLikelihood:
+            'propensity' : (N*, T, K) with p(A=1 | X, Z^k, D)
+            if A_obs is provided:
+                'log_gps' : (N*, T, K) with log pmf at the observed A in {0,1}
+        - For GaussianLikelihood (continuous treatment):
+            if A_obs is provided:
+                'log_gps' : (N*, T, K) with element-wise Normal log pdf at observed A
+            always (for convenience):
+                'mu'  : (N*, T, K)
+                'var' : (N*, T, K)  predictive variance (includes noise when add_lik_var=True)
+
+        Notes:
+        - The K axis corresponds to z_integral latent draws.
+        - Use the returned 'log_gps' to build IPTW weights in log-space across t.
+        """
+        self.eval()
+        for gp, lik in zip(self.gps, self.likelihoods):
+            gp.eval(); lik.eval()
+
+        N_star, T = X_cov_star.size(0), self.T
+        device = z_star.device
+        K = z_integral
+
+        prop = torch.full((N_star, T, K), float("nan"), device=device)  # only filled for Bernoulli
+        log_gps = torch.full((N_star, T, K), float("nan"), device=device) if A_obs is not None else None
+        mu_out  = torch.full((N_star, T, K), float("nan"), device=device)
+        var_out = torch.full((N_star, T, K), float("nan"), device=device)
+
+        mask = ~X_cov_star.isnan().any(dim=-1)  # (N*, T)
+
+        with gpytorch.settings.fast_pred_var():
+            for t in range(T):
+                mask_t = mask[:, t]
+                if mask_t.sum() == 0:
+                    continue
+                n = int(mask_t.sum().item())
+
+                # build [K, n, C+Q] then flatten to [K*n, C+Q]
+                x_t = X_cov_star[mask_t, t, :].unsqueeze(0).expand(K, -1, -1)         # [K, n, C]
+                xz  = torch.cat([x_t, z_star[:, mask_t, :]], dim=2).reshape(K * n, -1)  # [K*n, C+Q]
+
+                gp_t  = self.gps[t]
+                lik_t = self.likelihoods[t]
+                latent = gp_t(xz)  # distribution over f at these inputs
+
+                lik_cls = type(lik_t)
+
+                if lik_cls is gpytorch.likelihoods.GaussianLikelihood:
+                    # Predictive for A (continuous) — include obs noise for GPS
+                    pred = lik_t(latent) if add_lik_var else latent
+
+                    mu_vec  = pred.mean      # [K*n]
+                    var_vec = pred.variance  # [K*n]  (diag; includes noise if add_lik_var)
+
+                    # store params (useful even if you only need log_gps)
+                    mu_t  = mu_vec.view(K, n).T   # [n, K]
+                    var_t = var_vec.view(K, n).T  # [n, K]
+                    mu_out[mask_t, t, :]  = mu_t
+                    var_out[mask_t, t, :] = var_t
+
+                    # If observed A given, compute element-wise Normal log pdf (GPS)
+                    if A_obs is not None:
+                        a_t = A_obs[mask_t, t]                                 # [n]
+                        a_flat = a_t.unsqueeze(0).expand(K, -1).reshape(K * n) # [K*n]
+                        # log N(a | mu, var)
+                        log_pdf = -0.5 * (torch.log(2 * torch.pi * var_vec) + (a_flat - mu_vec) ** 2 / var_vec)
+                        log_gps[mask_t, t, :] = log_pdf.view(K, n).T           # [n, K]
+
+                elif lik_cls is gpytorch.likelihoods.BernoulliLikelihood:
+                    # Predictive Bernoulli (probit) — already integrates over f
+                    pred = lik_t(latent)                  # Bernoulli over A
+                    p_vec = pred.mean                     # [K*n] propensity for A=1
+                    prop_t = p_vec.view(K, n).T           # [n, K]
+                    prop[mask_t, t, :] = prop_t
+
+                    # Optional: log pmf at observed A (useful for stabilized weights)
+                    if A_obs is not None:
+                        a_t = A_obs[mask_t, t]                                 # [n], values 0/1
+                        a_flat = a_t.unsqueeze(0).expand(K, -1).reshape(K * n) # [K*n]
+                        log_pmf = pred.log_prob(a_flat)                        # [K*n], element-wise
+                        log_gps[mask_t, t, :] = log_pmf.view(K, n).T           # [n, K]
+
+                else:
+                    # Generic fallback: try to use returned distribution directly.
+                    pred = lik_t(latent)
+                    if A_obs is not None and hasattr(pred, "log_prob"):
+                        a_t = A_obs[mask_t, t]
+                        a_flat = a_t.unsqueeze(0).expand(K, -1).reshape(K * n)
+                        lp = pred.log_prob(a_flat)
+                        # If lp came back as joint (scalar), skip; otherwise scatter
+                        if lp.shape == a_flat.shape:
+                            log_gps[mask_t, t, :] = lp.view(K, n).T
+
+                    # If pred has mean/variance (e.g., Poisson gives mean=rate), you can
+                    # also record expected value here if desired.
+
+        out = {
+            "propensity": prop,  # (N*, T, K) — filled only for Bernoulli
+            "mu": mu_out,        # (N*, T, K) — useful for continuous
+            "var": var_out,      # (N*, T, K)
+        }
+        if log_gps is not None:
+            out["log_gps"] = log_gps  # (N*, T, K)
+        return out
+
+    
+
 def val_model(trained_model, X_val, Y_val):
 
         """
@@ -423,9 +544,6 @@ def forward_val(model):      #, batch_idx: torch.Tensor):
         
         return loss  
 
-
-
-from utils.inspectors import get_actuals_via_getters
 
 def fit_Z_posterior(model, steps=500, lr=0.01):
     keywords = ["chol_variational_covar", "variational_mean"] # these two are too big to save so we ommit them during the book keeping

@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=24G
 #SBATCH --time=06:00:00
-#SBATCH --array=1                  # set to 1-48 when you’re ready
+#SBATCH --array=1-24                  # set to 1-48 when you’re ready
 #SBATCH --export=NONE              # don't inherit a messy login env
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
