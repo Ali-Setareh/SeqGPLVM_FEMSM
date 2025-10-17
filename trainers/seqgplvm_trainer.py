@@ -206,7 +206,7 @@ def train_seqgplvm(df: pd.DataFrame,
         epochs_completed_prior = get_epochs_completed_prior(train_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
-    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device}")
+    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device} with train_id: {train_id}\n")
 
     try:
 
