@@ -19,6 +19,7 @@ from utils.progress import ProgressLogger
 from typing import  Type 
 from utils.training import class_to_id, _update_manifest, tensor_fingerprint
 import time, traceback
+from typing import Literal
 
 # to do : resume option for val trainer and check to see if everything works fine because I changed sth to be able to get a class as the treatment model and init z 
 # to do : also remove init z from the train identity 
@@ -31,6 +32,9 @@ def train_seqgplvm(df: pd.DataFrame,
                    treatment_model: Type[Likelihood] = None, # "bernoulli" | "gaussian"
                    init_z: torch.Tensor = None, # optional initial Z if none  the model will assign them N(0,1)
                    learn_inducing_locations: bool = True, # whether to optimize the inducing locations or keep them fixed
+                   z_initializer: Literal['normal', 'uniform'] = 'normal', # how to initialize the inducing points in the latent space
+                   uniform_halfwidth: float | None = None, # a for Uniform[-a, a] for initializing inducing points in latent space
+                   prior_std: float | None = None,        # s0 for Normal(0, s0^2) for initializing inducing points in latent space
                    use_titsias: bool = False, # whether to use Titsias' trick for inducing points
                    pid_col: str = "patient_id",
                    time_col: str = "t",
@@ -64,8 +68,12 @@ def train_seqgplvm(df: pd.DataFrame,
     if treatment_model is None:
         raise ValueError("your treatment model must be specified")
     
-    model = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
+    model = SeqGPLVM(Y = A_train, X_cov = X_train, 
+                        latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
                         init_z=init_z, device=device,
+                        z_initializer=z_initializer,
+                        uniform_halfwidth=uniform_halfwidth,
+                        prior_std=prior_std,
                         lik=treatment_model,
                         learn_inducing_locations = learn_inducing_locations,
                         use_titsias=use_titsias).to(device)
@@ -118,11 +126,17 @@ def train_seqgplvm(df: pd.DataFrame,
         "treatment_lag": treatment_lag,
         "treatment_model": class_to_id(treatment_model),
         "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
+        "z_initializer": z_initializer,
         "learn_inducing_locations": learn_inducing_locations,
         "use_titsias": use_titsias,
         "lr": optimize_hyperparams["lr"]
     }
-     
+
+    if z_initializer == "uniform":
+        _train_cfg_identity["uniform_halfwidth"] = uniform_halfwidth
+    elif z_initializer == "normal":
+        _train_cfg_identity["prior_std"] = prior_std
+
     train_id = make_train_id(
         data_run_id=data_run_id,
         model_name=model_name,

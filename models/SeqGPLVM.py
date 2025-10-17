@@ -10,7 +10,7 @@ import torch.nn as nn
 from models.GPLVM import GPLVM, SGPRModel
 from copy import deepcopy
 from tqdm.notebook import trange
-from typing import Optional
+from typing import Optional, Literal
 from utils.inspectors import get_actuals_via_getters
 from torch.quasirandom import SobolEngine 
 
@@ -100,7 +100,13 @@ class SeqGPLVM(nn.Module):
         device = None, 
         lik = None, #gpytorch.likelihoods.GaussianLikelihood()
         learn_inducing_locations = False , 
-        use_titsias = False 
+        use_titsias = False, 
+        z_initializer: Literal['normal', 'uniform'] = 'normal',
+        uniform_halfwidth: float | None = None, # a for Uniform[-a, a]
+        prior_std: float | None = None,        # s0 for Normal(0, s0^2)
+
+
+        
     ):
         """
         Y: (N, T) tensor of targets for each of T GPs
@@ -110,6 +116,9 @@ class SeqGPLVM(nn.Module):
         init_z: (N, Q) init for shared latent; if None, random
         """
         super().__init__()
+
+        if z_initializer not in {"uniform", "normal"}:
+            raise ValueError(f"z_initializer must be 'uniform' or 'normal', got {z_initializer!r}")
 
         self.config = {
             'latent_dim': latent_dim,
@@ -157,7 +166,12 @@ class SeqGPLVM(nn.Module):
         self.mlls = []
        
         #Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
-        Xu_Z = init_inducing_Z(n_inducing_hidden, latent_dim, uniform_halfwidth = 1, method="sobol-uniform", seed=0, device=device)
+        Xu_Z = init_inducing_Z(n_inducing_hidden, 
+                               latent_dim, 
+                               uniform_halfwidth = uniform_halfwidth if z_initializer == "uniform" else None, 
+                               prior_std= prior_std if z_initializer == "normal" else None,
+                               method="lhs-uniform" if z_initializer == "uniform" else "sobol-normal", 
+                               seed=0, device=device)
 
         for t in range(T):
             ### NEW ###

@@ -3,6 +3,7 @@ import subprocess, os, json, tempfile
 from itertools import product
 from utils.training import dump_train_cfg_json
 from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
+import numpy as np 
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
 
@@ -16,7 +17,11 @@ params_grid = {
     "p": [2], # p = [2,4]
 }
 
-T = {n: [int(n/r) for r in rho] for n in params_grid["n"]}
+train_test_split = 0.8
+T = {((1/train_test_split) * n): [int(n/r) for r in rho] for n in params_grid["n"]}
+num_inducing = {((1/train_test_split) * n): int(np.sqrt(n)) for n in params_grid["n"]}
+params_grid["n"] = [(1/train_test_split) * i for i in params_grid["n"]]
+
 beta_dict  = {2: [-0.5, -0.5],           4: [-0.5, -0.5, 1.0, -0.5]}
 gamma_dict = {2: [1.0, 0.5],             4: [1.0, 0.5, 1.0, 1.0]}
 
@@ -28,10 +33,11 @@ params = dict(
 
 training_cfg = {
     "latent_dim": 1,
-    "num_inducing": 50,
-    "num_inducing_hidden": 5,
+    "num_inducing_hidden": 13,
     "treatment_lag": 1,
     "init_z": None,
+    "z_initializer": "uniform",
+    "uniform_halfwidth": 2.0,
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": True,
     "use_titsias": False,
@@ -96,8 +102,9 @@ for combo in selected:
 
     try:
         dgp_cfg_path.write_text(json.dumps(dgp_cfg))
+        training_cfg["uniform_halfwidth"] = a
+        training_cfg["num_inducing"] = num_inducing[n]
         dump_train_cfg_json(train_cfg_path, training_cfg)
-
 
         run([
             "python", "-m", "experiments.train_seqgplvm",
