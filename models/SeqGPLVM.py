@@ -682,6 +682,7 @@ class SeqGPLVMVal(SeqGPLVM):
         if init_z is None:
             init_z = torch.randn(N_val, Q, device=X_val.device)
 
+        model.T_val = T
         model.Z_val = VariationalLatentVariable(
             N_val, T, Q, init_z, model.Z.prior_x  # reuse prior from the trained model
         )
@@ -717,7 +718,7 @@ class SeqGPLVMVal(SeqGPLVM):
         Z_sample = self.sample_latent_variable_val()
         loss = 0.0
 
-        for t, (gp, mll) in enumerate(zip(self.gps, self.mlls_val)):
+        for t, (gp, mll) in enumerate(zip(self.gps, self.mlls_val)): # note that if mmls_val is shorter that self.gps (so we have less time points in val than in train) this loop only itterates over the val time points
             Yt = self.Y_val[:, t]
             Xt = self.X_val[:, t, :]
             subset = ~torch.isnan(Yt).reshape(-1).detach()
@@ -737,7 +738,7 @@ class SeqGPLVMVal(SeqGPLVM):
                 loss += -mll(f_dist, yt).sum()
         
         kl_z_val = sum(term.loss() for term in self.Z_val.added_loss_terms())
-        loss += self.T * kl_z_val
+        loss += self.T_val * kl_z_val
 
 
         return loss
