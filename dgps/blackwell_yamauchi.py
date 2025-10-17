@@ -105,7 +105,8 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
                 "patient_id": i,
                 "t": t + 1,
                 "D": int(D[i, t]),
-                "Y": float(Y[i]) if (t == T - 1) else np.nan
+                "Y": float(Y[i]) if (t == T - 1) else np.nan,
+                "alpha": float(alpha[i]),  # for inspection purposes
             }
             for j in range(p):
                 rec[f"x{j}"] = float(X[i, t, j])
