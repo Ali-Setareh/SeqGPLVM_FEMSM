@@ -164,6 +164,11 @@ class SeqGPLVM(nn.Module):
                     elbo = -mll(f_dist, yt).sum()
                     loss+= elbo 
         
+        # --- add the Z-KL correctly ---
+        # Pull the added-loss term that VariationalLatentVariable registered on itself
+        kl_z = sum(term.loss() for term in self.Z.added_loss_terms())
+        loss += self.T * kl_z            # multiply by data_dim (see note above)
+        
         return loss
 
     @torch.no_grad()
