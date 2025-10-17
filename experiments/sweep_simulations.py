@@ -1,6 +1,7 @@
 from itertools import product
 import subprocess, json
 from pathlib import Path
+import numpy as np 
 
 def run(cmd): subprocess.check_call(cmd, shell=True)
 
@@ -8,7 +9,7 @@ dgp = "blackwell_yamauchi"
 
 rho = [5,10,50] # n/T
 params_grid = {
-    "n": [200, 500, 1000, 3000],
+    "n": int(np.array([200, 500, 1000, 3000])*(10/8)), # we have to adjust n so that after an 80/20 split we get the desired n
     "seed": [1], 
     "a": [1,2], 
     "p": [2,4], 
