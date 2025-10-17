@@ -24,7 +24,7 @@ def split_path(dgp: str, N: int, split_seed: int = 42, T: int | None = None, p: 
     return output_dir/ "_".join(parts)
 
 def make_or_load_split(dgp: str, N: int,  output_dir: Path, split_seed: int = 42, T: int | None = None, p: int | None = None,
-                       train=0.7, val=0.15, test=0.15,
+                       train=0.8, val=0.10, test=0.10,
                        ) -> tuple[dict, Path]:
     path = split_path(dgp, N, split_seed, T, p,output_dir=output_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
