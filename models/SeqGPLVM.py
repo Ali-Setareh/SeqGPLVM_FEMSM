@@ -70,7 +70,8 @@ class SeqGPLVM(nn.Module):
 
         # Define prior for Z
         Z_prior_mean = torch.zeros(N, latent_dim, requires_grad=False, device=device)  # shape: N x Q
-        prior_Z = NormalPrior(Z_prior_mean, 0.5*torch.ones_like(Z_prior_mean, requires_grad=False, device=device)) #requires_grad=False because we dont want to learn the prior hyperparams 
+        s0 = 2.0  # broad, lets data speak
+        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=False, device=device)) #requires_grad=False because we dont want to learn the prior hyperparams
 
         self.Z = VariationalLatentVariable(N, T, 
                                            latent_dim, init_z, 
@@ -360,6 +361,8 @@ class SeqGPLVM(nn.Module):
         A_obs: Optional[torch.Tensor] = None,  # (N*, T) observed treatment for GPS/log-prop; optional
         add_lik_var: bool = True,              # must be True for Gaussian GPS (use obs noise)
         z_integral: int = 100,
+        sample_count: int = 0,         # number of A samples to draw
+        sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
     ) -> dict:
         """
         Returns a dict with per-(n,t,k) quantities for treatment models:
@@ -391,6 +394,12 @@ class SeqGPLVM(nn.Module):
         log_gps = torch.full((N_star, T, K), float("nan"), device=device) if A_obs is not None else None
         mu_out  = torch.full((N_star, T, K), float("nan"), device=device)
         var_out = torch.full((N_star, T, K), float("nan"), device=device)
+        A_samples = torch.full((sample_count, N_star, T, K), float("nan"), device=device) if sample_count>0 else None
+        log_gps_samples = (
+        torch.full((sample_count, N_star, T, K), float("nan"), device=device)
+        if sample_count > 0 else None
+        )
+
 
         mask = ~X_cov_star.isnan().any(dim=-1)  # (N*, T)
 
@@ -431,6 +440,21 @@ class SeqGPLVM(nn.Module):
                         # log N(a | mu, var)
                         log_pdf = -0.5 * (torch.log(2 * torch.pi * var_vec) + (a_flat - mu_vec) ** 2 / var_vec)
                         log_gps[mask_t, t, :] = log_pdf.view(K, n).T           # [n, K]
+                    
+                    # Optionally draw samples from the predictive (for IPTW diagnostics)
+                    if sample_count > 0:
+                        if sample_independent:
+                            # factorized Normal: mu + sqrt(var)*eps
+                            eps = torch.randn(sample_count, K*n, device=device)
+                            samp = mu_vec.unsqueeze(0) + eps * var_vec.sqrt().unsqueeze(0)  # [S, K*n]
+                        else:
+                            # full MVN sample (captures correlation across points)
+                            samp = pred.rsample((sample_count,))  # [S, K*n]
+                        A_samples[:, mask_t, t, :] = samp.view(sample_count, K, n).permute(0, 2, 1)
+                        
+                        diag = torch.distributions.Normal(mu_vec, var_vec.sqrt())
+                        logpdf_elem = diag.log_prob(samp)               # [S, K*n] element-wise
+                        log_gps_samples[:, mask_t, t, :] = logpdf_elem.view(sample_count, K, n).permute(0, 2, 1)
 
                 elif lik_cls is gpytorch.likelihoods.BernoulliLikelihood:
                     # Predictive Bernoulli (probit) — already integrates over f
@@ -445,6 +469,13 @@ class SeqGPLVM(nn.Module):
                         a_flat = a_t.unsqueeze(0).expand(K, -1).reshape(K * n) # [K*n]
                         log_pmf = pred.log_prob(a_flat)                        # [K*n], element-wise
                         log_gps[mask_t, t, :] = log_pmf.view(K, n).T           # [n, K]
+                    
+                    if sample_count > 0:
+                        samp = pred.sample((sample_count,))         # [S, K*n], 0/1 draws
+                        A_samples[:, mask_t, t, :] = samp.view(sample_count, K, n).permute(0, 2, 1).to(torch.float32)
+                        logpmf = pred.log_prob(samp)                    # [S, K*n]
+                        log_gps_samples[:, mask_t, t, :] = logpmf.view(sample_count, K, n).permute(0, 2, 1)
+                        
 
                 else:
                     # Generic fallback: try to use returned distribution directly.
@@ -466,7 +497,11 @@ class SeqGPLVM(nn.Module):
             "var": var_out,      # (N*, T, K)
         }
         if log_gps is not None:
-            out["log_gps"] = log_gps  # (N*, T, K)
+            out["log_gps"] = log_gps  # (N*, T, K ) 
+        if A_samples is not None:
+            out["A_samples"] = A_samples  # (S, N*, T, K)
+        if log_gps_samples is not None:
+            out["log_gps_samples_z_meaned"] = log_gps_samples.mean(3)  # (S, N*, T, ) we average over K which is z_integral and the last axis
         return out
 
     

@@ -14,12 +14,14 @@ import time,  os, json
 
 
 def propensity_seqgplvm(train_id: str,
-                            pid_col: str = "patient_id",
-                            time_col: str = "t",
-                            treatment_col: str = "D",
-                            covariate_cols_prefix: str = "x",
-                            device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), 
-                            sample_num: int = 100
+                        pid_col: str = "patient_id",
+                        time_col: str = "t",
+                        treatment_col: str = "D",
+                        covariate_cols_prefix: str = "x",
+                        device = torch.device("cuda" if torch.cuda.is_available() else "cpu"), 
+                        sample_num: int = 100, 
+                        sample_count: int = 0,         # number of A samples to draw
+                        sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -89,8 +91,10 @@ def propensity_seqgplvm(train_id: str,
     
     extra = payload_train.get("extra")
     param_hist    = extra.get("param_hist")
-    variational_mean_train = param_hist.get("Z.q_mu") if param_hist else None
-    variational_log_sigma_train = param_hist.get("Z.q_log_sigma") if param_hist else None
+    variational_mean_train = torch.as_tensor(param_hist["Z.q_mu"][-1], 
+                                         device=device, dtype=X_train.dtype) if param_hist else None
+    variational_log_sigma_train = torch.as_tensor(param_hist["Z.q_log_sigma"][-1], 
+                                         device=device, dtype=X_train.dtype) if param_hist else None
     if variational_mean_train is None or variational_log_sigma_train is None:
         raise ValueError("No variational params found in parent training checkpoint.")
 
@@ -107,8 +111,11 @@ def propensity_seqgplvm(train_id: str,
     payload_val = load_ckpt_any(ckpt_path, map_location=device)
     extra = payload_val.get("extra")
     param_hist    = extra.get("param_hist")
-    variational_mean_val = param_hist.get("Z_val.q_mu") if param_hist else None
-    variational_log_sigma_val = param_hist.get("Z_val.q_log_sigma") if param_hist else None
+    variational_mean_val = torch.as_tensor(param_hist["Z_val.q_mu"][-1], 
+                                       device=device, dtype=X_train.dtype)
+    variational_log_sigma_val = torch.as_tensor(param_hist["Z_val.q_log_sigma"][-1], 
+                                        device=device, dtype=X_train.dtype)
+    
     if variational_mean_val is None or variational_log_sigma_val is None:
         raise ValueError("No variational params found in validation training checkpoint.") 
     
@@ -132,13 +139,14 @@ def propensity_seqgplvm(train_id: str,
         with gpytorch.settings.cholesky_jitter(1e-3):
             z_star_train = qZ_dist_train.sample(torch.Size([sample_num]))
             z_star_val = qZ_dist_val.sample(torch.Size([sample_num]))
-            prop_dic_train = model_base.propensity(X_cov_star = X_train, z_star = z_star_train , A_obs= A_train, z_integral= sample_num)
-            prop_dic_val = model_val.propensity(X_cov_star = X_val, z_star = z_star_val , A_obs= A_val, z_integral= sample_num)
+            prop_dic_train = model_base.propensity(X_cov_star = X_train, z_star = z_star_train , A_obs= A_train, z_integral= sample_num, sample_count= sample_count, sample_independent= sample_independent)
+            prop_dic_val = model_val.propensity(X_cov_star = X_val, z_star = z_star_val , A_obs= A_val, z_integral= sample_num, sample_count= sample_count, sample_independent= sample_independent)
 
     # --- reassemble into global tensors ----------------------------------------
     K = sample_num
     T = X_train.size(1)
     N_total = len(id2row)
+    S = sample_count
 
     # make sure both dicts have log_gps
     def ensure_log_gps(d):
@@ -149,17 +157,17 @@ def propensity_seqgplvm(train_id: str,
     # detect likelihood once (binary vs continuous)
     is_bernoulli = isinstance(model_base.likelihoods[0], gpytorch.likelihoods.BernoulliLikelihood)
 
-    loggps_train = ensure_log_gps(prop_dic_train).to(torch.float32).cpu()  # (Ntrain, T, K)
-    loggps_val   = ensure_log_gps(prop_dic_val).to(torch.float32).cpu()  # (Nval,   T, K)
+    loggps_train = ensure_log_gps(prop_dic_train).to(torch.float32).cpu()  # (Ntrain, T)
+    loggps_val   = ensure_log_gps(prop_dic_val).to(torch.float32).cpu()  # (Nval,   T)
 
-    # optional: keep propensities too (only for Bernoulli)
-    prop_train = prop_dic_train.get("propensity")
-    prop_val   = prop_dic_val.get("propensity")
-    if prop_train is not None: prop_train = prop_train.to(torch.float32).cpu()
-    if prop_val   is not None: prop_val   = prop_val.to(torch.float32).cpu()
+    loggps_samples_train = prop_dic_train.get("log_gps_samples_z_meaned")
+    loggps_samples_val   = prop_dic_val.get("log_gps_samples_z_meaned")
+    if loggps_samples_train is not None: loggps_samples_train = loggps_samples_train.to(torch.float32).cpu()
+    if loggps_samples_val   is not None: loggps_samples_val   = loggps_samples_val.to(torch.float32).cpu()
 
     # allocate global tensors (NaN where not applicable)
     loggps_all = torch.full((N_total, T, K), float("nan"), dtype=torch.float32)
+    loggps_samples_all = torch.full((S, N_total, T), float("nan"), dtype=torch.float32)
     if is_bernoulli:
         prop_all = torch.full((N_total, T, K), float("nan"), dtype=torch.float32)
     else:
@@ -168,16 +176,35 @@ def propensity_seqgplvm(train_id: str,
     # scatter into original row positions
     loggps_all[train_rows, :, :] = loggps_train
     loggps_all[val_rows,   :, :] = loggps_val
+    if loggps_samples_train is not None:
+        loggps_samples_all[:, train_rows, :] = loggps_samples_train
+    if loggps_samples_val is not None:
+        loggps_samples_all[:, val_rows, :] = loggps_samples_val
+    
+    prop_train = prop_dic_train.get("propensity")
+    prop_val   = prop_dic_val.get("propensity")
+    if prop_train is not None: prop_train = prop_train.to(torch.float32).cpu()
+    if prop_val   is not None: prop_val   = prop_val.to(torch.float32).cpu()
+    
     if is_bernoulli:
         prop_all[train_rows, :, :] = prop_train
         prop_all[val_rows,   :, :] = prop_val
+    
+    if sample_count > 0:
+        A_samp_train = prop_dic_train["A_samples"].cpu()   # (S, N_train, T, K)
+        A_samp_val   = prop_dic_val["A_samples"].cpu()     # (S, N_val,   T, K)
+
+        A_samples_all = torch.full((S, N_total, T, K), float("nan"), dtype=A_samp_train.dtype)
+        A_samples_all[:, train_rows, :, :] = A_samp_train
+        A_samples_all[:, val_rows,   :, :] = A_samp_val
 
     # an availability mask is handy downstream
     mask_all = ~torch.isnan(loggps_all)
 
     # --- save once ------------------------------------------------------------
     payload = {
-        "log_gps": loggps_all,        # (N_total, T, K)
+        "log_gps": loggps_all,        # (N_total, T)
+        "log_gps_samples_z_meaned": loggps_samples_all, # (S, N_total, T)
         "mask": mask_all,             # (N_total, T, K)
         "is_bernoulli": is_bernoulli,
         # keep propensities only for binary (for convenience)
@@ -207,6 +234,9 @@ def propensity_seqgplvm(train_id: str,
             "pids_val":   [pid for pid in test_val_ids if pid in id2row],
         },
     }
+
+    if sample_count > 0:
+        payload["A_samples"] = A_samples_all  # (S, N_total, T, K)
 
     out_path = propensity_dir_out / f"loggps_{train_id}.pt"
     torch.save(payload, out_path)

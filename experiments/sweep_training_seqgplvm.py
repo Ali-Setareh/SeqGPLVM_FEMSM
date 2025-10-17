@@ -35,7 +35,7 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": True,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 20000},
     "checkpoint_interval": 20,
     "param_logging_freq": 10,
     "pid_col": "patient_id",
