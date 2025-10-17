@@ -9,7 +9,7 @@ dgp = "blackwell_yamauchi"
 
 rho = [5,10,50] # n/T
 params_grid = {
-    "n": int(np.array([200, 500, 1000, 3000])*(10/8)), # we have to adjust n so that after an 80/20 split we get the desired n
+    "n": (np.array([200, 500, 1000, 3000]) * (10/8)).astype(int), # we have to adjust n so that after an 80/20 split we get the desired n
     "seed": [1], 
     "a": [1,2], 
     "p": [2,4], 
