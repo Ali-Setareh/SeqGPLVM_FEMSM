@@ -15,13 +15,39 @@ from utils.inspectors import get_actuals_via_getters
 from torch.quasirandom import SobolEngine 
 
 @torch.no_grad()
-def farthest_points(X, M):
-    idx = [torch.randint(0, X.size(0), ()).item()]
-    dist = torch.cdist(X, X[idx].unsqueeze(0)).squeeze(1)
+def farthest_points(X: torch.Tensor, M: int, *, seed: int = 42) -> torch.Tensor:
+    """
+    X: [N, d] (no NaNs); returns M rows of X chosen by greedy farthest-point sampling.
+    Always keeps 'dist' as [N] to avoid argmax flattening surprises.
+    """
+    if X.ndim != 2:
+        raise ValueError("X must be [N, d].")
+    N = X.size(0)
+    if N == 0:
+        raise ValueError("Empty X.")
+    M = min(int(M), N)
+
+    # start index (random or deterministic)
+    if seed is not None:
+        g = torch.Generator(device=X.device); g.manual_seed(seed)
+        start = int(torch.randint(N, (1,), generator=g, device=X.device).item())
+    else:
+        start = int(torch.randint(N, (1,), device=X.device).item())
+
+    idx = [start]
+
+    # distances to the selected set (init with the first point)
+    dist = torch.cdist(X, X[start].unsqueeze(0)).squeeze(1)  # [N]
+    dist[start] = -1.0  # mask the chosen point
+
     for _ in range(1, M):
-        idx.append(torch.argmax(dist).item())
-        dist = torch.minimum(dist, torch.cdist(X, X[idx[-1]].unsqueeze(0)).squeeze(1))
-    return X[idx]
+        nxt = int(torch.argmax(dist).item())  # in [0, N-1]
+        idx.append(nxt)
+        # update with distance to the newly chosen point (keep it 1-D)
+        dist = torch.minimum(dist, torch.cdist(X, X[nxt].unsqueeze(0)).squeeze(1))
+        dist[nxt] = -1.0  # mask selected
+
+    return X[idx]  # [M, d]
 
 @torch.no_grad()
 def init_inducing_Z(Mz: int,
