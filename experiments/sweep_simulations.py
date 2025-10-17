@@ -1,7 +1,7 @@
 from itertools import product
 import subprocess, json
 from pathlib import Path
-import numpy as np 
+
 
 def run(cmd): subprocess.check_call(cmd, shell=True)
 
@@ -9,14 +9,14 @@ dgp = "blackwell_yamauchi"
 
 rho = [5,10,50] # n/T
 params_grid = {
-    "n": (np.array([200, 500, 1000, 3000]) * (10/8)).astype(int), # we have to adjust n so that after an 80/20 split we get the desired n
+    "n": [200, 500, 1000, 3000], 
     "seed": [1], 
     "a": [1,2], 
     "p": [2,4], 
 }
 
 T =  {n:[int(n/r) for r in rho] for n in params_grid["n"]}
-
+params_grid["n"] = [int(i * (10/8)) for i in params_grid["n"]]  # we have to adjust n so that after an 80/20 split we get the desired n
 beta_dict = {2:  [-0.5, -0.5], 4: [-0.5, -0.5, 1.0, -0.5]}
 gamma_dict = {2: [1.0, 0.5], 4: [1.0, 0.5, 1.0, 1.0]}
 
