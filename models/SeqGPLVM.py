@@ -735,5 +735,9 @@ class SeqGPLVMVal(SeqGPLVM):
             with gpytorch.settings.cholesky_jitter(1e-3):
                 f_dist = gp(Xjoint)
                 loss += -mll(f_dist, yt).sum()
+        
+        kl_z_val = sum(term.loss() for term in self.Z_val.added_loss_terms())
+        loss += self.T * kl_z_val
+
 
         return loss
