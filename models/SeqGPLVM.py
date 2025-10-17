@@ -582,6 +582,9 @@ def forward_val(model):      #, batch_idx: torch.Tensor):
                     elbo = -mll(f_dist, yt).sum()
                     loss+= elbo 
         
+        kl_z_val = sum(term.loss() for term in model.Z_val.added_loss_terms())
+        loss += model.T * kl_z_val
+
         return loss  
 
 
