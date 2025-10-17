@@ -15,8 +15,11 @@ params_grid = {
     "p": [2,4], 
 }
 
-T =  {n:[int(n/r) for r in rho] for n in params_grid["n"]}
-params_grid["n"] = [int(i * (10/8)) for i in params_grid["n"]]  # we have to adjust n so that after an 80/20 split we get the desired n
+train_test_split = 0.8 
+
+T =  {int((1/train_test_split) * n):[int(n/r) for r in rho] for n in params_grid["n"]}
+params_grid["n"] = [int(i * (1/train_test_split)) for i in params_grid["n"]]  # we have to adjust n so that after an 80/20 split we get the desired n
+
 beta_dict = {2:  [-0.5, -0.5], 4: [-0.5, -0.5, 1.0, -0.5]}
 gamma_dict = {2: [1.0, 0.5], 4: [1.0, 0.5, 1.0, 1.0]}
 
