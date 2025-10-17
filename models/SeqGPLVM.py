@@ -5,13 +5,82 @@ from gpytorch.mlls import VariationalELBO, ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
 from torch.distributions import Distribution
 import gpytorch
-import torch 
+import torch, math
 import torch.nn as nn
 from models.GPLVM import GPLVM, SGPRModel
 from copy import deepcopy
 from tqdm.notebook import trange
 from typing import Optional
 from utils.inspectors import get_actuals_via_getters
+from torch.quasirandom import SobolEngine 
+
+@torch.no_grad()
+def farthest_points(X, M):
+    idx = [torch.randint(0, X.size(0), ()).item()]
+    dist = torch.cdist(X, X[idx].unsqueeze(0)).squeeze(1)
+    for _ in range(1, M):
+        idx.append(torch.argmax(dist).item())
+        dist = torch.minimum(dist, torch.cdist(X, X[idx[-1]].unsqueeze(0)).squeeze(1))
+    return X[idx]
+
+@torch.no_grad()
+def init_inducing_Z(Mz: int,
+                    Q: int,
+                    *,
+                    prior_std: float | None = None,        # s0 for Normal(0, s0^2)
+                    uniform_halfwidth: float | None = None, # a for Uniform[-a, a]
+                    method: str = "sobol-normal",          # "sobol-normal", "sobol-uniform", "lhs-uniform"
+                    include_endpoints: bool = True,         # for Q=1 + uniform
+                    device=None, dtype=None, seed: int | None = None) -> torch.Tensor:
+    """
+    Returns Z_u of shape [Mz, Q] for inducing points along the latent dimension.
+
+    - If method ends with '-normal', prior_std must be set (uses Normal(0, s0^2)).
+    - If method ends with '-uniform', uniform_halfwidth must be set (uses [-a, a]^Q).
+    """
+
+    device = device or torch.device("cpu")
+    dtype = dtype or torch.get_default_dtype()
+
+    if method.endswith("-normal"):
+        if prior_std is None:
+            raise ValueError("init_inducing_Z: prior_std required for *-normal methods.")
+        # Sobol in (0,1), avoid exact 0/1 to keep erfinv finite
+        eng = SobolEngine(dimension=Q, scramble=True, seed=seed)
+        U = eng.draw(Mz).to(device=device, dtype=dtype).clamp(1e-6, 1-1e-6)  # [Mz,Q]
+        # Map U -> N(0,1) via inverse error function, then scale by s0
+        Z = math.sqrt(2.0) * torch.erfinv(2.0 * U - 1.0) * prior_std
+        return Z
+
+    elif method.endswith("-uniform"):
+        if uniform_halfwidth is None:
+            raise ValueError("init_inducing_Z: uniform_halfwidth required for *-uniform methods.")
+        a = float(uniform_halfwidth)
+
+        if method == "sobol-uniform":
+            eng = SobolEngine(dimension=Q, scramble=True, seed=seed)
+            U = eng.draw(Mz).to(device=device, dtype=dtype)                  # [Mz,Q] in [0,1]
+        elif method == "lhs-uniform":
+            # Latin hypercube: stratify each dim
+            U = torch.empty(Mz, Q, device=device, dtype=dtype)
+            base = torch.linspace(0, 1, steps=Mz+1, device=device, dtype=dtype)
+            for j in range(Q):
+                # pick one point uniformly from each stratum, then permute
+                u = base[:-1] + (base[1:] - base[:-1]) * torch.rand(Mz, device=device, dtype=dtype)
+                perm = torch.randperm(Mz, device=device)
+                U[:, j] = u[perm]
+        else:
+            raise ValueError(f"Unknown method: {method}")
+
+        Z = (2.0 * U - 1.0) * a  # map [0,1] -> [-a,a]
+        # Nice endpoints for Q==1 and very small Mz
+        if Q == 1 and include_endpoints and Mz >= 2 and method != "lhs-uniform":
+            Z[0, 0] = -a
+            Z[-1, 0] = a
+        return Z
+
+    else:
+        raise ValueError(f"Unknown method: {method}")
 
 class SeqGPLVM(nn.Module):
     '''
@@ -87,15 +156,17 @@ class SeqGPLVM(nn.Module):
         self.likelihoods = nn.ModuleList()
         self.mlls = []
        
-        Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
+        #Xu_Z  = torch.randn(n_inducing_hidden, latent_dim).to(device)
+        Xu_Z = init_inducing_Z(n_inducing_hidden, latent_dim, uniform_halfwidth = 1, method="sobol-uniform", seed=0, device=device)
 
         for t in range(T):
             ### NEW ###
             mask  = ~torch.isnan(X_cov[:,t,:]).any(dim=1)
             covs = X_cov[:,t,:][mask]
-            perm = torch.randperm(covs.size(0))[:n_inducing_x]
+            #perm = torch.randperm(covs.size(0))[:n_inducing_x]
             # choose some of the non nan Xs to be the inducing points. 
-            Xu_X  = covs [perm].to(device)
+            #Xu_X  = covs [perm].to(device)
+            Xu_X = farthest_points(covs, n_inducing_x).to(device)
             ### NEW ###
 
             subset = ~(torch.isnan(Y[:,t]).reshape(-1).detach().cpu())

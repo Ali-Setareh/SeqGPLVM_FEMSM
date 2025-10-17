@@ -45,8 +45,8 @@ class GPLVM(ApproximateGP):
         # Kernel (acting on latent dimensions)
         #self.mean_module = ZeroMean(ard_num_dims=latent_dim)
         if kernel=="RBF": 
-            lengthscale_prior = GammaPrior(10.0, 1.0) #GammaPrior(10.0, 1.0) # if you use GammaPrior you can also learn the hyperprameters of the prior but for now we skip it 
-            outputscale_prior = GammaPrior(1.0, 1.0) #GammaPrior(1.0, 1.0)
+            lengthscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(10.0, 1.0) # if you use GammaPrior you can also learn the hyperprameters of the prior but for now we skip it 
+            outputscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(1.0, 1.0)
 
             self.mean_module = ConstantMean(ard_num_dims= self.inducing_inputs.shape[1])
             self.covar_module = ScaleKernel(RBFKernel(ard_num_dims=self.inducing_inputs.shape[1],
@@ -101,8 +101,8 @@ class SGPRModel(ExactGP):
             RBFKernel(ard_num_dims=train_x.size(-1))
         )
 
-        lengthscale_prior = GammaPrior(10.0, 1.0) #GammaPrior(10.0, 1.0) # if you use GammaPrior you can also learn the hyperprameters of the prior but for now we skip it 
-        outputscale_prior = GammaPrior(1.0, 1.0) #GammaPrior(1.0, 1.0)
+        lengthscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(10.0, 1.0) # if you use GammaPrior you can also learn the hyperprameters of the prior but for now we skip it 
+        outputscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(1.0, 1.0)
 
         
         base_covar = ScaleKernel(RBFKernel(ard_num_dims=self.inducing_inputs.shape[1],
