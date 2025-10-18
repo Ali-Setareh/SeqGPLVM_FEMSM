@@ -38,4 +38,7 @@ export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-1}
 export PYTHONUNBUFFERED=1
 
 # Run the sweep (1 task = first combo). Use stdbuf for live-ish logs.
-stdbuf -oL -eL python experiments/sweep_training_seqgplvm.py
+# ensure project root is importable
+export PYTHONPATH="$SLURM_SUBMIT_DIR:${PYTHONPATH:-}"
+# run as a module so sys.path[0] is the project root
+stdbuf -oL -eL python -m experiments.sweep_training_seqgplvm
