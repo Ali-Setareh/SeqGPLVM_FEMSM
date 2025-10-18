@@ -1,4 +1,4 @@
-from gpytorch.means import ZeroMean, ConstantMean
+from gpytorch.means import ZeroMean, ConstantMean, LinearMean
 from gpytorch.priors import GammaPrior, NormalPrior
 
 
@@ -18,7 +18,7 @@ import numpy as np
 from utils.preprocessings import grid_helper
 
 class GPLVM(ApproximateGP):
-    def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "RBF"):
+    def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "rbf_linear"):
         self.n = n
         #self.batch_shape = torch.Size([data_dim])
 
@@ -44,19 +44,19 @@ class GPLVM(ApproximateGP):
         D = self.inducing_inputs.shape[1]
         # Kernel (acting on latent dimensions)
         #self.mean_module = ZeroMean(ard_num_dims=latent_dim)
-        if kernel=="RBF": 
-            lengthscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(10.0, 1.0) # if you use GammaPrior you can also learn the hyperprameters of the prior but for now we skip it 
-            outputscale_prior = GammaPrior(2.0, 1.0) #GammaPrior(1.0, 1.0)
+        if kernel == "RBF":
+            lengthscale_prior = GammaPrior(2.0, 1.0)
+            outputscale_prior = GammaPrior(2.0, 1.0)
 
-            self.mean_module = ConstantMean(ard_num_dims= self.inducing_inputs.shape[1])
-            self.covar_module = ScaleKernel(RBFKernel(ard_num_dims=self.inducing_inputs.shape[1],
-                                                    lengthscale_prior = lengthscale_prior),
-                                            outputscale_prior=outputscale_prior)
+            self.mean_module = ConstantMean()  # no ard here
+            self.covar_module = ScaleKernel(
+                RBFKernel(ard_num_dims=D, lengthscale_prior=lengthscale_prior),
+                outputscale_prior=outputscale_prior,
+            )
+            with torch.no_grad():
+                self.covar_module.base_kernel.lengthscale = lengthscale_prior.mean
+                self.covar_module.outputscale = outputscale_prior.mean
             
-            #self.covar_module.base_kernel.register_constraint("raw_lengthscale", GreaterThan(1e-1))
-            # Initialize lengthscale and outputscale to mean of priors
-            self.covar_module.base_kernel.lengthscale = lengthscale_prior.mean #paper code : 2
-            self.covar_module.outputscale = outputscale_prior.mean #paper code: 0.7  
         elif kernel == "linear":
             var_prior   = GammaPrior(2.0, 1.0)         # variance of linear kernel
             offset_prior = NormalPrior(0.0, 1.0)       # optional: learn an offset/bias in kernel
@@ -74,6 +74,38 @@ class GPLVM(ApproximateGP):
             with torch.no_grad():
                 self.covar_module.base_kernel.variance = 1.0
                 self.covar_module.outputscale = 1.0
+        
+        elif kernel in ("rbf+linear", "linear+rbf", "rbf_linear"):
+            # Priors
+            lengthscale_prior = GammaPrior(2.0, 1.0)
+            rbf_outputscale_prior = GammaPrior(2.0, 1.0)
+            lin_variance_prior = GammaPrior(2.0, 1.0)
+            lin_offset_prior = NormalPrior(0.0, 1.0)  # optional
+
+            # Mean: linear baseline (you can switch to ConstantMean() if you prefer)
+            self.mean_module = LinearMean(input_size=D)
+
+            # Kernels with independent scales
+            rbf = ScaleKernel(
+                RBFKernel(ard_num_dims=D, lengthscale_prior=lengthscale_prior),
+                outputscale_prior=rbf_outputscale_prior,
+            )
+            lin = ScaleKernel(
+                LinearKernel(ard_num_dims=D,
+                            variance_prior=lin_variance_prior,
+                            offset_prior=lin_offset_prior)
+            )
+
+            # Sum kernel
+            self.covar_module = rbf + lin
+
+            # Sensible inits
+            with torch.no_grad():
+                rbf.base_kernel.lengthscale = lengthscale_prior.mean
+                rbf.outputscale = rbf_outputscale_prior.mean
+                lin.base_kernel.variance = 1.0
+                # lin.base_kernel.offset = 0.0   # (optional) start offset at 0
+                lin.outputscale = 1.0
 
         
 
