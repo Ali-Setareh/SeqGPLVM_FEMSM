@@ -1,5 +1,5 @@
 from gpytorch.means import ZeroMean, ConstantMean
-from gpytorch.priors import GammaPrior
+from gpytorch.priors import GammaPrior, NormalPrior
 
 
 from gpytorch.models import ApproximateGP, ExactGP
@@ -41,7 +41,7 @@ class GPLVM(ApproximateGP):
         super().__init__(q_f)
 
 
-
+        D = self.inducing_inputs.shape[1]
         # Kernel (acting on latent dimensions)
         #self.mean_module = ZeroMean(ard_num_dims=latent_dim)
         if kernel=="RBF": 
@@ -57,17 +57,23 @@ class GPLVM(ApproximateGP):
             # Initialize lengthscale and outputscale to mean of priors
             self.covar_module.base_kernel.lengthscale = lengthscale_prior.mean #paper code : 2
             self.covar_module.outputscale = outputscale_prior.mean #paper code: 0.7  
-        elif kernel=="linear": 
-            variance_prior = GammaPrior(1.0, 1.0)
-            self.mean_module = ConstantMean(ard_num_dims= self.inducing_inputs.shape[1])
-            self.covar_module = LinearKernel(ard_num_dims=self.inducing_inputs.shape[1],lengthscale_prior = lengthscale_prior,variance_prior=variance_prior)
+        elif kernel == "linear":
+            var_prior   = GammaPrior(2.0, 1.0)         # variance of linear kernel
+            offset_prior = NormalPrior(0.0, 1.0)       # optional: learn an offset/bias in kernel
 
+            # mean: either constant or linear; pick one that matches your inductive bias
+            self.mean_module = ConstantMean()          # or: LinearMean(input_size=D)
 
+            base = LinearKernel(
+                ard_num_dims=D,
+                variance_prior=var_prior,
+                offset_prior=offset_prior,             # optional
+            )
+            self.covar_module = ScaleKernel(base)      # for parity with the RBF case
 
-        #for name, param in self.covar_module.named_parameters():
-            # any parameter that belongs to a Prior or Constraint we don’t want to learn
-         #   if "prior" in name or "constraint" in name:
-          #      param.requires_grad_(False)
+            with torch.no_grad():
+                self.covar_module.base_kernel.variance = 1.0
+                self.covar_module.outputscale = 1.0
 
         
 
