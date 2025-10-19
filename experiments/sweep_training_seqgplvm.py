@@ -9,9 +9,9 @@ def run(cmd_list): subprocess.run(cmd_list, check=True)
 
 dgp = "blackwell_yamauchi"
 
-rho = [5] #[5,10,50]  # n/T
+rho = [50] #[5,10,50]  # n/T
 params_grid = {
-    "n": [200], #n = [200, 500, 1000, 3000],
+    "n": [1000], #n = [200, 500, 1000, 3000],
     "seed": [1],
     "a": [1], # a = [1,2]
     "p": [2], # p = [2,4]
@@ -41,9 +41,9 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": True,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 500},
-    "checkpoint_interval": 20,
-    "param_logging_freq": 10,
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 2000},
+    "checkpoint_interval": 500,
+    "param_logging_freq": 50,
     "pid_col": "patient_id",
     "time_col": "t",
     "treatment_col": "D",

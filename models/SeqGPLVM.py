@@ -699,36 +699,6 @@ def forward_val(model):      #, batch_idx: torch.Tensor):
         return loss  
 
 
-def fit_Z_posterior(model, steps=500, lr=0.01):
-    keywords = ["chol_variational_covar", "variational_mean"] # these two are too big to save so we ommit them during the book keeping
-    param_hist = {name: [] for name, _ in model.named_parameters() if not any(kw in name for kw in keywords) }
-
-
-    iterator = trange(steps, leave=True)
-
-    opt  = torch.optim.Adam(model.Z_val.parameters(), lr=lr)
-    loss_list = []
-    model.train()
-    for i in iterator:
-        opt.zero_grad()             
-        loss = forward_val(model)        
-        loss.backward()
-        opt.step()
-        iterator.set_description(f"Loss: {loss:.4f}, iter {i}")
-        for name, p in model.named_parameters():
-                if not any(kw in name for kw in keywords):
-                    param_hist[name].append(p.data.clone().detach().cpu().numpy())
-        
-        loss_list.append(loss.item())
-
-
-
-        real_params = get_actuals_via_getters(model)
-    model.eval()
-
-    return param_hist,real_params,loss_list
-
-
 
 class SeqGPLVMVal(SeqGPLVM):
     """
