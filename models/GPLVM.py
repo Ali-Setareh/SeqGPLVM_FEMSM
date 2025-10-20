@@ -44,6 +44,7 @@ class GPLVM(ApproximateGP):
         D = self.inducing_inputs.shape[1]
         # Kernel (acting on latent dimensions)
         #self.mean_module = ZeroMean(ard_num_dims=latent_dim)
+
         if kernel == "RBF":
             lengthscale_prior = GammaPrior(2.0, 1.0)
             outputscale_prior = GammaPrior(2.0, 1.0)
@@ -56,7 +57,7 @@ class GPLVM(ApproximateGP):
             with torch.no_grad():
                 self.covar_module.base_kernel.lengthscale = lengthscale_prior.mean
                 self.covar_module.outputscale = outputscale_prior.mean
-            
+        
         elif kernel == "linear":
             lin_variance_prior = GammaPrior(2.0, 1.0)         # variance of linear kernel
 
