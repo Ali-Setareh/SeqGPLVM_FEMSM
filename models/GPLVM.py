@@ -80,7 +80,7 @@ class GPLVM(ApproximateGP):
             lengthscale_prior = GammaPrior(2.0, 1.0)
             rbf_outputscale_prior = GammaPrior(2.0, 1.0)
             lin_variance_prior = GammaPrior(2.0, 1.0)
-            lin_offset_prior = NormalPrior(0.0, 1.0)  # optional
+            
 
             # Mean: linear baseline (you can switch to ConstantMean() if you prefer)
             self.mean_module = ConstantMean() #LinearMean(input_size=D)
@@ -90,11 +90,9 @@ class GPLVM(ApproximateGP):
                 RBFKernel(ard_num_dims=D, lengthscale_prior=lengthscale_prior),
                 outputscale_prior=rbf_outputscale_prior,
             )
-            lin = ScaleKernel(
-                LinearKernel(ard_num_dims=D,
-                            variance_prior=lin_variance_prior,
-                            offset_prior=lin_offset_prior)
-            )
+
+            lin = LinearKernel(ard_num_dims=D, variance_prior=lin_variance_prior)
+        
 
             # Sum kernel
             self.covar_module = rbf + lin
@@ -103,9 +101,8 @@ class GPLVM(ApproximateGP):
             with torch.no_grad():
                 rbf.base_kernel.lengthscale = lengthscale_prior.mean
                 rbf.outputscale = rbf_outputscale_prior.mean
-                lin.base_kernel.variance = 1.0
-                # lin.base_kernel.offset = 0.0   # (optional) start offset at 0
-                lin.outputscale = 1.0
+                lin.variance = 1.0
+               
 
         
 
