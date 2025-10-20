@@ -1,5 +1,5 @@
 from gpytorch.likelihoods import GaussianLikelihood, BernoulliLikelihood
-from gpytorch.priors import NormalPrior, GammaPrior
+from gpytorch.priors import Prior,NormalPrior, GammaPrior
 from gpytorch.models.gplvm import  VariationalLatentVariable
 from gpytorch.mlls import VariationalELBO, ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
@@ -107,6 +107,22 @@ def init_inducing_Z(Mz: int,
 
     else:
         raise ValueError(f"Unknown method: {method}")
+    
+@torch.no_grad()
+def prior_same_type_resized(prior_train: Prior, n_val: int, q: int, device) -> Prior:
+    """
+    Keep the *type* and parameters of prior_train, but resize batch shape for validation.
+    Handles Normal, Independent(Normal,1), and MultivariateNormal.
+    """
+    p = prior_train
+
+    if isinstance(p, NormalPrior) :
+        s0 = 2.0  # broad, lets data speak
+        Z_prior_mean = torch.zeros(n_val, q, requires_grad=False, device=device)  # shape: N_val x Q
+        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=False, device=device))
+        return prior_Z
+    else:
+        raise TypeError(f"Unsupported prior type for resizing: {type(p)}")
 
 class SeqGPLVM(nn.Module):
     '''
@@ -684,8 +700,10 @@ class SeqGPLVMVal(SeqGPLVM):
             init_z = torch.randn(N_val, Q, device=X_val.device)
 
         model.T_val = T
+        Z_val_prior = prior_same_type_resized(
+            trained_model.Z.prior_x, N_val, Q, device=X_val.device)
         model.Z_val = VariationalLatentVariable(
-            N_val, T, Q, init_z, model.Z.prior_x  # reuse prior from the trained model
+            N_val, T, Q, init_z, Z_val_prior
         )
 
         # 6) build per-time MLLs for validation, using the *same* gps/likelihoods

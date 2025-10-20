@@ -19,6 +19,8 @@ def main():
     train_ids = set(df.loc[df["model"] == "seqgplvm", "train_id"].unique())
     validated_ids = set(df.loc[df["model"] == "seqgplvm_val", "train_id"].unique())
     to_validate = sorted(train_ids - validated_ids)
+    #################
+    to_validate = ["0d5484a5ce"]  # TEMPORARY LIMIT FOR TESTING
     if not to_validate:
         print("Nothing to do — all training runs already have seqgplvm_val.")
         return
