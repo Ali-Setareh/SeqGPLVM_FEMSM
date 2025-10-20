@@ -18,7 +18,7 @@ import numpy as np
 from utils.preprocessings import grid_helper
 
 class GPLVM(ApproximateGP):
-    def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "rbf_linear"):
+    def __init__(self, n, x_inducing, z_inducing, learn_inducing_locations = False, kernel = "linear"):
         self.n = n
         #self.batch_shape = torch.Size([data_dim])
 

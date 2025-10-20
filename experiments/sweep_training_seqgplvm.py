@@ -48,6 +48,7 @@ training_cfg = {
     "time_col": "t",
     "treatment_col": "D",
     "covariate_cols_prefix": "x",
+    "x_standardize": True,
     "resume_mode": "no",
 }
 
