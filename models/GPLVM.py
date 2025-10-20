@@ -58,22 +58,19 @@ class GPLVM(ApproximateGP):
                 self.covar_module.outputscale = outputscale_prior.mean
             
         elif kernel == "linear":
-            var_prior   = GammaPrior(2.0, 1.0)         # variance of linear kernel
-            offset_prior = NormalPrior(0.0, 1.0)       # optional: learn an offset/bias in kernel
+            lin_variance_prior = GammaPrior(2.0, 1.0)         # variance of linear kernel
 
             # mean: either constant or linear; pick one that matches your inductive bias
             self.mean_module = ConstantMean()          # or: LinearMean(input_size=D)
 
-            base = LinearKernel(
+            self.covar_module = LinearKernel(
                 ard_num_dims=D,
-                variance_prior=var_prior,
-                offset_prior=offset_prior,             # optional
+                variance_prior=lin_variance_prior
             )
-            self.covar_module = ScaleKernel(base)      # for parity with the RBF case
+           
 
             with torch.no_grad():
-                self.covar_module.base_kernel.variance = 1.0
-                self.covar_module.outputscale = 1.0
+                self.covar_module.variance = 1.0
         
         elif kernel in ("rbf+linear", "linear+rbf", "rbf_linear"):
             # Priors
