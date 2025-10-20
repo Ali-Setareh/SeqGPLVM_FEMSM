@@ -20,6 +20,7 @@ from typing import  Type
 from utils.training import class_to_id, _update_manifest, tensor_fingerprint
 import time, traceback
 from typing import Literal
+from utils.preprocessings import FeatureStandardizer
 
 # to do : resume option for val trainer and check to see if everything works fine because I changed sth to be able to get a class as the treatment model and init z 
 # to do : also remove init z from the train identity 
@@ -44,6 +45,7 @@ def train_seqgplvm(df: pd.DataFrame,
                    optimize_hyperparams: dict = {"lr": 1e-2, "num_epochs": 20000},
                    checkpoint_interval: int = 2000,
                    param_logging_freq = 50,
+                   standardize_covariates: bool = True,
                    resume_mode: str = "auto" # "auto" | "yes" | "no"
                    ):
 
@@ -62,6 +64,13 @@ def train_seqgplvm(df: pd.DataFrame,
     train_rows = [id2row[pid] for pid in train_ids]
     X_train = X[train_rows].to(device)
     A_train = A[train_rows].to(device)
+    if standardize_covariates:
+        x_cols = [c for c in df.columns if c.startswith(covariate_cols_prefix)]
+        K = len(x_cols) 
+        stdzr = FeatureStandardizer.fit(X_train[:,:,:K])  # uses only TRAIN data
+        X_train[:,:, :K] = stdzr.transform(X_train[:,:,:K])
+
+
 
     # Model:
         
@@ -129,7 +138,8 @@ def train_seqgplvm(df: pd.DataFrame,
         "z_initializer": z_initializer,
         "learn_inducing_locations": learn_inducing_locations,
         "use_titsias": use_titsias,
-        "lr": optimize_hyperparams["lr"]
+        "lr": optimize_hyperparams["lr"], 
+        "x_standardize": standardize_covariates
     }
 
     if z_initializer == "uniform":
@@ -207,6 +217,14 @@ def train_seqgplvm(df: pd.DataFrame,
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
     print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device} with train_id: {train_id}\n")
+
+    if standardize_covariates:
+        stdzr_params = stdzr.to_dict()
+        stdzr_params["feature_dim"] = K
+        # save standardizer params to training dir for future use during val/test
+        stdzr_path = train_out / "x_standardizer.json"
+        with open(stdzr_path, "w") as f:
+            json.dump(stdzr_params, f)
 
     try:
 

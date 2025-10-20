@@ -61,7 +61,7 @@ class GPLVM(ApproximateGP):
             lin_variance_prior = GammaPrior(2.0, 1.0)         # variance of linear kernel
 
             # mean: either constant or linear; pick one that matches your inductive bias
-            self.mean_module = ConstantMean()          # or: LinearMean(input_size=D)
+            self.mean_module = ConstantMean()         
 
             self.covar_module = LinearKernel(
                 ard_num_dims=D,
