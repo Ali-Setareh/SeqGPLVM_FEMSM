@@ -1,5 +1,7 @@
+import json
 import torch
 import pandas as pd
+from pathlib import Path
 
 def get_training_tensors(df: pd.DataFrame, 
                          id_col: str = "patient_id", 
@@ -68,3 +70,36 @@ def grid_helper(a, b):
     x = a.repeat(nrow_b, 1)
     y = b.repeat(1, nrow_a).view(-1, ncol_b)
     return x, y
+
+class FeatureStandardizer:
+    def __init__(self, mean, std):
+        self.mean = mean
+        self.std = std
+
+    @classmethod
+    def fit(cls, X):  # X: [N, T, C] torch.FloatTensor
+        # Flatten N and T; drop rows with any NaNs (from lags, etc.)
+        X2 = X.view(-1, X.size(-1))
+        mask = ~torch.isnan(X2).any(dim=1)
+        X2 = X2[mask]
+        mean = X2.mean(dim=0)
+        std = X2.std(dim=0, unbiased=False).clamp_min(1e-6)
+        return cls(mean, std)
+
+    def transform(self, X):
+        return (X - self.mean) / self.std
+
+    def to_dict(self):
+        return {"mean": self.mean.detach().cpu().tolist(),
+                "std": self.std.detach().cpu().tolist()}
+
+    @classmethod
+    def from_dict(cls, d, device=None, dtype=None):
+        m = torch.tensor(d["mean"], device=device, dtype=dtype)
+        s = torch.tensor(d["std"],  device=device, dtype=dtype)
+        return cls(m, s)
+
+def save_json(obj, path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f, indent=2)
