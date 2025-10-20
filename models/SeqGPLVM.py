@@ -127,7 +127,7 @@ class SeqGPLVM(nn.Module):
         lik = None, #gpytorch.likelihoods.GaussianLikelihood()
         learn_inducing_locations = False , 
         use_titsias = False, 
-        z_initializer: Literal['normal', 'uniform'] = 'normal',
+        z_initializer: Literal['normal', 'uniform'] = 'normal', # how to initialize Z INDUCING points
         uniform_halfwidth: float | None = None, # a for Uniform[-a, a]
         prior_std: float | None = None,        # s0 for Normal(0, s0^2)
 
@@ -619,86 +619,6 @@ class SeqGPLVM(nn.Module):
         if log_gps_samples is not None:
             out["log_gps_samples_z_meaned"] = log_gps_samples.mean(3)  # (S, N*, T, ) we average over K which is z_integral and the last axis
         return out
-
-    
-
-def val_model(trained_model, X_val, Y_val):
-
-        """
-        Returns a *deterministic* copy of the trained SeqGPLVM in which
-        only the variational parameters of Z are left unfrozen and
-        initialised for the N_val validation patients.
-        """
-        
-        model = deepcopy(trained_model).eval()          # freeze weights
-        for p in model.parameters():                    # global params
-            p.requires_grad_(False)
-
-        # ── create a brand-new VariationalLatentVariable ─────────────────
-        N_val, T, *_ = X_val.shape
-        Q            = model.Q
-        init_z       = torch.randn(N_val, Q, device=X_val.device)
-
-        model.X_val = X_val
-        model.Y_val = Y_val
-      
-        model.Z_val  = VariationalLatentVariable(
-                        N_val, T, Q, init_z, model.Z.prior_x
-                    )
-     
-        model.mlls_val = [] 
-        for t in range(T): 
-            subset = ~(torch.isnan(Y_val[:,t]).reshape(-1).detach().cpu())
-            if model.use_titsias: 
-                model.mlls_val.append(type(model.mlls[t])(   # grabs the *original class*
-                            model.likelihoods[t],            # same likelihood object
-                            model.gps[t]                     # the per-step GP module
-                        ))
-            else: 
-                model.mlls_val.append(type(model.mlls[t])(       # grabs the *original class*
-                                model.likelihoods[t],            # same likelihood object
-                                model.gps[t],                    # the per-step GP module
-                                num_data=(subset.float().sum())  # only that column’s targets
-                            ))
-
-        
-        # the only learnable params will be those of Z_val
-        return model
-
-def forward_val(model):      #, batch_idx: torch.Tensor):
-        # Sample shared latent for batch
-        Z_sample = model.Z_val()  # q(Z|·) sample
-        loss = 0.0
-        
-        for t, (gp, mll) in enumerate(zip(model.gps, model.mlls_val)):
-            Yt = model.Y_val[:, t]
-            Xt = model.X_val[:,t,:]
-            subset = ~torch.isnan(Yt).reshape(-1).detach()
-            if subset.sum() > 0:
-                yt = Yt[subset]
-                zt = Z_sample[subset, :]
-                xt = Xt[subset, :]
-
-                Xjoint = torch.cat([xt,zt], dim=1)    # (B, Q+C)
-                
-                if model.use_titsias: 
-                    gp.set_train_data(
-                        inputs=(Xjoint,),
-                        targets=yt,
-                        strict=False,           # allow changing the size of the data
-                        )
-                
-                with gpytorch.settings.cholesky_jitter(1e-3):
-                    f_dist = gp(Xjoint)
-                    elbo = -mll(f_dist, yt).sum()
-                    loss+= elbo 
-        
-        kl_z_val = sum(term.loss() for term in model.Z_val.added_loss_terms())
-        loss += model.T * kl_z_val
-
-        return loss  
-
-
 
 class SeqGPLVMVal(SeqGPLVM):
     """

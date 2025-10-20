@@ -59,7 +59,7 @@ def train_seqgplvm(df: pd.DataFrame,
     with open(as_path(metadata_file_path)) as f:
         train_ids = json.load(f)["train_ids"]
 
-    train_rows = [id2row[pid] for pid in train_ids if pid in id2row]
+    train_rows = [id2row[pid] for pid in train_ids]
     X_train = X[train_rows].to(device)
     A_train = A[train_rows].to(device)
 
