@@ -83,7 +83,7 @@ class GPLVM(ApproximateGP):
             lin_offset_prior = NormalPrior(0.0, 1.0)  # optional
 
             # Mean: linear baseline (you can switch to ConstantMean() if you prefer)
-            self.mean_module = LinearMean(input_size=D)
+            self.mean_module = ConstantMean() #LinearMean(input_size=D)
 
             # Kernels with independent scales
             rbf = ScaleKernel(
