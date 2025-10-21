@@ -73,13 +73,13 @@ def train_seqgplvm_val(train_id: str,
     X_val   = X[val_rows].to(device)
     A_val   = A[val_rows].to(device)
 
-    if train_conf["preprocess"].get("x_standardize", False):
+    if train_conf.get("x_standardize", False):
         stdzr_params = json.loads((train_out / "x_standardizer.json").read_text(encoding="utf-8"))
         if stdzr_params is None:
             raise ValueError("Training config indicates standardized covariates but no standardizer found.")
         K = stdzr_params["feature_dim"]
-        from utils.preprocessings import Standardizer
-        stdzr = Standardizer.from_dict(stdzr_params, device=X_val.device, dtype=X_val.dtype)
+        from utils.preprocessings import FeatureStandardizer
+        stdzr = FeatureStandardizer.from_dict(stdzr_params, device=X_val.device, dtype=X_val.dtype)
         X_train[:,:, :K] = stdzr.transform(X_train[:,:,:K])
         X_val[:,:, :K] = stdzr.transform(X_val[:,:,:K])
 

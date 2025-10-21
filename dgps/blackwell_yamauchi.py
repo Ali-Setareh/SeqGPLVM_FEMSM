@@ -73,13 +73,17 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     # --- Generate treatments with 1-lag dependence ---
     D = np.zeros((n, T), dtype=int)
     D_lag = np.zeros(n, dtype=float)  # D_{i,0} = 0
+    eta_true = np.empty((n, T), dtype=float)     
+    p_true   = np.empty((n, T), dtype=float)      
 
     def expit(z: np.ndarray) -> np.ndarray:
         return 1.0 / (1.0 + np.exp(-z))
 
     for t in range(T):
         lin = alpha + phi * D_lag + X[:, t, :].dot(beta)
+        eta_true[:, t] = lin
         p_t = expit(lin)
+        p_true[:, t] = p_t
         D[:, t] = rng.binomial(1, p_t)
         D_lag = D[:, t]
 
@@ -107,6 +111,8 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
                 "D": int(D[i, t]),
                 "Y": float(Y[i]) if (t == T - 1) else np.nan,
                 "alpha": float(alpha[i]),  # for inspection purposes
+                "eta_true": float(eta_true[i, t]),     
+                "p_true": float(p_true[i, t]),
             }
             for j in range(p):
                 rec[f"x{j}"] = float(X[i, t, j])

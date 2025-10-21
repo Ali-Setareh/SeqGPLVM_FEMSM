@@ -296,3 +296,29 @@ tmp/
 
 # slurm commands 
 slurm_commands.txt
+
+# R session cruft
+.Rhistory
+.Rapp.history
+.RData
+.Ruserdata
+
+# RStudio
+.Rproj.user/
+
+# R Markdown / knitr artifacts
+*_cache/
+cache/
+*_files/
+figure/
+*.utf8.md
+*.knit.md
+*.nb.html
+# If you don't want to version rendered docs, also ignore:
+# *.html
+# *.pdf
+# *.docx
+
+# renv (keep renv.lock and renv/activate.R, ignore libs)
+renv/library/
+renv/staging/

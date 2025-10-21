@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(lme4)
+library(dplyr)
+library(jsonlite)
+library(arrow)
+
+train_id  <- "281b276cad"
+train_out <- file.path(getwd(), "results", "models", "seqgplvm", train_id)
+
+# 1) read data_ref.json (lives in train_out)
+path <- file.path(train_out, "data_ref.json")
+j <- read_json(path, simplifyVector = TRUE)
+
+# 2) load the parquet (data_file is a DIR that contains data.parquet)
+df <- arrow::read_parquet(file.path(getwd(), j[["data_file"]], "data.parquet"))
+df_manifest <- read_json(file.path(getwd(), j[["data_file"]], "manifest.json"), header = TRUE,  sep = '	',  stringsAsFactors = FALSE)
+df_manifest$params
+# 3) read the split file and extract ids
+splits <- read_json(file.path(getwd(), j[["split_file"]]), simplifyVector = TRUE)
+train_split <- splits[["train_ids"]]
+val_split   <- c(splits[["val_ids"]], splits[["test_ids"]])
+# 4) filter df to only training ids
+df_train <- df %>% filter(patient_id %in% train_split)
+# Fit textbook GLMM: logit(p_it) = α_id + φ * Dlag + β1*x1 + β2*x2
+fit =  glmer(D ~ lag1_D + x0 + x1 + (1 | patient_id), data = df_train, family = binomial(link = "logit"))
+
+summary(fit)        # coefficients + random-effect SD
+fixef(fit)          # (Intercept), Dlag, x1, x2
+ranef(fit)$patient_id       # α_i estimates (BLUPs)
+sigma_re <- attr(VarCorr(fit)$id, "stddev")  # SD of random intercepts
+
+# Predicted probabilities for each row:
+df_train$phat <- predict(fit, type = "response")
+df_train$phat
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+
+```
+

@@ -191,7 +191,7 @@ class SeqGPLVM(nn.Module):
         # Define prior for Z
         Z_prior_mean = torch.zeros(N, latent_dim, requires_grad=False, device=device)  # shape: N x Q
         s0 = 2.0  # broad, lets data speak
-        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=True, device=device)) #requires_grad=False because we dont want to learn the prior hyperparams
+        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=False, device=device)) #requires_grad=False because we dont want to learn the prior hyperparams
 
         self.Z = VariationalLatentVariable(N, T, 
                                            latent_dim, init_z, 
