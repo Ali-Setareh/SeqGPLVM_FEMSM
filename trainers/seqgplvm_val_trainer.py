@@ -86,7 +86,7 @@ def train_seqgplvm_val(train_id: str,
     # 2) Rebuild the *trained* base model with TRAIN shapes and load its weights
     model_base = SeqGPLVM(Y = A_train, X_cov = X_train, latent_dim = train_conf["latent_dim"], 
                      n_inducing_x = train_conf["num_inducing"], n_inducing_hidden = train_conf["num_inducing_hidden"],
-                     init_z=None,z_initializer= train_conf["z_initializer"],
+                     init_z=None,z_prior= train_conf["z_prior"],z_initializer= train_conf["z_initializer"],
                      uniform_halfwidth=train_conf.get("uniform_halfwidth", None),prior_std=train_conf.get("prior_std", None),device=device,
                      lik= train_conf["treatment_model"],
                      learn_inducing_locations = train_conf["learn_inducing_locations"],
