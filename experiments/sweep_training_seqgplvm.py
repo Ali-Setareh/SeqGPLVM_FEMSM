@@ -15,7 +15,9 @@ params_grid = {
     "seed": [1],
     "a": [1], # a = [1,2]
     "p": [2], # p = [2,4]
+    "z_prior": ["normal", "uniform"] # hidden confounder prior types
 }
+
 
 train_test_split = 0.8
 T = {((1/train_test_split) * n): [int(n/r) for r in rho] for n in params_grid["n"]}
@@ -56,9 +58,9 @@ device = "auto"
 
 # Build the full grid of combos
 full_grid = []
-for n, seed, a, p in product(*params_grid.values()):
+for n, seed, a, p, z_prior in product(*params_grid.values()):
     for t in T[n]:
-        full_grid.append({"n": n, "seed": seed, "a": a, "p": p, "T": t})
+        full_grid.append({"n": n, "seed": seed, "a": a, "p": p, "T": t, "z_prior": z_prior})
 
 # Check if we are in a Slurm array
 task_id = os.environ.get("SLURM_ARRAY_TASK_ID")
@@ -89,7 +91,7 @@ else:
 #Path("configs").mkdir(exist_ok=True)
 
 for combo in selected:
-    n, seed, a, p, t = combo["n"], combo["seed"], combo["a"], combo["p"], combo["T"]
+    n, seed, a, p, t, z_prior = combo["n"], combo["seed"], combo["a"], combo["p"], combo["T"], combo["z_prior"]
 
     dgp_cfg = {
         "dgp": dgp, "n": n, "T": t, "seed": seed, "a": a, "p": p,
@@ -97,7 +99,7 @@ for combo in selected:
     }
 
     # Use task-specific temp files so array tasks don't overwrite each other
-    stem = f"{dgp}_N{n}_T{t}_a{a}_p{p}_seed{seed}"
+    stem = f"{dgp}_N{n}_T{t}_a{a}_p{p}_seed{seed}_zprior{z_prior}"
     dgp_cfg_path   = scratch / f"{stem}._data_tmp.json"
     train_cfg_path = scratch / f"{stem}._train_tmp.json"
 
@@ -105,6 +107,7 @@ for combo in selected:
         dgp_cfg_path.write_text(json.dumps(dgp_cfg))
         training_cfg["uniform_halfwidth"] = a
         training_cfg["num_inducing"] = num_inducing[n]
+        training_cfg["z_prior"] = z_prior
         dump_train_cfg_json(train_cfg_path, training_cfg)
 
         run([

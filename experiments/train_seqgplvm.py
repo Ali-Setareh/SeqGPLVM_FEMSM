@@ -30,6 +30,7 @@ def main():
         treatment_lag=cfg.get("treatment_lag", 1),
         treatment_model = cfg.get("treatment_model", None),
         init_z=cfg.get("init_z", None),
+        z_prior=cfg.get("z_prior", "normal"),
         z_initializer=cfg.get("z_initializer", "normal"),
         uniform_halfwidth=cfg.get("uniform_halfwidth", None),
         prior_std=cfg.get("prior_std", None),

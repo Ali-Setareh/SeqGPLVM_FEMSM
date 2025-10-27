@@ -8,6 +8,8 @@ library(lme4)
 library(dplyr)
 library(jsonlite)
 library(arrow)
+library(dplyr)
+library(ggplot2)
 
 train_id  <- "281b276cad"
 train_out <- file.path(getwd(), "results", "models", "seqgplvm", train_id)
@@ -27,16 +29,49 @@ val_split   <- c(splits[["val_ids"]], splits[["test_ids"]])
 # 4) filter df to only training ids
 df_train <- df %>% filter(patient_id %in% train_split)
 # Fit textbook GLMM: logit(p_it) = α_id + φ * Dlag + β1*x1 + β2*x2
-fit =  glmer(D ~ lag1_D + x0 + x1 + (1 | patient_id), data = df_train, family = binomial(link = "logit"))
+# GLMM (with random intercepts)
+fit_re <- glmer(D ~ lag1_D + x0 + x1 + (1 | patient_id),
+                data = df_train, family = binomial(link = "logit"))
 
-summary(fit)        # coefficients + random-effect SD
-fixef(fit)          # (Intercept), Dlag, x1, x2
-ranef(fit)$patient_id       # α_i estimates (BLUPs)
+# GLM (no random effects)
+fit <- glm(D ~ lag1_D + x0 + x1,
+              data = df_train, family = binomial(link = "logit"))
+
+summary(fit_re)        # coefficients + random-effect SD
+summary(fit)        # coefficients only
+fixef(fit_re)          # (Intercept), Dlag, x1, x2
+
+re <- ranef(fit_re)$patient_id
+alpha_map <- setNames(re[,"(Intercept)"], rownames(re))
+df_train$alpha_hat <- alpha_map[ as.character(df_train$patient_id) ]       # α_i estimates (BLUPs)
+df_train$phat <- predict(fit, type = "response")
+df_train$phat_re <- predict(fit_re, type = "response")
+
+corr = df_train %>%
+  distinct(patient_id, alpha, alpha_hat) %>%
+  summarise(corr = cor(alpha, alpha_hat))
+
+
+df_train %>%
+  distinct(patient_id, alpha, alpha_hat) %>%
+  ggplot(aes(alpha, alpha_hat)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(x = "True αᵢ", y = "Estimated α̂ᵢ",
+       title =sprintf("Correlation = %.3f", corr)
+    )
 sigma_re <- attr(VarCorr(fit)$id, "stddev")  # SD of random intercepts
 
 # Predicted probabilities for each row:
-df_train$phat <- predict(fit, type = "response")
-df_train$phat
+corr
+df_plot <- df_train |> dplyr::mutate(phat = phat)
+#df_plot <- df_train |> dplyr::mutate(phat = phat_re)
+
+ggplot(df_plot, aes(x = p_true, y = phat)) +
+  geom_abline(slope = 1, intercept = 0, linetype = 2) +
+  geom_point(alpha = 0.3, size = 1) +
+  coord_equal(xlim = c(0,1), ylim = c(0,1)) +
+  labs(x = "True p", y = "Predicted p̂", title = "True vs Predicted Probabilities")
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.

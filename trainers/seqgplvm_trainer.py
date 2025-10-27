@@ -32,6 +32,7 @@ def train_seqgplvm(df: pd.DataFrame,
                    treatment_lag: int = 1,
                    treatment_model: Type[Likelihood] = None, # "bernoulli" | "gaussian"
                    init_z: torch.Tensor = None, # optional initial Z if none  the model will assign them N(0,1)
+                   z_prior: Literal['normal', 'uniform'] = 'normal', # prior distribution for the latent variables
                    learn_inducing_locations: bool = True, # whether to optimize the inducing locations or keep them fixed
                    z_initializer: Literal['normal', 'uniform'] = 'normal', # how to initialize the inducing points in the latent space
                    uniform_halfwidth: float | None = None, # a for Uniform[-a, a] for initializing inducing points in latent space
@@ -79,7 +80,7 @@ def train_seqgplvm(df: pd.DataFrame,
     
     model = SeqGPLVM(Y = A_train, X_cov = X_train, 
                         latent_dim = latent_dim, n_inducing_x = num_inducing, n_inducing_hidden = num_inducing_hidden,
-                        init_z=init_z, device=device,
+                        init_z=init_z, z_prior=z_prior, device=device,
                         z_initializer=z_initializer,
                         uniform_halfwidth=uniform_halfwidth,
                         prior_std=prior_std,
@@ -135,6 +136,7 @@ def train_seqgplvm(df: pd.DataFrame,
         "treatment_lag": treatment_lag,
         "treatment_model": class_to_id(treatment_model),
         "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
+        "z_prior": z_prior,
         "z_initializer": z_initializer,
         "learn_inducing_locations": learn_inducing_locations,
         "use_titsias": use_titsias,

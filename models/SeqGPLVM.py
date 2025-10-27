@@ -1,5 +1,5 @@
 from gpytorch.likelihoods import GaussianLikelihood, BernoulliLikelihood
-from gpytorch.priors import Prior,NormalPrior, GammaPrior
+from gpytorch.priors import Prior,NormalPrior, GammaPrior, SmoothedBoxPrior
 from gpytorch.models.gplvm import  VariationalLatentVariable
 from gpytorch.mlls import VariationalELBO, ExactMarginalLogLikelihood
 from gpytorch.constraints import GreaterThan
@@ -117,9 +117,27 @@ def prior_same_type_resized(prior_train: Prior, n_val: int, q: int, device) -> P
     p = prior_train
 
     if isinstance(p, NormalPrior) :
-        s0 = 2.0  # broad, lets data speak
+        # Keep a broad Normal with the same std as train (defaulting to 2.0 if not encoded)
+        std = 2.0
         Z_prior_mean = torch.zeros(n_val, q, requires_grad=False, device=device)  # shape: N_val x Q
-        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=False, device=device))
+        prior_Z = NormalPrior(
+            Z_prior_mean,
+            std * torch.ones_like(
+                Z_prior_mean, requires_grad=False, device=device
+            ),
+        )
+        return prior_Z
+    elif isinstance(p, SmoothedBoxPrior):
+        # Recreate the same box bounds for validation. Try to recover train-time bounds
+        # and expand them to [n_val, q]. If bounds were tensors of shape [N_train,q],
+        # we preserve per-dimension values from the first row.
+       
+        a = 2.0  # broad, lets data speak
+        Z_prior_mean = torch.zeros(n_val, q, requires_grad=False, device=device)  # shape: N x Q
+        prior_Z = SmoothedBoxPrior(
+            -a * torch.ones_like(Z_prior_mean, requires_grad=False, device=device),
+            a * torch.ones_like(Z_prior_mean, requires_grad=False, device=device),
+        )
         return prior_Z
     else:
         raise TypeError(f"Unsupported prior type for resizing: {type(p)}")
@@ -139,6 +157,7 @@ class SeqGPLVM(nn.Module):
         n_inducing_x: int,
         n_inducing_hidden: int, 
         init_z: torch.Tensor = None, 
+        z_prior: Literal['normal', 'uniform'] = 'normal',
         device = None, 
         lik = None, #gpytorch.likelihoods.GaussianLikelihood()
         learn_inducing_locations = False , 
@@ -146,9 +165,7 @@ class SeqGPLVM(nn.Module):
         z_initializer: Literal['normal', 'uniform'] = 'normal', # how to initialize Z INDUCING points
         uniform_halfwidth: float | None = None, # a for Uniform[-a, a]
         prior_std: float | None = None,        # s0 for Normal(0, s0^2)
-
-
-        
+ 
     ):
         """
         Y: (N, T) tensor of targets for each of T GPs
@@ -189,9 +206,22 @@ class SeqGPLVM(nn.Module):
              init_z = torch.nn.Parameter(torch.randn(N, latent_dim))
 
         # Define prior for Z
-        Z_prior_mean = torch.zeros(N, latent_dim, requires_grad=False, device=device)  # shape: N x Q
-        s0 = 2.0  # broad, lets data speak
-        prior_Z = NormalPrior(Z_prior_mean, s0*torch.ones_like(Z_prior_mean, requires_grad=False, device=device)) #requires_grad=False because we dont want to learn the prior hyperparams
+        if z_prior == 'normal':
+            Z_prior_mean = torch.zeros(N, latent_dim, requires_grad=False, device=device)  # shape: N x Q
+            std = 2.0  # broad, lets data speak (std); 
+            prior_Z = NormalPrior(
+                Z_prior_mean,
+                std * torch.ones_like(
+                    Z_prior_mean, requires_grad=False, device=device
+                ),
+            )  # requires_grad=False because we dont want to learn the prior hyperparams
+        elif z_prior == 'uniform':
+            a = 2.0  # broad, lets data speak
+            Z_prior_mean = torch.zeros(N, latent_dim, requires_grad=False, device=device)  # shape: N x Q
+            prior_Z = SmoothedBoxPrior(
+                -a * torch.ones_like(Z_prior_mean, requires_grad=False, device=device),
+                 a * torch.ones_like(Z_prior_mean, requires_grad=False, device=device),
+            )
 
         self.Z = VariationalLatentVariable(N, T, 
                                            latent_dim, init_z, 
