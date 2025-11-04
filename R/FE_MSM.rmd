@@ -1,0 +1,182 @@
+---
+output:
+  reprex::reprex_document:
+    venue: "gh"
+    advertise: FALSE
+    session_info: TRUE
+    style: TRUE
+    comment: "#;-)"
+    tidyverse_quiet: FALSE
+    std_out_err: TRUE
+knit: reprex::reprex_render
+---
+
+```{r}
+# packages
+library(fs)
+library(arrow)
+library(jsonlite)
+library(dplyr)
+library(stringr)
+library(fixest)
+
+# ---- config
+cwd  <- getwd()
+path <- fs::path(cwd, "data", "raw", "blackwell_yamauchi")
+folders <- dir_ls(path, type = "directory")
+
+clip01 <- function(p, eps = 1e-6) pmax(eps, pmin(1 - eps, p))
+
+df_results <- tibble(
+  data_id     = character(),
+  N = integer(), T = integer(), rho = integer(),
+  a = numeric(), p = integer(),
+  tau_f_true  = numeric(), tau_c_true = numeric(),
+  tau_f_fe    = numeric(), tau_c_fe   = numeric(),
+  tau_f_no_fe = numeric(), tau_c_no_fe = numeric()
+)
+
+for (num in seq_along(folders)) {
+  data_id_folder <- basename(folders[num])
+  cat(sprintf("Processing %d/%d: %s\n", num, length(folders), data_id_folder))
+
+  # ---- load data
+  df_path          <- fs::path(folders[num], "data.parquet")
+  df_manifest_path <- fs::path(folders[num], "manifest.json")
+  df_manifest      <- jsonlite::fromJSON(df_manifest_path)
+  df               <- arrow::read_parquet(df_path) |> as.data.frame()
+
+  # split file (relative to cwd)
+  splits_path <- fs::path(cwd, df_manifest$split_file)
+  splits      <- jsonlite::fromJSON(splits_path)
+  train_split <- splits$train_ids
+  N           <- length(train_split)
+
+  T_val <- df_manifest$params$T
+  rho   <- as.integer(N / T_val)
+
+  # ---- PREP: keep ALL train units (do NOT drop monotone)  ← change #1
+  df_fe <- df |>
+    dplyr::filter(patient_id %in% train_split) |>
+    dplyr::arrange(patient_id, t)
+
+  # identify variable-treatment units for FE only
+  tmp <- df_fe |>
+    group_by(patient_id) |>
+    summarise(meanD = mean(D), .groups="drop")
+  var_pids <- tmp$patient_id[!(tmp$meanD %in% c(0,1))]
+
+  T_final <- max(df_fe$t)
+  mask_last4 <- df_fe$t >= (T_final - 3) & df_fe$t <= T_final
+
+  # MSM regressors at final time: Y_T ~ D_T + (lag1+lag2+lag3)_T
+  if (!all(c("lag1_D","lag2_D","lag3_D") %in% names(df_fe))) {
+    df_fe <- df_fe |>
+      arrange(patient_id, t) |>
+      group_by(patient_id) |>
+      mutate(
+        lag1_D = dplyr::lag(D, 1, default = 0),
+        lag2_D = dplyr::lag(D, 2, default = 0),
+        lag3_D = dplyr::lag(D, 3, default = 0)
+      ) |>
+      ungroup()
+  }
+  df_fe$lag_sum3 <- df_fe$lag1_D + df_fe$lag2_D + df_fe$lag3_D
+  df_msm <- df_fe |> dplyr::filter(t == T_final)
+
+  # ---- propensity models (numerator is common; denominators differ)
+  # numerator (stabilized): D_t ~ lag1_D
+  num_mod <- glm(D ~ lag1_D, data = df_fe, family = binomial())
+  p_num   <- clip01(predict(num_mod, type = "response"))
+
+  # denominator NO-FE: D_t ~ lag1_D + X_t
+  x_cols <- grep("^x", names(df_fe), value = TRUE)
+  f_no   <- reformulate(termlabels = c("lag1_D", x_cols), response = "D")
+  den_no <- glm(f_no, data = df_fe, family = binomial())
+  p_no   <- clip01(predict(den_no, type = "response"))
+
+  # denominator FE: fit ONLY on variable-treatment units
+  df_fe_FE <- df_fe[df_fe$patient_id %in% var_pids, , drop=FALSE]
+  rhs      <- paste(c("lag1_D", x_cols), collapse = " + ")
+  den_fe   <- fixest::feglm(as.formula(paste0("D ~ ", rhs, " | patient_id")),
+                            data = df_fe_FE, family = binomial())
+  p_fe     <- clip01(predict(den_fe, type = "response"))
+
+  # (optional) true p from generator if available
+  p_true <- if ("p_true" %in% names(df_fe)) clip01(df_fe$p_true) else NA_real_
+
+  # ---- per-period stabilized weights
+  per_period_w <- function(p_num, p_den, D) ifelse(D == 1, p_num/p_den, (1 - p_num)/(1 - p_den))
+
+  # TRUE/no-FE on FULL df_fe
+  w_true_it <- if (all(!is.na(p_true))) per_period_w(p_num, p_true, df_fe$D) else rep(NA_real_, nrow(df_fe))
+  w_no_it   <- per_period_w(p_num, p_no,   df_fe$D)
+
+  # FE weights on FE sample only
+  p_num_FE  <- p_num[df_fe$patient_id %in% var_pids]
+  w_fe_it   <- per_period_w(p_num_FE, p_fe, df_fe_FE$D)
+
+  # ---- product over the last 4 periods, per patient
+  last4_prod <- function(ids, w, mask) {
+    data.frame(patient_id = ids[mask], w = w[mask]) |>
+      aggregate(w ~ patient_id, data = _, FUN = prod)
+  }
+
+  W_true_tbl <- if (all(!is.na(w_true_it))) last4_prod(df_fe$patient_id, w_true_it, mask_last4) else
+                  data.frame(patient_id = df_msm$patient_id, w = NA_real_)
+  W_no_tbl   <- last4_prod(df_fe$patient_id,   w_no_it,   mask_last4)
+
+  mask_last4_FE <- df_fe_FE$t >= (T_final - 3) & df_fe_FE$t <= T_final
+  W_fe_tbl      <- last4_prod(df_fe_FE$patient_id, w_fe_it, mask_last4_FE)
+
+  # ---- align weights with final-time rows using match()  ← change #2
+  df_msm$patient_id     <- as.character(df_msm$patient_id)
+  W_true_tbl$patient_id <- as.character(W_true_tbl$patient_id)
+  W_no_tbl$patient_id   <- as.character(W_no_tbl$patient_id)
+  W_fe_tbl$patient_id   <- as.character(W_fe_tbl$patient_id)
+
+  w_true <- if (all(!is.na(w_true_it))) W_true_tbl$w[ match(df_msm$patient_id, W_true_tbl$patient_id) ]
+            else rep(NA_real_, nrow(df_msm))
+  w_no   <- W_no_tbl$w  [ match(df_msm$patient_id, W_no_tbl$patient_id) ]
+
+  df_msm_FE <- df_msm[df_msm$patient_id %in% var_pids, , drop=FALSE]
+  w_fe      <- W_fe_tbl$w[ match(as.character(df_msm_FE$patient_id), W_fe_tbl$patient_id) ]
+
+  # ---- weighted MSM fits
+  fit_wls <- function(data, w) lm(Y ~ D + lag_sum3, data = data, weights = w)
+
+  res_true <- if (all(!is.na(w_true))) fit_wls(df_msm, w_true) else NULL
+  res_no   <- fit_wls(df_msm, w_no)
+  res_fe   <- if (nrow(df_msm_FE) > 0) fit_wls(df_msm_FE, w_fe) else NULL
+
+  tau_f_true <- if (!is.null(res_true)) coef(res_true)[["D"]] else NA_real_
+  tau_c_true <- if (!is.null(res_true)) coef(res_true)[["lag_sum3"]] else NA_real_
+  tau_f_no   <- coef(res_no)[["D"]]
+  tau_c_no   <- coef(res_no)[["lag_sum3"]]
+  tau_f_fe   <- if (!is.null(res_fe)) coef(res_fe)[["D"]] else NA_real_
+  tau_c_fe   <- if (!is.null(res_fe)) coef(res_fe)[["lag_sum3"]] else NA_real_
+
+  # ---- store results
+  df_results <- dplyr::bind_rows(
+    df_results,
+    tibble(
+      data_id = df_manifest$run_id,
+      N = N, T = T_val, rho = rho,
+      a = df_manifest$params$a, p = df_manifest$params$p,
+      tau_f_true = tau_f_true, tau_c_true = tau_c_true,
+      tau_f_fe = tau_f_fe,     tau_c_fe = tau_c_fe,
+      tau_f_no_fe = tau_f_no,  tau_c_no_fe = tau_c_no
+    )
+  )
+}
+
+```
+
+```{r}
+write.csv(df_results, file = file.path(cwd, "results", "msm", "msm_results.csv"), row.names = FALSE)
+```
+
+
+
+
+

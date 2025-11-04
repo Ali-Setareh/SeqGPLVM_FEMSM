@@ -15,7 +15,7 @@ params_grid = {
     "seed": [1],
     "a": [1], # a = [1,2]
     "p": [2], # p = [2,4]
-    "z_prior": ["normal", "uniform"] # hidden confounder prior types
+    "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
 }
 
 
@@ -43,15 +43,15 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": False,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
-    "checkpoint_interval": 50,
-    "param_logging_freq": 20,
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 6000},
+    "checkpoint_interval": 2000,
+    "param_logging_freq": 50,
     "pid_col": "patient_id",
     "time_col": "t",
     "treatment_col": "D",
     "covariate_cols_prefix": "x",
     "x_standardize": True,
-    "resume_mode": "no",
+    "resume_mode": "yes",
 }
 
 device = "auto"

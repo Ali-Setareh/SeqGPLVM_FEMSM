@@ -24,6 +24,7 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     - sigma_eps: float         # sd of noise in Y (paper uses 1.0)
     - max_lag_x: int           # how many covariate lags to materialize as columns (naming scheme)
     - seed: int | None         # RNG seed
+    - exclude_monotone: bool = False  # if True, exclude units with monotone D meaning D_it = D_{i,t-1} for all t, if True, we resample until no monotone units remain
 
     Returns:
     Long-format DataFrame with columns:
@@ -51,6 +52,8 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     max_lag_x = int(params.get("max_lag_x", 0))
     max_lag_d = int(params.get("max_lag_d", 0))
     seed      = params.get("seed", None)
+    exclude_monotone = bool(params.get("exclude_monotone", False))
+
 
     if beta.shape[0] != p or gamma.shape[0] != p:
         raise ValueError(f"beta and gamma must have length p={p}.")
@@ -86,6 +89,56 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
         p_true[:, t] = p_t
         D[:, t] = rng.binomial(1, p_t)
         D_lag = D[:, t]
+    
+    # optionally drop monotone units (always 0 or always 1) and top-up ---
+    if exclude_monotone:
+        # identify non-monotone (not all-zeros and not all-ones)
+        non_mask = (D.sum(axis=1) != 0) & (D.sum(axis=1) != T)
+
+        # keep non-monotone from the initial draw
+        sel_alpha  = alpha[non_mask]
+        sel_X      = X[non_mask]
+        sel_D      = D[non_mask]
+        sel_eta    = eta_true[non_mask]
+        sel_ptrue  = p_true[non_mask]
+
+        # top-up until we have exactly n non-monotone units
+        while sel_D.shape[0] < n:
+            need = n - sel_D.shape[0]
+
+            # draw just as many new units as still needed
+            alpha2 = rng.uniform(-a, a, size=need)
+            X2     = rng.multivariate_normal(mean=mu, cov=Sigma, size=(need, T))
+
+            D2         = np.zeros((need, T), dtype=int)
+            D_lag2     = np.zeros(need, dtype=float)
+            eta_true2  = np.empty((need, T), dtype=float)
+            p_true2    = np.empty((need, T), dtype=float)
+
+            for tt in range(T):
+                lin2 = alpha2 + phi * D_lag2 + X2[:, tt, :].dot(beta)
+                eta_true2[:, tt] = lin2
+                p_t2 = 1.0 / (1.0 + np.exp(-lin2))
+                p_true2[:, tt] = p_t2
+                D2[:, tt] = rng.binomial(1, p_t2)
+                D_lag2 = D2[:, tt]
+
+            non2 = (D2.sum(axis=1) != 0) & (D2.sum(axis=1) != T)
+            if non2.any():
+                sel_alpha = np.concatenate([sel_alpha, alpha2[non2]], axis=0)
+                sel_X     = np.concatenate([sel_X,     X2[non2]],     axis=0)
+                sel_D     = np.concatenate([sel_D,     D2[non2]],     axis=0)
+                sel_eta   = np.concatenate([sel_eta,   eta_true2[non2]], axis=0)
+                sel_ptrue = np.concatenate([sel_ptrue, p_true2[non2]],   axis=0)
+
+        # trim to exactly n and overwrite variables used downstream
+        alpha    = sel_alpha[:n]
+        X        = sel_X[:n]
+        D        = sel_D[:n]
+        eta_true = sel_eta[:n]
+        p_true   = sel_ptrue[:n]
+        # ensure n is still correct for the remainder of the function
+        n = alpha.shape[0]
 
     # --- Outcome: one endpoint Y_i (attach to time T row) ---
     # Sum of last three pre-final treatments (handle small T gracefully)
