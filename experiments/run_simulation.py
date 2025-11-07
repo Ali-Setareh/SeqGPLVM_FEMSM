@@ -13,6 +13,9 @@ def main():
     p.add_argument("--config", required=True, help="JSON or YAML with params")
     p.add_argument("--project_root", default=".", help="repo root (where data/ lives)")
     p.add_argument("--splits_outdir", default="data/splits", help="dir for persisted splits")
+    p.add_argument("--save_data", choices=["full","head","none"], default="none",
+                   help="full: save complete dataset; head: save preview; none: save nothing")
+    p.add_argument("--head_k", type=int, default=500, help="rows to keep if save_data=head")
     
     args = p.parse_args()
 
@@ -34,8 +37,16 @@ def main():
     df = simulate(params)
 
     # --- Save canonical dataset run (short ID folder) ---
-    extra_manifest = {"script": "experiments/run_simulation.py"}
-    run_id, run_path, manifest = save_dataset_run(root, args.dgp, params, df, extra_manifest=extra_manifest)
+    extra_manifest = {
+        "script": "experiments/run_simulation.py",
+        "save_mode": args.save_data,
+        "rng_info": {"lib": "numpy", "version": np.__version__, "seed": params["seed"], "rng_source": "rng_from_seed"},
+    }
+
+    run_id, run_path, manifest = save_dataset_run(root, args.dgp, params, df, 
+                                                  extra_manifest=extra_manifest, 
+                                                  save_mode=args.save_data,
+                                                  head_k=args.head_k,)
 
     # --- Splits (persist + record path in manifest) ---
     splits_outdir = root / args.splits_outdir
@@ -55,7 +66,13 @@ def main():
     manifest.update({
         "split_file": str(split_file),
         "split_info": {"by": "unit", "split_seed": split_seed},
+        "replay_command": (
+            f"python experiments/run_simulation.py --dgp {args.dgp} "
+            f"--config {args.config} --project_root {args.project_root} "
+            f"--splits_outdir {args.splits_outdir} --save_data full"
+        ),
     })
+
     (run_path / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     # --- Global index row ---
@@ -71,8 +88,11 @@ def main():
     append_global_index(root, row)
 
 
-    print(f"[OK] dgp={args.dgp} run_id={run_id}")
-    print(f"     data: {run_path/'data.parquet'}")
+    if args.save_data != "none":
+        print(f"[OK] dgp={args.dgp} run_id={run_id}")
+        print(f"     data: {run_path/'data.parquet'}")
+    else:
+        print(f"[OK] dgp={args.dgp} run_id={run_id} (no dataset saved)")
     print(f"     cfg : {run_path/'config.json'}")
     print(f"     mani: {run_path/'manifest.json'}")
     print(f"     split: {split_file}")

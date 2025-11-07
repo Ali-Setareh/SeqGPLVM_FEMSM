@@ -2,6 +2,7 @@ from __future__ import annotations
 import json, hashlib, platform, subprocess
 from pathlib import Path
 from datetime import datetime
+import os
 
 def canonicalize(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -14,7 +15,19 @@ def make_run_id(params: dict, length: int = 8) -> str:
 def run_dir(root: Path, dgp: str, run_id: str) -> Path:
     return root / "data" / "raw" / dgp / run_id
 
-def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: dict | None = None):
+def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: dict | None = None, save_mode: str | None = None, head_k: int = 500):
+    """
+    Save a simulation run. `save_mode` controls dataset saving:
+      - "full": write full data to data.parquet (default)
+      - "head": write first `head_k` rows to data_head.parquet
+      - "none": don't write any dataset file
+    If `save_mode` is None, falls back to env SIM_SAVE_DATA (full/head/none), default "none".
+    """
+    # Resolve save_mode (env-driven default so callers don't need changes)
+    if save_mode is None:
+        save_mode = os.getenv("SIM_SAVE_DATA", "full").lower()
+    assert save_mode in {"full", "head", "none"}, f"Invalid save_mode={save_mode}"
+
     root = Path(root)
     rid = make_run_id(params)
     out = run_dir(root, dgp, rid)
@@ -23,8 +36,19 @@ def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: 
     # 1) config used for generation
     (out / "config.json").write_text(canonicalize(params), encoding="utf-8")
 
-    # 2) data
-    df.to_parquet(out / "data.parquet", index=False)
+    # 2) data (conditional)
+    data_file = None
+    saved_rows = 0
+    if save_mode == "full":
+        data_file = out / "data.parquet"
+        df.to_parquet(data_file, index=False)
+        saved_rows = len(df)
+    elif save_mode == "head":
+        data_file = out / "data_head.parquet"
+        df.head(head_k).to_parquet(data_file, index=False)
+        saved_rows = min(head_k, len(df))
+    # save_mode == "none": skip writing data
+
 
     # 3) manifest.json (lightweight, human friendly)
     git_commit = None
@@ -42,6 +66,9 @@ def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: 
         "python": platform.python_version(),
         "node": platform.node(),
         "params": params,  # full dict (small; if huge, store only in config.json)
+        "save_mode": save_mode,
+        "data_file": str(data_file) if data_file else None,
+        "saved_rows": int(saved_rows),
     }
     if extra_manifest:
         manifest.update(extra_manifest)
