@@ -5,7 +5,7 @@ import numpy as np
 def dataset_fingerprint(df: pd.DataFrame) -> dict:
     cols = list(df.columns)
     dtypes = [str(df[c].dtype) for c in cols]
-    rowhash = pd.util.hash_pandas_object(df, index=True, categoricals=True)
+    rowhash = pd.util.hash_pandas_object(df, index=True, categorize=True)
 
     h = hashlib.sha256()
     h.update(np.int64(len(df)).tobytes())
