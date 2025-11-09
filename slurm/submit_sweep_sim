@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "$0")/.."   # repo root if you run from scripts/
+mkdir -p logs
+
+COUNT=$(python sweep_simulations.py --count)
+echo "Total tasks: $COUNT"
+
+# cap concurrency; tune this to your cluster
+MAX_CONCURRENCY=200
+ARRAY_SPEC="0-$((COUNT-1))%${MAX_CONCURRENCY}"
+echo "Submitting array: $ARRAY_SPEC"
+
+JID=$(sbatch --array="$ARRAY_SPEC" slurm/sweep_array.sbatch | awk '{print $NF}')
+echo "Array job id: $JID"
+
+# Submit index rebuild after the array succeeds
+sbatch --dependency=afterok:${JID} slurm/rebuild_index.sbatch
