@@ -37,7 +37,7 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
       (we attach Y_i only at time T row, NaN otherwise)
     """
     # --- Pull params with sensible defaults from the paper ---
-    n         = int(params.get("n", 1000))
+    n         = int(params.get("N", 1000))
     T         = int(params.get("T", n // 10 if n >= 10 else 10))
     p         = int(params.get("p", 2))
     a         = float(params.get("a", 1.0))
@@ -52,7 +52,7 @@ def simulate(params: Dict[str, Any]) -> pd.DataFrame:
     max_lag_x = int(params.get("max_lag_x", 0))
     max_lag_d = int(params.get("max_lag_d", 0))
     seed      = params.get("seed", None)
-    exclude_monotone = bool(params.get("exclude_monotone", False))
+    exclude_monotone = bool(params.get("exclude_monotone", True))
 
 
     if beta.shape[0] != p or gamma.shape[0] != p:

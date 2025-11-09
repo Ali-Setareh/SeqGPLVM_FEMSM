@@ -31,6 +31,7 @@ params = dict(
     phi=0.3, tau_F=1.0, tau_C=0.3, mean_x=-0.5, offdiag=0.2,
     sigma_eps=1.0, max_lag_x=0, max_lag_d=3, split_seed=42,
     treatment_model="logit",
+    exclude_monotone=True
 )
 
 training_cfg = {
@@ -93,10 +94,8 @@ else:
 for combo in selected:
     n, seed, a, p, t, z_prior = combo["n"], combo["seed"], combo["a"], combo["p"], combo["T"], combo["z_prior"]
 
-    dgp_cfg = {
-        "dgp": dgp, "n": n, "T": t, "seed": seed, "a": a, "p": p,
-        "beta": beta_dict[p], "gamma": gamma_dict[p], **params
-    }
+    dgp_cfg = {"dgp": dgp,"N": n, "T": t, "train_test_ratio": train_test_split,"seed": seed, "a": a, "p": p,
+               "beta": beta_dict[p], "gamma": gamma_dict[p], **params}
 
     # Use task-specific temp files so array tasks don't overwrite each other
     stem = f"{dgp}_N{n}_T{t}_a{a}_p{p}_seed{seed}_zprior{z_prior}"

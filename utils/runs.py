@@ -84,7 +84,7 @@ def append_global_index(root: Path, manifest_row: dict):
 
     # explode a few common params for filtering
     params = row.get("params", {})
-    for k in ("N", "n", "T", "K", "p","a" ,"seed", "split_seed"):
+    for k in ("N", "n", "T", "K", "p","a" ,"train_test_ratio","seed", "split_seed", "exclude_monotone"):
         if k in params:
             row[k] = params[k]
 
@@ -95,6 +95,47 @@ def append_global_index(root: Path, manifest_row: dict):
         df = pd.DataFrame([row])
 
     df.to_parquet(idx_path)
+
+def rebuild_index(root: str | Path, dgp: str | None = None) -> Path:
+    """
+    Scan data/raw/**/manifest.json and write a fresh data/index/runs.parquet.
+    Safe for HPC because each task only writes its own manifest; we aggregate once.
+    """
+    import pandas as pd, json
+    root = Path(root)
+    manifests = []
+    base = root / "data" / "raw"
+    if not base.exists():
+        (root / "data" / "index").mkdir(parents=True, exist_ok=True)
+        out = root / "data" / "index" / "runs.parquet"
+        pd.DataFrame().to_parquet(out)
+        return out
+
+    for dgp_dir in base.iterdir():
+        if not dgp_dir.is_dir():
+            continue
+        if dgp and dgp_dir.name != dgp:
+            continue
+        for run_dir in dgp_dir.iterdir():
+            m = run_dir / "manifest.json"
+            if m.exists():
+                try:
+                    row = json.loads(m.read_text(encoding="utf-8"))
+                    # explode common params for easy filtering
+                    params = row.get("params", {})
+                    for k in ("N","n","T","K","p","a","train_test_ratio","seed","split_seed","exclude_monotone"):
+                        if k in params:
+                            row[k] = params[k]
+                    manifests.append(row)
+                except Exception:
+                    pass
+
+    df = pd.DataFrame(manifests) if manifests else pd.DataFrame()
+    outdir = root / "data" / "index"
+    outdir.mkdir(parents=True, exist_ok=True)
+    out = outdir / "runs.parquet"
+    df.to_parquet(out)
+    return out
 
 def find_by_params(root: Path, dgp: str, query_params: dict):
     """Exact match via hash; fallback to column filter."""

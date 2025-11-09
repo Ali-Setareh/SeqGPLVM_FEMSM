@@ -16,6 +16,9 @@ def main():
     p.add_argument("--save_data", choices=["full","head","none"], default="none",
                    help="full: save complete dataset; head: save preview; none: save nothing")
     p.add_argument("--head_k", type=int, default=500, help="rows to keep if save_data=head")
+    p.add_argument("--index_mode", choices=["append", "deferred"], default="append",
+               help="append: update runs.parquet immediately; deferred: skip (rebuild later)")
+
     
     args = p.parse_args()
 
@@ -33,8 +36,11 @@ def main():
     params["seed"] = int(params.get("seed", 0))
 
     # --- Simulate ---
-    simulate = get_simulator(args.dgp)
-    df = simulate(params)
+    if args.save_data == "none":
+        df = None 
+    else:
+        simulate = get_simulator(args.dgp)
+        df = simulate(params)
 
     # --- Save canonical dataset run (short ID folder) ---
     extra_manifest = {
@@ -69,7 +75,7 @@ def main():
         "replay_command": (
             f"python experiments/run_simulation.py --dgp {args.dgp} "
             f"--config {args.config} --project_root {args.project_root} "
-            f"--splits_outdir {args.splits_outdir} --save_data full"
+            f"--splits_outdir {args.splits_outdir} --save_data {args.save_data}"
         ),
     })
 
@@ -79,13 +85,16 @@ def main():
     row = {
         "dgp": args.dgp,
         "run_id": run_id,
+        "treatment_model": params.get("treatment_model"),
         "path": str(run_path),
         "created_at": manifest["created_at"],
         "git_commit": manifest.get("git_commit"),
         "params": params,
         "split_file": str(split_file),
+        "replay_command": manifest["replay_command"],
     }
-    append_global_index(root, row)
+    if args.index_mode == "append":
+        append_global_index(root, row)
 
 
     if args.save_data != "none":
