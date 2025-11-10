@@ -27,7 +27,7 @@ dgp = "blackwell_yamauchi"
 rho = [5,10,50] # n/T
 params_grid = {
     "n": [200, 500, 1000, 3000], 
-    "seed": list(range(500)), 
+    "seed": list(range(1,101)), 
     "a": [1,2], 
     "p": [2,4], 
 }
@@ -95,7 +95,7 @@ for n, seed, a, p in product(*params_grid.values()):
         "--dgp", dgp,
         "--config", str(cfg_path.resolve()),
         "--project_root", ".",
-        "--splits_outdir", f"data/splits/{dgp}/n{n}_T{t}",
+        "--splits_outdir", f"data/splits/{dgp}/",
         ]
         
         if args.defer_index:

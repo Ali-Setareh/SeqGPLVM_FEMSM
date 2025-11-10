@@ -44,7 +44,7 @@ def main():
 
     # --- Save canonical dataset run (short ID folder) ---
     extra_manifest = {
-        "script": "experiments/run_simulation.py",
+        "script": "simulations/run_simulation.py",
         "save_mode": args.save_data,
         "rng_info": {"lib": "numpy", "version": np.__version__, "seed": params["seed"], "rng_source": "rng_from_seed"},
     }
@@ -73,7 +73,7 @@ def main():
         "split_file": str(split_file),
         "split_info": {"by": "unit", "split_seed": split_seed},
         "replay_command": (
-            f"python experiments/run_simulation.py --dgp {args.dgp} "
+            f"python simulations/run_simulation.py --dgp {args.dgp} "
             f"--config {args.config} --project_root {args.project_root} "
             f"--splits_outdir {args.splits_outdir} --save_data {args.save_data}"
         ),
