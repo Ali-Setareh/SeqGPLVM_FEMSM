@@ -300,7 +300,7 @@ tmp/
 #*.npy
 
 # slurm commands 
-slurm_commands.txt
+slurm/
 
 # R session cruft
 .Rhistory
