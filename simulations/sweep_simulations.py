@@ -19,6 +19,7 @@ def write_unique_cfg(cfg: dict, index: int) -> Path:
     cfg_path.write_text(json.dumps(cfg))
     return cfg_path
 
+
 def jsonl_to_parquet(jsonl_path: str, out_parquet: str):
     import json
     import pyarrow as pa
@@ -74,54 +75,50 @@ def jsonl_to_parquet(jsonl_path: str, out_parquet: str):
         if writer is not None:
             writer.close()
 
-def run(cmd):
-    # capture stdout so we can parse the JSON line
-    out = subprocess.check_output(cmd, text=True)
-    return out.strip()
 
-
+# --- your sweep setup ---
 dgp = "blackwell_yamauchi"
 
-rho = [5,10,50] # n/T
+rho = [5, 10, 50]  # n/T
 params_grid = {
-    "n": [200, 500, 1000, 3000], 
-    "seed": list(range(1,101)), 
-    "a": [1,2], 
-    "p": [2,4], 
+    "n": [200, 500, 1000, 3000],
+    "seed": list(range(1, 101)),
+    "a": [1, 2],
+    "p": [2, 4],
 }
 
-train_test_split = 0.8 
+train_test_split = 0.8
 
-T =  {int((1/train_test_split) * n):[int(n/r) for r in rho] for n in params_grid["n"]}
-params_grid["n"] = [int(i * (1/train_test_split)) for i in params_grid["n"]]  # we have to adjust n so that after an 80/20 split we get the desired n
+# T keyed by adjusted n (post split)
+T = {int((1/train_test_split) * n): [int(n/r) for r in rho] for n in params_grid["n"]}
+# adjust n so that after 80/20 split you get the desired n in train
+params_grid["n"] = [int(i * (1/train_test_split)) for i in params_grid["n"]]
 
-beta_dict = {2:  [-0.5, -0.5], 4: [-0.5, -0.5, 1.0, -0.5]}
+beta_dict = {2: [-0.5, -0.5], 4: [-0.5, -0.5, 1.0, -0.5]}
 gamma_dict = {2: [1.0, 0.5], 4: [1.0, 0.5, 1.0, 1.0]}
 
 params = {
     "phi": 0.3,
-    "tau_F": 1.0, 
+    "tau_F": 1.0,
     "tau_C": 0.3,
-    "mean_x": -0.5, 
+    "mean_x": -0.5,
     "offdiag": 0.2,
-    "sigma_eps": 1.0, 
-    "max_lag_x": 0, 
+    "sigma_eps": 1.0,
+    "max_lag_x": 0,
     "max_lag_d": 3,
     "split_seed": 42
-    }
+}
 
 treatment_model = "logit"
-
 params["treatment_model"] = treatment_model
 params["exclude_monotone"] = True
 
 index = 0
-total =  len(params_grid["n"]) * len(params_grid["seed"]) * len(params_grid["a"]) * len(params_grid["p"]) * len(rho)
+total = len(params_grid["n"]) * len(params_grid["seed"]) * len(params_grid["a"]) * len(params_grid["p"]) * len(rho)
+
 ap = argparse.ArgumentParser()
 ap.add_argument("--task", type=int, default=None,
                 help="Run only this 0-based global index (for SLURM_ARRAY_TASK_ID).")
-ap.add_argument("--defer-index", action="store_true",
-                help="Pass --index_mode=deferred to run_simulation and rebuild later.")
 ap.add_argument("--count", action="store_true",
                 help="Print total number of tasks and exit.")
 args = ap.parse_args()
@@ -130,12 +127,13 @@ if args.count:
     print(total)
     raise SystemExit
 
-# if launched as array without --task, pick it up automatically
+# if launched as array without --task, pick it up automatically (harmless if not using arrays)
 if args.task is None:
     env_task = os.environ.get("SLURM_ARRAY_TASK_ID")
     if env_task is not None:
         args.task = int(env_task)
 
+# Single JSONL for the whole sweep
 ROWLOG = Path("data/runs.jsonl")
 ROWLOG.parent.mkdir(parents=True, exist_ok=True)
 try:
@@ -144,53 +142,49 @@ except FileNotFoundError:
     pass
 
 for n, seed, a, p in product(*params_grid.values()):
-
     for t in T[n]:
-        cfg = {"dgp": dgp,"N": n, "T": t, "train_test_ratio": train_test_split,"seed": seed, "a": a, "p": p,
-               "beta": beta_dict[p], "gamma": gamma_dict[p], **params}
-        
+        cfg = {
+            "dgp": dgp, "N": n, "T": t, "train_test_ratio": train_test_split,
+            "seed": seed, "a": a, "p": p,
+            "beta": beta_dict[p], "gamma": gamma_dict[p], **params
+        }
+
         # Select by global index if requested
         if args.task is not None and index != args.task:
             index += 1
             continue
-    
+
         cfg_path = write_unique_cfg(cfg, index)
+
         cmd = [
-        "python", "simulations/run_simulation.py",
-        "--dgp", dgp,
-        "--config", str(cfg_path.resolve()),
-        "--project_root", ".",
-        "--splits_outdir", f"data/splits/{dgp}/",
-        "--index_mode", "deferred", 
-        "--emit-row-stdout",  
+            "python", "simulations/run_simulation.py",
+            "--dgp", dgp,
+            "--config", str(cfg_path.resolve()),
+            "--project_root", ".",
+            "--splits_outdir", f"data/splits/{dgp}/",
+            "--index_mode", "deferred",
+            "--rowlog", str(ROWLOG),   # <— append one JSON line per run
         ]
-        
-        if args.defer_index:
-            cmd += [
-                "--index_mode", "deferred",
-                "--rowlog", str(ROWLOG),
-            ]
 
-        res = subprocess.run(cmd, text=True, capture_output=True, check=True)
-        row_line = next((ln[len("___ROWJSON___ "):]
-                        for ln in res.stdout.splitlines()
-                        if ln.startswith("___ROWJSON___ ")), None)
-        if row_line is None:
-            raise RuntimeError(f"No row JSON found.\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
+        print(f"[{index+1}/{total}] {' '.join(cmd)}", flush=True)
+        # no need to capture stdout; child writes to JSONL
+        subprocess.check_call(cmd)
 
-        print(f"[{index+1}/{total}]", " ".join(cmd), flush=True)
         index += 1
-        run(cmd)
+
+        # clean up temp cfg locally
         try:
             if not os.environ.get("SLURM_TMPDIR"):
                 cfg_path.unlink(missing_ok=True)
         except Exception:
             pass
 
-if args.defer_index and ROWLOG.exists():
+# Convert JSONL -> Parquet once at the end
+if ROWLOG.exists():
     jsonl_to_parquet(str(ROWLOG), out_parquet="data/runs.parquet")
     print("[post] wrote data/runs.parquet")
 
+# Optional: remove the JSONL
 try:
     ROWLOG.unlink()
 except Exception:

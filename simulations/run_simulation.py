@@ -107,11 +107,25 @@ def main():
     if args.index_mode == "append" and not args.rowlog:
         append_global_index(root, row)
     
+
     if args.rowlog:
+        def _json_default(o):
+            import numpy as _np
+            from pathlib import Path as _Path
+            if isinstance(o, (_np.integer,)):
+                return int(o)
+            if isinstance(o, (_np.floating,)):
+                return float(o)
+            if isinstance(o, _np.ndarray):
+                return o.tolist()
+            if isinstance(o, _Path):
+                return str(o)
+            return str(o)
         rowlog_path = Path(args.rowlog)
         rowlog_path.parent.mkdir(parents=True, exist_ok=True)
         with open(rowlog_path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+            f.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
+
 
 
     if args.save_data != "none":
@@ -119,9 +133,11 @@ def main():
         print(f"     data: {run_path/'data.parquet'}")
     else:
         print(f"[OK] dgp={args.dgp} run_id={run_id} (no dataset saved)")
-    print(f"     cfg : {run_path/'config.json'}")
-    print(f"     mani: {run_path/'manifest.json'}")
-    print(f"     split: {split_file}")
+    
+    if args.write_config_manifest:
+        print(f"     cfg : {run_path/'config.json'}")
+        print(f"     mani: {run_path/'manifest.json'}")
+        print(f"     split: {split_file}")
 
 if __name__ == "__main__":
     main()
