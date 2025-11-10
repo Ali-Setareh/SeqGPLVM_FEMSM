@@ -19,6 +19,8 @@ def main():
     p.add_argument("--index_mode", choices=["append", "deferred"], default="append",
                help="append: update runs.parquet immediately; deferred: skip (rebuild later)")
     p.add_argument("--write_config_manifest", action="store_true", help="Whether to write config.json and manifest.json files")
+    p.add_argument("--emit-row-stdout", action="store_true",
+               help="If set, emit a single JSON line with the summary row to stdout.")
 
     
     args = p.parse_args()
@@ -99,6 +101,10 @@ def main():
     }
     if args.index_mode == "append":
         append_global_index(root, row)
+    
+    if args.emit_row_stdout:
+        # one clean line; parent process will parse it
+        print(json.dumps(row, ensure_ascii=False), flush=True)
 
 
     if args.save_data != "none":

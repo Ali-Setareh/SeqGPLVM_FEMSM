@@ -19,8 +19,44 @@ def write_unique_cfg(cfg: dict, index: int) -> Path:
     cfg_path.write_text(json.dumps(cfg))
     return cfg_path
 
-def run(cmd):  
-    subprocess.check_call(cmd)
+def _flatten(row: dict) -> dict:
+    """Turn nested dicts into JSON strings; ensure stable keys."""
+    import json as _json
+    out = dict(row)  # shallow copy
+    # stringify nested dicts (schema-stable, fast)
+    for k in ("manifest", "config"):
+        v = out.get(k)
+        out[k] = _json.dumps(v) if v is not None else None
+    # make sure all expected keys exist
+    for k in ("dgp","run_id","treatment_model","path","created_at",
+              "git_commit","split_file","manifest","config","replay_command"):
+        out.setdefault(k, None)
+    return out
+
+def _write_parquet(rows, out: str):
+    import pyarrow as pa, pyarrow.parquet as pq
+    schema = pa.schema([
+        ("dgp", pa.string()),
+        ("run_id", pa.string()),
+        ("treatment_model", pa.string()),
+        ("path", pa.string()),
+        ("created_at", pa.string()),
+        ("git_commit", pa.string()),
+        ("split_file", pa.string()),
+        ("manifest", pa.large_string()),
+        ("config", pa.large_string()),
+        ("replay_command", pa.large_string()),
+    ])
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    table = pa.Table.from_pylist(rows, schema=schema)  # single big batch = fastest here
+    pq.write_table(table, out, compression="zstd")     # compact & fast
+
+
+def run(cmd):
+    # capture stdout so we can parse the JSON line
+    out = subprocess.check_output(cmd, text=True)
+    return out.strip()
+
 
 dgp = "blackwell_yamauchi"
 
@@ -78,6 +114,8 @@ if args.task is None:
     if env_task is not None:
         args.task = int(env_task)
 
+rows = [] 
+
 for n, seed, a, p in product(*params_grid.values()):
 
     for t in T[n]:
@@ -96,11 +134,16 @@ for n, seed, a, p in product(*params_grid.values()):
         "--config", str(cfg_path.resolve()),
         "--project_root", ".",
         "--splits_outdir", f"data/splits/{dgp}/",
+        "--index_mode", "deferred", 
+        "--emit-row-stdout",  
         ]
         
         if args.defer_index:
             cmd += ["--index_mode", "deferred"]
 
+        line = run(cmd)              # returns the child's stdout (JSON line)
+        row = json.loads(line)       # dict
+        rows.append(_flatten(row))   # stringify nested fields for Parquet
 
         print(f"[{index+1}/{total}]", " ".join(cmd), flush=True)
         index += 1
@@ -110,8 +153,5 @@ for n, seed, a, p in product(*params_grid.values()):
                 cfg_path.unlink(missing_ok=True)
         except Exception:
             pass
+_write_parquet(rows, out="data/runs.parquet")
 
-if args.defer_index and args.task is None:
-    from utils.runs import rebuild_index
-    print("[post] rebuilding index ...", flush=True)
-    rebuild_index(".", dgp=dgp)
