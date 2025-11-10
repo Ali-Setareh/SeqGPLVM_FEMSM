@@ -15,7 +15,10 @@ def make_run_id(params: dict, length: int = 8) -> str:
 def run_dir(root: Path, dgp: str, run_id: str) -> Path:
     return root / "data" / "raw" / dgp / run_id
 
-def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: dict | None = None, save_mode: str | None = None, head_k: int = 500):
+def save_dataset_run(root: Path, dgp: str, params: dict, df,
+                     *,
+                     extra_manifest: dict | None = None, save_mode: str | None = None, head_k: int = 500, 
+                     write_config_manifest: bool = True) -> tuple[str, Path, dict, dict]:
     """
     Save a simulation run. `save_mode` controls dataset saving:
       - "full": write full data to data.parquet (default)
@@ -31,10 +34,13 @@ def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: 
     root = Path(root)
     rid = make_run_id(params)
     out = run_dir(root, dgp, rid)
-    out.mkdir(parents=True, exist_ok=True)
+    if write_config_manifest:
+        out.mkdir(parents=True, exist_ok=True)
 
     # 1) config used for generation
-    (out / "config.json").write_text(canonicalize(params), encoding="utf-8")
+    config = canonicalize(params)
+    if write_config_manifest:
+        (out / "config.json").write_text(config, encoding="utf-8")
 
     # 2) data (conditional)
     data_file = None
@@ -72,9 +78,11 @@ def save_dataset_run(root: Path, dgp: str, params: dict, df, *, extra_manifest: 
     }
     if extra_manifest:
         manifest.update(extra_manifest)
-
-    (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    return rid, out, manifest
+    
+    if write_config_manifest:
+        (out / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    
+    return rid, out, manifest, config
 
 def append_global_index(root: Path, manifest_row: dict):
     import pandas as pd

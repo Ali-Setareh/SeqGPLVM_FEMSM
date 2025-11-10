@@ -18,6 +18,7 @@ def main():
     p.add_argument("--head_k", type=int, default=500, help="rows to keep if save_data=head")
     p.add_argument("--index_mode", choices=["append", "deferred"], default="append",
                help="append: update runs.parquet immediately; deferred: skip (rebuild later)")
+    p.add_argument("--write_config_manifest", action="store_true", help="Whether to write config.json and manifest.json files")
 
     
     args = p.parse_args()
@@ -49,10 +50,10 @@ def main():
         "rng_info": {"lib": "numpy", "version": np.__version__, "seed": params["seed"], "rng_source": "rng_from_seed"},
     }
 
-    run_id, run_path, manifest = save_dataset_run(root, args.dgp, params, df, 
+    run_id, run_path, manifest, config = save_dataset_run(root, args.dgp, params, df, 
                                                   extra_manifest=extra_manifest, 
                                                   save_mode=args.save_data,
-                                                  head_k=args.head_k,)
+                                                  head_k=args.head_k, write_config_manifest=args.write_config_manifest)
 
     # --- Splits (persist + record path in manifest) ---
     splits_outdir = root / args.splits_outdir
@@ -79,7 +80,9 @@ def main():
         ),
     })
 
-    (run_path / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    if args.write_config_manifest:
+
+        (run_path / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     # --- Global index row ---
     row = {
@@ -89,8 +92,9 @@ def main():
         "path": str(run_path),
         "created_at": manifest["created_at"],
         "git_commit": manifest.get("git_commit"),
-        "params": params,
         "split_file": str(split_file),
+        "manifest": manifest,
+        "config": config,
         "replay_command": manifest["replay_command"],
     }
     if args.index_mode == "append":
