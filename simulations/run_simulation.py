@@ -1,6 +1,8 @@
 # experiments/run_simulation.py
+import functools
 import argparse, json
 from pathlib import Path
+import sys
 
 import numpy as np
 from dgps import get_simulator
@@ -8,6 +10,9 @@ from utils.splits import make_or_load_split
 from utils.runs import save_dataset_run, append_global_index, make_run_id, canonicalize
 
 def main():
+    
+    print = functools.partial(print, file=sys.stderr)
+
     p = argparse.ArgumentParser()
     p.add_argument("--dgp", required=True, help="module name in dgps/, e.g. hatt_feuerriegel")
     p.add_argument("--config", required=True, help="JSON or YAML with params")
@@ -103,8 +108,10 @@ def main():
         append_global_index(root, row)
     
     if args.emit_row_stdout:
-        # one clean line; parent process will parse it
-        print(json.dumps(row, ensure_ascii=False), flush=True)
+        sys.stdout.write("___ROWJSON___ ")
+        json.dump(row, sys.stdout, ensure_ascii=False)
+        sys.stdout.write("\n")
+        sys.stdout.flush()
 
 
     if args.save_data != "none":

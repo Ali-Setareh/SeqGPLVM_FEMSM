@@ -153,5 +153,5 @@ for n, seed, a, p in product(*params_grid.values()):
                 cfg_path.unlink(missing_ok=True)
         except Exception:
             pass
-_write_parquet(rows, out="data/runs.parquet")
+_write_parquet(rows, out="data/index/runs.parquet")
 
