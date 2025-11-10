@@ -10,7 +10,7 @@ from utils.splits import make_or_load_split
 from utils.runs import save_dataset_run, append_global_index, make_run_id, canonicalize
 
 def main():
-    
+
     print = functools.partial(print, file=sys.stderr)
 
     p = argparse.ArgumentParser()
@@ -24,8 +24,8 @@ def main():
     p.add_argument("--index_mode", choices=["append", "deferred"], default="append",
                help="append: update runs.parquet immediately; deferred: skip (rebuild later)")
     p.add_argument("--write_config_manifest", action="store_true", help="Whether to write config.json and manifest.json files")
-    p.add_argument("--emit-row-stdout", action="store_true",
-               help="If set, emit a single JSON line with the summary row to stdout.")
+    p.add_argument("--rowlog", type=str, default=None,
+               help="Path to a JSONL file to append one summary row per run.")
 
     
     args = p.parse_args()
@@ -104,14 +104,14 @@ def main():
         "config": config,
         "replay_command": manifest["replay_command"],
     }
-    if args.index_mode == "append":
+    if args.index_mode == "append" and not args.rowlog:
         append_global_index(root, row)
     
-    if args.emit_row_stdout:
-        sys.stdout.write("___ROWJSON___ ")
-        json.dump(row, sys.stdout, ensure_ascii=False)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
+    if args.rowlog:
+        rowlog_path = Path(args.rowlog)
+        rowlog_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(rowlog_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
     if args.save_data != "none":

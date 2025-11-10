@@ -19,22 +19,12 @@ def write_unique_cfg(cfg: dict, index: int) -> Path:
     cfg_path.write_text(json.dumps(cfg))
     return cfg_path
 
-def _flatten(row: dict) -> dict:
-    """Turn nested dicts into JSON strings; ensure stable keys."""
-    import json as _json
-    out = dict(row)  # shallow copy
-    # stringify nested dicts (schema-stable, fast)
-    for k in ("manifest", "config"):
-        v = out.get(k)
-        out[k] = _json.dumps(v) if v is not None else None
-    # make sure all expected keys exist
-    for k in ("dgp","run_id","treatment_model","path","created_at",
-              "git_commit","split_file","manifest","config","replay_command"):
-        out.setdefault(k, None)
-    return out
+def jsonl_to_parquet(jsonl_path: str, out_parquet: str):
+    import json
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from pathlib import Path
 
-def _write_parquet(rows, out: str):
-    import pyarrow as pa, pyarrow.parquet as pq
     schema = pa.schema([
         ("dgp", pa.string()),
         ("run_id", pa.string()),
@@ -47,10 +37,42 @@ def _write_parquet(rows, out: str):
         ("config", pa.large_string()),
         ("replay_command", pa.large_string()),
     ])
-    Path(out).parent.mkdir(parents=True, exist_ok=True)
-    table = pa.Table.from_pylist(rows, schema=schema)  # single big batch = fastest here
-    pq.write_table(table, out, compression="zstd")     # compact & fast
 
+    path = Path(jsonl_path)
+    if not path.exists():
+        print(f"[reduce] JSONL not found: {jsonl_path}")
+        return
+
+    Path(out_parquet).parent.mkdir(parents=True, exist_ok=True)
+    writer = None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            batch = []
+            for line in f:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                # stringify nested dicts for schema stability
+                r["manifest"] = json.dumps(r.get("manifest")) if r.get("manifest") is not None else None
+                r["config"]   = json.dumps(r.get("config"))   if r.get("config")   is not None else None
+                # ensure all keys exist
+                for k in schema.names:
+                    r.setdefault(k, None)
+                batch.append(r)
+                if len(batch) >= 4096:
+                    tbl = pa.Table.from_pylist(batch, schema=schema)
+                    if writer is None:
+                        writer = pq.ParquetWriter(out_parquet, schema, compression="zstd")
+                    writer.write_table(tbl)
+                    batch.clear()
+            if batch:
+                tbl = pa.Table.from_pylist(batch, schema=schema)
+                if writer is None:
+                    writer = pq.ParquetWriter(out_parquet, schema, compression="zstd")
+                writer.write_table(tbl)
+    finally:
+        if writer is not None:
+            writer.close()
 
 def run(cmd):
     # capture stdout so we can parse the JSON line
@@ -114,7 +136,12 @@ if args.task is None:
     if env_task is not None:
         args.task = int(env_task)
 
-rows = [] 
+ROWLOG = Path("data/runs.jsonl")
+ROWLOG.parent.mkdir(parents=True, exist_ok=True)
+try:
+    ROWLOG.unlink()  # start fresh
+except FileNotFoundError:
+    pass
 
 for n, seed, a, p in product(*params_grid.values()):
 
@@ -139,11 +166,17 @@ for n, seed, a, p in product(*params_grid.values()):
         ]
         
         if args.defer_index:
-            cmd += ["--index_mode", "deferred"]
+            cmd += [
+                "--index_mode", "deferred",
+                "--rowlog", str(ROWLOG),
+            ]
 
-        line = run(cmd)              # returns the child's stdout (JSON line)
-        row = json.loads(line)       # dict
-        rows.append(_flatten(row))   # stringify nested fields for Parquet
+        res = subprocess.run(cmd, text=True, capture_output=True, check=True)
+        row_line = next((ln[len("___ROWJSON___ "):]
+                        for ln in res.stdout.splitlines()
+                        if ln.startswith("___ROWJSON___ ")), None)
+        if row_line is None:
+            raise RuntimeError(f"No row JSON found.\nSTDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
 
         print(f"[{index+1}/{total}]", " ".join(cmd), flush=True)
         index += 1
@@ -153,5 +186,12 @@ for n, seed, a, p in product(*params_grid.values()):
                 cfg_path.unlink(missing_ok=True)
         except Exception:
             pass
-_write_parquet(rows, out="data/index/runs.parquet")
 
+if args.defer_index and ROWLOG.exists():
+    jsonl_to_parquet(str(ROWLOG), out_parquet="data/runs.parquet")
+    print("[post] wrote data/runs.parquet")
+
+try:
+    ROWLOG.unlink()
+except Exception:
+    pass
