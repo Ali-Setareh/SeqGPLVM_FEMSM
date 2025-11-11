@@ -163,7 +163,7 @@ for n, seed, a, p in product(*params_grid.values()):
             "--project_root", ".",
             "--splits_outdir", f"data/splits/{dgp}/",
             "--index_mode", "deferred",
-            "--rowlog", str(ROWLOG),   # <— append one JSON line per run
+            "--rowlog", str(ROWLOG),   
         ]
 
         print(f"[{index+1}/{total}] {' '.join(cmd)}", flush=True)
@@ -181,8 +181,8 @@ for n, seed, a, p in product(*params_grid.values()):
 
 # Convert JSONL -> Parquet once at the end
 if ROWLOG.exists():
-    jsonl_to_parquet(str(ROWLOG), out_parquet="data/runs.parquet")
-    print("[post] wrote data/runs.parquet")
+    jsonl_to_parquet(str(ROWLOG), out_parquet="data/index/runs.parquet")
+    print("[post] wrote data/index/runs.parquet")
 
 # Optional: remove the JSONL
 try:

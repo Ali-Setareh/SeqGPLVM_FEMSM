@@ -11,7 +11,7 @@ from utils.runs import save_dataset_run, append_global_index, make_run_id, canon
 
 def main():
 
-    print = functools.partial(print, file=sys.stderr)
+    
 
     p = argparse.ArgumentParser()
     p.add_argument("--dgp", required=True, help="module name in dgps/, e.g. hatt_feuerriegel")
