@@ -12,9 +12,9 @@ for index, row in df_runs.iterrows():
         df_runs.at[index, col] = dic.get(col, None)
 
 seed = 1 
-df_runs_seed = df_runs[df_runs["seed"]==seed].reset_index(drop=True)
+#df_runs_seed = df_runs[df_runs["seed"]==seed].reset_index(drop=True)
 all_rows = []
-for index,row in df_runs_seed.iterrows():                     
+for index,row in df_runs.iterrows():                     
     params = json.loads(json.loads(row["config"]))
     mani = json.loads(row["manifest"])
     simulate = get_simulator(params["dgp"])
@@ -35,7 +35,7 @@ for index,row in df_runs_seed.iterrows():
         x_cols=x_cols,                        # optional
     )
     all_rows.append(row)
-    print(F"{index}/{len(df_runs_seed)} done.", end="\r")
+    print(F"{index}/{len(df_runs)} done.", end="\r")
 
 results = pd.concat(all_rows, ignore_index=True)
 results.to_csv("results/msm/by_run_wide.csv", index=False)
