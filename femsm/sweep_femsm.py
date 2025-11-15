@@ -11,12 +11,12 @@ for index, row in df_runs.iterrows():
     for col in ["N", "T", "p", "a", "seed", "train_test_ratio","exclude_monotone"]:
         df_runs.at[index, col] = dic.get(col, None)
 
-seed = 1 
+#seed = 1 
 #df_runs_seed = df_runs[df_runs["seed"]==seed].reset_index(drop=True)
 all_rows = []
-for index,row in df_runs.iterrows():                     
-    params = json.loads(json.loads(row["config"]))
-    mani = json.loads(row["manifest"])
+for index,rows in df_runs.iterrows():                     
+    params = json.loads(json.loads(rows["config"]))
+    mani = json.loads(rows["manifest"])
     simulate = get_simulator(params["dgp"])
     df_sim = simulate(params)
 
@@ -34,8 +34,11 @@ for index,row in df_runs.iterrows():
         data_id=mani.get("run_id", None),
         x_cols=x_cols,                        # optional
     )
+    
     all_rows.append(row)
-    print(F"{index}/{len(df_runs)} done.", end="\r")
+    row["seed"] = params.get("seed", None)
+    print(F"{index}/{len(df_runs)}: N: {params.get('N', None)} , T: {params.get('T', None)} , a: {params.get('a', None)} , p: {params.get('p', None)}, seed: {params.get('seed', None)} done.", end="\r")
+    
 
 results = pd.concat(all_rows, ignore_index=True)
-results.to_csv("results/msm/by_run_wide.csv", index=False)
+results.to_csv("results/msm/fe_msm_results.csv", index=False)
