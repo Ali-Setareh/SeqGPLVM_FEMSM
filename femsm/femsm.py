@@ -9,7 +9,7 @@ def _ensure_r_packages(pkgs):
         utils.install_packages(r.c(*to_install), repos="https://cloud.r-project.org")
 
 # Make sure needed R packages exist
-_ensure_r_packages(["fs", "arrow", "jsonlite", "dplyr", "stringr", "fixest"])
+_ensure_r_packages(["fs", "arrow", "jsonlite", "dplyr", "stringr", "fixest", "sandwich"])
 
 # Define the R function performing the MSM estimation using fix effects
 r('''
@@ -22,6 +22,7 @@ msm_from_py <- function(df,
   suppressPackageStartupMessages({
     library(dplyr)
     library(fixest)
+    library(sandwich)
   })
 
   # Expect columns: patient_id, t, D, Y, and covariates x1, x2, ...
@@ -137,6 +138,33 @@ msm_from_py <- function(df,
   res_no   <- fit_wls(df_msm, w_no)
   res_fe   <- if (nrow(df_msm_FE) > 0) fit_wls(df_msm_FE, w_fe) else NULL
 
+  # --- HC2 sandwich SEs for 90% CIs ---
+  tau_f_true_se <- NA_real_
+  tau_c_true_se <- NA_real_
+  tau_f_no_se   <- NA_real_
+  tau_c_no_se   <- NA_real_
+  tau_f_fe_se   <- NA_real_
+  tau_c_fe_se   <- NA_real_
+
+  if (!is.null(res_true)) {
+    vc_true <- sandwich::vcovHC(res_true, type = "HC2")
+    se_true <- sqrt(diag(vc_true))
+    tau_f_true_se <- se_true[["D"]]
+    tau_c_true_se <- se_true[["lag_sum3"]]
+  }
+
+  vc_no <- sandwich::vcovHC(res_no, type = "HC2")
+  se_no <- sqrt(diag(vc_no))
+  tau_f_no_se <- se_no[["D"]]
+  tau_c_no_se <- se_no[["lag_sum3"]]
+
+  if (!is.null(res_fe)) {
+    vc_fe <- sandwich::vcovHC(res_fe, type = "HC2")
+    se_fe <- sqrt(diag(vc_fe))
+    tau_f_fe_se <- se_fe[["D"]]
+    tau_c_fe_se <- se_fe[["lag_sum3"]]
+  }
+  
   tau_f_true <- if (!is.null(res_true)) stats::coef(res_true)[["D"]] else NA_real_
   tau_c_true <- if (!is.null(res_true)) stats::coef(res_true)[["lag_sum3"]] else NA_real_
   tau_f_no   <- stats::coef(res_no)[["D"]]
@@ -156,7 +184,10 @@ msm_from_py <- function(df,
     a = a_val, p = p_count,
     tau_f_true = tau_f_true, tau_c_true = tau_c_true,
     tau_f_fe   = tau_f_fe,   tau_c_fe   = tau_c_fe,
-    tau_f_no_fe = tau_f_no,  tau_c_no_fe = tau_c_no
+    tau_f_no_fe = tau_f_no,  tau_c_no_fe = tau_c_no, 
+    tau_f_true_se = tau_f_true_se, tau_c_true_se = tau_c_true_se,
+    tau_f_fe_se   = tau_f_fe_se,   tau_c_fe_se   = tau_c_fe_se,
+    tau_f_no_fe_se = tau_f_no_se,  tau_c_no_fe_se = tau_c_no_se
   )
 }
 ''')

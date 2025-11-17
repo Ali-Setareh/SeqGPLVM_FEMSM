@@ -24,7 +24,8 @@ def main():
         optimize_hyperparams_val=cfg.get("optimize_hyperparams_val", {"lr":1e-2,"num_epochs":10000}),
         checkpoint_interval=cfg.get("checkpoint_interval", 2000),
         param_logging_freq=cfg.get("param_logging_freq", 50),
-        resume_mode=cfg.get("resume_mode", "auto")
+        resume_mode=cfg.get("resume_mode", "auto"),
+        load_data=cfg.get("load_data", True)
     )
 
 if __name__ == "__main__":

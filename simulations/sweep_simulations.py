@@ -167,7 +167,6 @@ for n, seed, a, p in product(*params_grid.values()):
         ]
 
         print(f"[{index+1}/{total}] {' '.join(cmd)}", flush=True)
-        # no need to capture stdout; child writes to JSONL
         subprocess.check_call(cmd)
 
         index += 1

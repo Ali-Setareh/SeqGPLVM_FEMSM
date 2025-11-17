@@ -1,5 +1,6 @@
 import shutil
 import torch
+from dgps import get_simulator
 from utils.checkpoints import latest_checkpoint_path, load_checkpoint, load_ckpt_any,train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
 from utils.preprocessings import get_training_tensors
 import pandas as pd
@@ -28,6 +29,7 @@ def train_seqgplvm_val(train_id: str,
                        checkpoint_interval: int = 2000,
                        param_logging_freq: int = 50,
                        resume_mode: str = "auto",
+                       load_data: bool = True
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -43,9 +45,16 @@ def train_seqgplvm_val(train_id: str,
     train_conf = load_train_cfg_from_json((train_out / "config.json"))
     train_conf = materialize_cfg(train_conf, device)
     
+    if load_data:
+        df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
+        df_manifest = json.loads((as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8"))
+    else:
+        df_dgp_idx = pd.read_parquet(as_path("./data/index/runs.parquet"))
+        data_config = json.loads(json.loads(df_dgp_idx[df_dgp_idx.run_id == data_ref["data_run_id"]]["config"].iloc[0]))
+        df_manifest = json.loads(df_dgp_idx[df_dgp_idx.run_id == data_ref["data_run_id"]]["manifest"].iloc[0])
 
-    df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
-    df_manifest = json.loads((as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8"))
+        simulate = get_simulator(data_config["dgp"])
+        df = simulate(data_config)
     split = json.loads(as_path(data_ref["split_file"]).read_text(encoding="utf-8"))
 
     X, A, id2row = get_training_tensors(

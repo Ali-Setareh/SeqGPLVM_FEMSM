@@ -10,6 +10,7 @@ from utils.pathing import as_path
 from pathlib import Path
 from models.SeqGPLVM import SeqGPLVM, SeqGPLVMVal
 import time,  os, json 
+from dgps import get_simulator
 
 
 
@@ -22,6 +23,7 @@ def propensity_seqgplvm(train_id: str,
                         sample_num: int = 100, 
                         sample_count: int = 0,         # number of A samples to draw
                         sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
+                        load_data: bool = True,
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -37,9 +39,16 @@ def propensity_seqgplvm(train_id: str,
     train_conf = load_train_cfg_from_json((train_out / "config.json"))
     train_conf = materialize_cfg(train_conf, device)
     
-
-    df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
-    df_manifest = json.loads((as_path(data_ref["data_file"]) / "manifest.json").read_text(encoding="utf-8"))
+    if load_data:
+        
+        df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
+    else: 
+        df_dgp_idx = pd.read_parquet(Path("./data/index/runs.parquet"))
+        manifest = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
+        data_config = json.loads(json.loads(df_dgp_idx[df_dgp_idx.run_id == manifest["data_run_id"]]["config"].iloc[0]))
+        simulate = get_simulator(data_config["dgp"])
+        df = simulate(data_config)
+    
     split = json.loads(as_path(data_ref["split_file"]).read_text(encoding="utf-8"))
 
     X, A, id2row = get_training_tensors(
