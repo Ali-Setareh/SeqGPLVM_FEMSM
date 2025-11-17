@@ -37,7 +37,7 @@ for index,rows in df_runs.iterrows():
     
     all_rows.append(row)
     row["seed"] = params.get("seed", None)
-    print(F"{index}/{len(df_runs)}: N: {params.get('N', None)} , T: {params.get('T', None)} , a: {params.get('a', None)} , p: {params.get('p', None)}, seed: {params.get('seed', None)} done.", end="\r")
+    print(F"{index}/{len(df_runs)}: N: {params.get('N', None)} , T: {params.get('T', None)} , a: {params.get('a', None)} , p: {params.get('p', None)}, seed: {params.get('seed', None)} done. \n {row}", end="\r")
     
 
 results = pd.concat(all_rows, ignore_index=True)
