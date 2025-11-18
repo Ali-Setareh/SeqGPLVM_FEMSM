@@ -228,9 +228,13 @@ def train_seqgplvm_val(train_id: str,
     except (NotPSDError, RuntimeError) as e:
         if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
             print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
-            if extra_logging_mode == "experiment":
-                for item in extra_logging:
-                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
+            if extra_logging_mode == "experiment": # only keep last successful step
+                if "loss_list" in extra_logging:
+                    extra_logging_set["loss_list"] = [extra_logging_set["loss_list"][-1]]
+                if "param_hist" in extra_logging:
+                    extra_logging_set["param_hist"] = {k: [v[-1]] for k, v in extra_logging_set["param_hist"].items()}
+                if "actual_params" in extra_logging:
+                    extra_logging_set["actual_params"] = {k: [v[-1]] for k, v in extra_logging_set["actual_params"].items()}
             save_ckpt(
                 val_out,
                 step=epochs_completed + epochs_completed_prior,
@@ -252,9 +256,14 @@ def train_seqgplvm_val(train_id: str,
         raise
     finally:
         #if (len(loss_list) == 0) or ((i + 1) % checkpoint_interval != 0):
-        if extra_logging_mode == "experiment":
-                for item in extra_logging:
-                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
+        if extra_logging_mode == "experiment": # only keep last successful step
+                if "loss_list" in extra_logging:
+                    extra_logging_set["loss_list"] = [extra_logging_set["loss_list"][-1]]
+                if "param_hist" in extra_logging:
+                    extra_logging_set["param_hist"] = {k: [v[-1]] for k, v in extra_logging_set["param_hist"].items()}
+                if "actual_params" in extra_logging:
+                    extra_logging_set["actual_params"] = {k: [v[-1]] for k, v in extra_logging_set["actual_params"].items()}
+
         save_ckpt(
                 val_out,
                 step=epochs_completed + epochs_completed_prior,

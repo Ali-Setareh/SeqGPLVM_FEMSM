@@ -51,8 +51,8 @@ training_cfg = {
     "covariate_cols_prefix": "x",
     "x_standardize": True,
     "resume_mode": "no",
-    "extra_logging": ["loss_list"], 
-    "extra_logging_mode": "experiment"
+    "extra_logging": ["loss_list", "param_hist"], 
+    "extra_logging_mode": "diagnose"
 }
 
 

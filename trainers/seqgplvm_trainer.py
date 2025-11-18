@@ -283,9 +283,13 @@ def train_seqgplvm(df: pd.DataFrame,
         if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
             print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
             # save right before quitting
-            if extra_logging_mode == "experiment":
-                for item in extra_logging:
-                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
+            if extra_logging_mode == "experiment": # only keep last successful step
+                if "loss_list" in extra_logging:
+                    extra_logging_set["loss_list"] = [extra_logging_set["loss_list"][-1]]
+                if "param_hist" in extra_logging:
+                    extra_logging_set["param_hist"] = {k: [v[-1]] for k, v in extra_logging_set["param_hist"].items()}
+                if "actual_params" in extra_logging:
+                    extra_logging_set["actual_params"] = {k: [v[-1]] for k, v in extra_logging_set["actual_params"].items()}
             save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
@@ -312,9 +316,13 @@ def train_seqgplvm(df: pd.DataFrame,
     finally:
         # final save if we didn't land exactly on a checkpoint
         if epochs_completed > 0: # and (epochs_completed % checkpoint_interval) != 0:
-            if extra_logging_mode == "experiment":
-                for item in extra_logging:
-                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
+            if extra_logging_mode == "experiment": # only keep last successful step
+                if "loss_list" in extra_logging:
+                    extra_logging_set["loss_list"] = [extra_logging_set["loss_list"][-1]]
+                if "param_hist" in extra_logging:
+                    extra_logging_set["param_hist"] = {k: [v[-1]] for k, v in extra_logging_set["param_hist"].items()}
+                if "actual_params" in extra_logging:
+                    extra_logging_set["actual_params"] = {k: [v[-1]] for k, v in extra_logging_set["actual_params"].items()}
             save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
