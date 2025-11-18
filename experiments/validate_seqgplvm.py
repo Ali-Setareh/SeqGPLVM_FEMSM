@@ -25,7 +25,10 @@ def main():
         checkpoint_interval=cfg.get("checkpoint_interval", 2000),
         param_logging_freq=cfg.get("param_logging_freq", 50),
         resume_mode=cfg.get("resume_mode", "auto"),
-        load_data=cfg.get("load_data", True)
+        load_data=cfg.get("load_data", True),
+        extra_logging=cfg.get("extra_logging", []),
+        extra_logging_mode=cfg.get("extra_logging_mode", "experiment")
+
     )
 
 if __name__ == "__main__":

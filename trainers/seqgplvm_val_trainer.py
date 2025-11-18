@@ -17,7 +17,7 @@ from utils.training import _update_manifest, materialize_cfg, load_train_cfg_fro
 from utils.inspectors import get_actuals_via_getters
 import time, sys, os, traceback, json 
 from utils.checkpoints import save_ckpt 
-
+from typing import Literal
 
 def train_seqgplvm_val(train_id: str,
                        pid_col: str = "patient_id",
@@ -29,7 +29,9 @@ def train_seqgplvm_val(train_id: str,
                        checkpoint_interval: int = 2000,
                        param_logging_freq: int = 50,
                        resume_mode: str = "auto",
-                       load_data: bool = True
+                       load_data: bool = True, 
+                       extra_logging: list = ["loss_list", "actual_params", "param_hist"], 
+                       extra_logging_mode: Literal["experiment", "model"] = "experiment"
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -188,6 +190,9 @@ def train_seqgplvm_val(train_id: str,
     
     print(f"\n Validation training for DGP with paramters: \n {df_manifest} \n on device {device} with train_id {train_id}\n")
 
+    extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
+    extra_logging_set = {item: extra_logging_map[item] for item in extra_logging}
+
     try:
         for i in iterator:
             optimizer.zero_grad()
@@ -223,12 +228,15 @@ def train_seqgplvm_val(train_id: str,
     except (NotPSDError, RuntimeError) as e:
         if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
             print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
+            if extra_logging_mode == "experiment":
+                for item in extra_logging:
+                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
             save_ckpt(
                 val_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                extra=extra_logging_set,
                 keep_last=1, 
                 milestone_every=0
             )
@@ -244,12 +252,15 @@ def train_seqgplvm_val(train_id: str,
         raise
     finally:
         #if (len(loss_list) == 0) or ((i + 1) % checkpoint_interval != 0):
+        if extra_logging_mode == "experiment":
+                for item in extra_logging:
+                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
         save_ckpt(
                 val_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list},
+                extra=extra_logging_set,
                 keep_last=1, 
                 milestone_every=0
             )

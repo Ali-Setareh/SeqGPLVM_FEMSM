@@ -42,15 +42,17 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": False,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 10000},
-    "checkpoint_interval": 2000,
-    "param_logging_freq": 500,
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 200},
+    "checkpoint_interval": 200,
+    "param_logging_freq": 50,
     "pid_col": "patient_id",
     "time_col": "t",
     "treatment_col": "D",
     "covariate_cols_prefix": "x",
     "x_standardize": True,
     "resume_mode": "no",
+    "extra_logging": ["loss_list"], 
+    "extra_logging_mode": "experiment"
 }
 
 

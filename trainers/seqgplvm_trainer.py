@@ -47,7 +47,9 @@ def train_seqgplvm(df: pd.DataFrame,
                    checkpoint_interval: int = 2000,
                    param_logging_freq = 50,
                    standardize_covariates: bool = True,
-                   resume_mode: str = "auto" # "auto" | "yes" | "no"
+                   resume_mode: str = "auto", # "auto" | "yes" | "no"
+                   extra_logging: list[str] = ["loss_list", "param_hist", "actual_params"], #  "loss" | "param_hist" | "actual_params"
+                   extra_logging_mode: Literal['experiment', 'diagnose'] = 'experiment'
                    ):
 
     X,A,id2row = get_training_tensors(df,
@@ -70,6 +72,10 @@ def train_seqgplvm(df: pd.DataFrame,
         K = len(x_cols) 
         stdzr = FeatureStandardizer.fit(X_train[:,:,:K])  # uses only TRAIN data
         X_train[:,:, :K] = stdzr.transform(X_train[:,:,:K])
+    
+    for item in extra_logging:
+        if item not in ("loss_list", "param_hist", "actual_params"):
+            raise ValueError(f"extra_logging item '{item}' not recognized")
 
 
 
@@ -228,6 +234,9 @@ def train_seqgplvm(df: pd.DataFrame,
         with open(stdzr_path, "w") as f:
             json.dump(stdzr_params, f)
 
+    extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
+    extra_logging_set = {item: extra_logging_map[item] for item in extra_logging}
+
     try:
 
         for i in iterator:
@@ -274,12 +283,15 @@ def train_seqgplvm(df: pd.DataFrame,
         if isinstance(e, NotPSDError) or "cholesky" in str(e).lower():
             print(f"🚨 Cholesky/PSD failure at iter {i}: {e}")
             # save right before quitting
+            if extra_logging_mode == "experiment":
+                for item in extra_logging:
+                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
             save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}, 
+                extra=extra_logging_set, 
                 keep_last=1, 
                 milestone_every=10000
             )
@@ -300,12 +312,15 @@ def train_seqgplvm(df: pd.DataFrame,
     finally:
         # final save if we didn't land exactly on a checkpoint
         if epochs_completed > 0: # and (epochs_completed % checkpoint_interval) != 0:
+            if extra_logging_mode == "experiment":
+                for item in extra_logging:
+                    extra_logging_set[item] = extra_logging_set[item][-1]  # last successful step only
             save_ckpt(
                 train_out,
                 step=epochs_completed + epochs_completed_prior,
                 model_state=model.state_dict(),
                 optimizer_state=optimizer.state_dict(),
-                extra={'param_hist': param_hist, 'actual_params': actual_params, 'loss_list': loss_list}, 
+                extra=extra_logging_set, 
                 keep_last=1, 
                 milestone_every=10000
             )
