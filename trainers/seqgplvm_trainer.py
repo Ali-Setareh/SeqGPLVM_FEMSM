@@ -49,8 +49,11 @@ def train_seqgplvm(df: pd.DataFrame,
                    standardize_covariates: bool = True,
                    resume_mode: str = "auto", # "auto" | "yes" | "no"
                    extra_logging: list[str] = ["loss_list", "param_hist", "actual_params"], #  "loss" | "param_hist" | "actual_params"
-                   extra_logging_mode: Literal['experiment', 'diagnose'] = 'experiment'
+                   extra_logging_mode: Literal['experiment', 'diagnose'] = 'experiment', 
+                   train_id: str | None = None, 
+                   train_cfg_identity: dict | None = None,
                    ):
+    
 
     X,A,id2row = get_training_tensors(df,
                                       id_col=pid_col,
@@ -130,36 +133,37 @@ def train_seqgplvm(df: pd.DataFrame,
     final_root.mkdir(parents=True, exist_ok=True)
     scratch_root = final_root
 
+    if train_id is None:
+        print("Warning: train_id is not provided, a new one will be generated based on the training configuration.")
+        # build a compact training config dict that determines the training identity
+        _train_cfg_identity = {
+            "N": X_train.size(0),
+            "T": X_train.size(1),
+            "C": X_train.size(2),
+            "latent_dim": latent_dim,
+            "num_inducing": num_inducing,
+            "num_inducing_hidden": num_inducing_hidden,
+            "treatment_lag": treatment_lag,
+            "treatment_model": class_to_id(treatment_model),
+            "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
+            "z_prior": z_prior,
+            "z_initializer": z_initializer,
+            "learn_inducing_locations": learn_inducing_locations,
+            "use_titsias": use_titsias,
+            "lr": optimize_hyperparams["lr"], 
+            "x_standardize": standardize_covariates
+        }
 
-    # build a compact training config dict that determines the training identity
-    _train_cfg_identity = {
-        "N": X_train.size(0),
-        "T": X_train.size(1),
-        "C": X_train.size(2),
-        "latent_dim": latent_dim,
-        "num_inducing": num_inducing,
-        "num_inducing_hidden": num_inducing_hidden,
-        "treatment_lag": treatment_lag,
-        "treatment_model": class_to_id(treatment_model),
-        "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
-        "z_prior": z_prior,
-        "z_initializer": z_initializer,
-        "learn_inducing_locations": learn_inducing_locations,
-        "use_titsias": use_titsias,
-        "lr": optimize_hyperparams["lr"], 
-        "x_standardize": standardize_covariates
-    }
+        if z_initializer == "uniform":
+            _train_cfg_identity["uniform_halfwidth"] = uniform_halfwidth
+        elif z_initializer == "normal":
+            _train_cfg_identity["prior_std"] = prior_std
 
-    if z_initializer == "uniform":
-        _train_cfg_identity["uniform_halfwidth"] = uniform_halfwidth
-    elif z_initializer == "normal":
-        _train_cfg_identity["prior_std"] = prior_std
-
-    train_id = make_train_id(
-        data_run_id=data_run_id,
-        model_name=model_name,
-        train_cfg=_train_cfg_identity,
-    )
+        train_id = make_train_id(
+            data_run_id=data_run_id,
+            model_name=model_name,
+            train_cfg=_train_cfg_identity,
+        )
 
     #project_root = Path(".")
     project_root = scratch_root                     

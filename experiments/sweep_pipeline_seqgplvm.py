@@ -5,10 +5,16 @@ from utils.training import dump_train_cfg_json
 from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
 import numpy as np 
 import pandas as pd
+from utils.training import dump_train_cfg_json
+from utils.checkpoints import make_train_id
+from utils.training import class_to_id, tensor_fingerprint
+
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
 
 dgp = "blackwell_yamauchi"
+
+model_name = "seqgplvm"
 
 df_runs = pd.read_parquet(Path(".")/"data"/"index"/"runs.parquet")
 for index, row in df_runs.iterrows():
@@ -22,8 +28,8 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 #rho = [50] #[5,10,50]  # n/T
 
 params_grid = {
-    "n": [500], #n = [200, 500, 1000, 3000],
-    "seed": [1],#list(df_runs.seed.unique()), 
+    "n": [200], #n = [200, 500, 1000, 3000],
+    "seed": [1,2],#list(df_runs.seed.unique()), 
     "a": [1], # a = [1,2]
     "p": [2], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
@@ -42,7 +48,7 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": False,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 5000},
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
     "checkpoint_interval": 200,
     "param_logging_freq": 50,
     "pid_col": "patient_id",
@@ -104,6 +110,37 @@ for combo in selected:
     dgp_cfg_path   = scratch / f"{stem}._data_tmp.json"
     dgp_mani_path  = scratch /f"{stem}._mani_tmp.json"
     train_cfg_path = scratch / f"{stem}._train_tmp.json"
+    train_cfg_identity_path = scratch / f"{stem}._train_id_tmp.json"
+
+    train_cfg_identity = {
+        "N": dgp_cfg["N"],
+        "T": dgp_cfg["T"],
+        "C": dgp_cfg["p"] + training_cfg["treatment_lag"],  # total covariates including lagged treatments
+        "latent_dim": training_cfg["latent_dim"],
+        "num_inducing": num_inducing[n],
+        "num_inducing_hidden": training_cfg["num_inducing_hidden"],
+        "treatment_lag": training_cfg["treatment_lag"],
+        "treatment_model": class_to_id(training_cfg["treatment_model"]),  
+        "init_z": training_cfg["init_z"],  
+        "z_prior": z_prior,
+        "z_initializer": training_cfg["z_initializer"],
+        "learn_inducing_locations": training_cfg["learn_inducing_locations"],
+        "use_titsias": training_cfg["use_titsias"],
+        "lr": training_cfg["optimize_hyperparams"]["lr"],
+        "x_standardize": training_cfg["x_standardize"],
+    }
+    if training_cfg["z_initializer"] == "uniform":
+        train_cfg_identity["uniform_halfwidth"] = training_cfg["uniform_halfwidth"]
+    elif training_cfg["z_initializer"] == "normal":
+        train_cfg_identity["prior_std"] = training_cfg["prior_std"]
+    
+    data_run_id = dgp_mani["run_id"]
+    train_id = make_train_id(
+        data_run_id=data_run_id,
+        model_name=model_name,
+        train_cfg=train_cfg_identity,
+    )
+    training_cfg["train_id"] = train_id
 
     try:
         dgp_cfg_path.write_text(json.dumps(dgp_cfg))
@@ -112,11 +149,13 @@ for combo in selected:
         training_cfg["num_inducing"] = num_inducing[n]
         training_cfg["z_prior"] = z_prior
         dump_train_cfg_json(train_cfg_path, training_cfg)
+        dump_train_cfg_json(train_cfg_identity_path, train_cfg_identity)
 
         run([
             "python", "-m", "experiments.pipeline_seqgplvm",
             "--dgp_config",   str(dgp_cfg_path),
             "--dgp_manifest", str(dgp_mani_path),
+            "--train_cfg_identity", str(train_cfg_identity_path),
             "--config", str(train_cfg_path),
             "--device", device
         ])

@@ -15,6 +15,8 @@ def main():
     parser.add_argument("--dgp_manifest", type=Path, required=True)
     parser.add_argument("--config", type=Path, required=True,
                         help="Training config JSON for SeqGPLVM")
+    parser.add_argument("--train_cfg_identity", type=Path, required=True,
+                        help="Training config identity JSON for SeqGPLVM")
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
 
@@ -22,8 +24,9 @@ def main():
     # 0) Get train_id from the *same* training config you already use
     # ------------------------------------------------------------------
     train_cfg = load_train_cfg_from_json(args.config)
-    train_cfg = materialize_cfg(train_cfg)
+    train_cfg = materialize_cfg(train_cfg, device=args.device)
     train_id = train_cfg["train_id"]
+    
 
     # ------------------------------------------------------------------
     # 1) TRAIN
@@ -34,7 +37,8 @@ def main():
         "--dgp_config",   str(args.dgp_config),
         "--dgp_manifest", str(args.dgp_manifest),
         "--config",       str(args.config),
-        "--device",       args.device,
+        "--train_cfg_identity", str(args.train_cfg_identity),
+        "--device",       args.device
     ])
     print(f"[{train_id}] Training done.")
 
@@ -45,7 +49,7 @@ def main():
 
     val_cfg = {
         "train_id": train_id,
-        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 1000},
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 100},
         "checkpoint_interval": 200,
         "param_logging_freq": 50,
         "resume_mode": "no",

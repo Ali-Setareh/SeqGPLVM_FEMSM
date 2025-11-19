@@ -11,9 +11,16 @@ def main():
     p.add_argument("--dgp_manifest", required=False)
     p.add_argument("--load_saved_data", required=False, action="store_true")
     p.add_argument("--config", required=True)
+    p.add_argument("--train_cfg_identity", required=False)
     p.add_argument("--device", default="auto", choices=["auto","cpu","cuda"])
     args = p.parse_args()
     
+    if args.train_cfg_identity is not None:
+        train_cfg_identity = load_train_cfg_from_json(args.train_cfg_identity)
+        train_cfg_identity = materialize_cfg(train_cfg_identity, device=args.device)
+    else:
+        train_cfg_identity = None
+
     data_path = Path(args.dgp_config)
     manifest_path = Path(args.dgp_manifest) if args.dgp_manifest else None
 
@@ -31,6 +38,8 @@ def main():
     train_cfg = Path(args.config)
     cfg = load_train_cfg_from_json(train_cfg)  # <-- replaces the yaml/json manual load
     cfg = materialize_cfg(cfg, args.device)  # <-- ensures all objects are in place
+
+    
     
     device = torch.device("cuda" if (args.device == "auto" and torch.cuda.is_available()) else (args.device if args.device!="auto" else "cpu"))
 
@@ -57,7 +66,9 @@ def main():
         param_logging_freq=cfg.get("param_logging_freq", 50),
         resume_mode=cfg.get("resume_mode", "auto"),
         extra_logging=cfg.get("extra_logging", []),
-        extra_logging_mode=cfg.get("extra_logging_mode", "experiment")
+        extra_logging_mode=cfg.get("extra_logging_mode", "experiment"), 
+        train_id=cfg.get("train_id", None),
+        train_cfg_identity=train_cfg_identity
     )
 
 if __name__ == "__main__":
