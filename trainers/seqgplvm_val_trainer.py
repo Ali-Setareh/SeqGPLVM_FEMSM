@@ -188,7 +188,7 @@ def train_seqgplvm_val(train_id: str,
         epochs_completed_prior = get_epochs_completed_prior(val_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
-    print(f"\n Validation training for DGP with paramters: \n {df_manifest} \n on device {device} with train_id {train_id}\n")
+    print(f"\n Validation training for DGP with paramters:  \n on device {device} with train_id {train_id}\n")
 
     extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
     extra_logging_set = {item: extra_logging_map[item] for item in extra_logging}

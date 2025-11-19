@@ -51,9 +51,8 @@ def train_seqgplvm(df: pd.DataFrame,
                    extra_logging: list[str] = ["loss_list", "param_hist", "actual_params"], #  "loss" | "param_hist" | "actual_params"
                    extra_logging_mode: Literal['experiment', 'diagnose'] = 'experiment', 
                    train_id: str | None = None, 
-                   train_cfg_identity: dict | None = None,
-                   ):
-    
+                   _train_cfg_identity: dict | None = None
+                     ):
 
     X,A,id2row = get_training_tensors(df,
                                       id_col=pid_col,
@@ -164,6 +163,10 @@ def train_seqgplvm(df: pd.DataFrame,
             model_name=model_name,
             train_cfg=_train_cfg_identity,
         )
+    
+    else:
+        _train_cfg_identity["treatment_model"] = class_to_id(treatment_model)
+        _train_cfg_identity["init_z"] = tensor_fingerprint(init_z) if init_z is not None else None
 
     #project_root = Path(".")
     project_root = scratch_root                     
@@ -228,7 +231,7 @@ def train_seqgplvm(df: pd.DataFrame,
         epochs_completed_prior = get_epochs_completed_prior(train_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
-    print(f"\n Training for DGP with paramters: \n {df_meta_data} \n on device {device} with train_id: {train_id}\n")
+    print(f"\n Training for DGP with paramters:  \n on device {device} with train_id: {train_id}\n")
 
     if standardize_covariates:
         stdzr_params = stdzr.to_dict()

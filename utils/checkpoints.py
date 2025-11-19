@@ -294,7 +294,7 @@ def latest_checkpoint_path(run_dir: Path) -> Path | None:
     return max(cands, key=key)
 
 def load_checkpoint(ckpt_path: Path, map_location="cpu"):
-    payload = torch.load(ckpt_path, map_location=map_location)
+    payload = torch.load(ckpt_path, map_location=map_location, weights_only=False)
     return payload  # contains model_state, optimizer_state, maybe "extra"
 
 def load_ckpt_any(p: Path, map_location=None, *, keep_temp=False):
@@ -310,7 +310,7 @@ def load_ckpt_any(p: Path, map_location=None, *, keep_temp=False):
                 tmp.write(dctx.decompress(fh.read()))
                 tmp_path = tmp.name
         try:
-            return torch.load(tmp_path, map_location=map_location)
+            return torch.load(tmp_path, map_location=map_location, weights_only=False)
         finally:
             if not keep_temp:
                 os.remove(tmp_path)
@@ -320,7 +320,7 @@ def load_ckpt_any(p: Path, map_location=None, *, keep_temp=False):
             tmp.write(fh.read())
             tmp_path = tmp.name
         try:
-            return torch.load(tmp_path, map_location=map_location)
+            return torch.load(tmp_path, map_location=map_location, weights_only=False)
         finally:
             if not keep_temp:
                 os.remove(tmp_path)

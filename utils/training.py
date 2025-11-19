@@ -68,7 +68,7 @@ def load_train_cfg_from_json(path: Path, device: str | torch.device = "cpu") -> 
     # file reference -> tensor
     iz = cfg.get("init_z")
     if isinstance(iz, dict) and "path" in iz:
-        cfg["init_z"] = torch.load(iz["path"], map_location=device)
+        cfg["init_z"] = torch.load(iz["path"], map_location=device, weights_only=False)
     return cfg
 
 def resolve_treatment_model(spec):
@@ -86,7 +86,7 @@ def materialize_cfg(cfg: dict, device: torch.device) -> dict:
     # {"path": "..."} -> tensor
     iz = cfg.get("init_z")
     if isinstance(iz, dict) and "path" in iz:
-        cfg["init_z"] = torch.load(iz["path"], map_location=device)
+        cfg["init_z"] = torch.load(iz["path"], map_location=device, weights_only=False)
     return cfg
 
 def _safe_write_json(path: Path, obj: dict):
