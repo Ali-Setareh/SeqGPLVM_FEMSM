@@ -9,13 +9,13 @@ def run(cmd): subprocess.run(cmd, check=True)
 
 def main():
     cfg = {
-        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 2000},
-        "checkpoint_interval": 2000,
-        "param_logging_freq": 500,
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 1000},
+        "checkpoint_interval": 200,
+        "param_logging_freq": 50,
         "resume_mode": "no",
         "load_data": False, 
-        "extra_logging": ["loss_list"],
-        "extra_logging_mode": "experiment"
+        "extra_logging": ["loss_list", "param_hist"],
+        "extra_logging_mode": "diagnose"
         }
     
     df = pd.read_parquet(INDEX_PATH)
@@ -23,7 +23,7 @@ def main():
     validated_ids = set(df.loc[df["model"] == "seqgplvm_val", "train_id"].unique())
     to_validate = sorted(train_ids - validated_ids)
     #################
-    to_validate = ["ceeafe5a10"]  # TEMPORARY LIMIT FOR TESTING
+    to_validate = ["54ecbe1f75"]  # TEMPORARY LIMIT FOR TESTING
     #################
     if not to_validate:
         print("Nothing to do — all training runs already have seqgplvm_val.")
