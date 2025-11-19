@@ -114,7 +114,7 @@ for combo in selected:
         dump_train_cfg_json(train_cfg_path, training_cfg)
 
         run([
-            "python", "-m", "experiments.train_seqgplvm",
+            "python", "-m", "experiments.pipeline_seqgplvm",
             "--dgp_config",   str(dgp_cfg_path),
             "--dgp_manifest", str(dgp_mani_path),
             "--config", str(train_cfg_path),
