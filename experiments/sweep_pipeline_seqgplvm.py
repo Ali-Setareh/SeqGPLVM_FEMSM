@@ -29,9 +29,9 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
-    "seed": [1,2],#list(df_runs.seed.unique()), 
-    "a": [1], # a = [1,2]
-    "p": [2], # p = [2,4]
+    "seed": [1],#list(df_runs.seed.unique()), 
+    "a": [1,2], # a = [1,2]
+    "p": [2,4], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
 }
 
@@ -49,7 +49,7 @@ training_cfg = {
     "learn_inducing_locations": False,
     "use_titsias": False,
     "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
-    "checkpoint_interval": 200,
+    "checkpoint_interval": 2000,
     "param_logging_freq": 50,
     "pid_col": "patient_id",
     "time_col": "t",
@@ -58,7 +58,7 @@ training_cfg = {
     "x_standardize": True,
     "resume_mode": "no",
     "extra_logging": ["loss_list", "param_hist"], 
-    "extra_logging_mode": "diagnose"
+    "extra_logging_mode": "experiment"
 }
 
 

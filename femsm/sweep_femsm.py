@@ -41,4 +41,6 @@ for index,rows in df_runs.iterrows():
     
 
 results = pd.concat(all_rows, ignore_index=True)
-results.to_csv("results/msm/fe_msm_results.csv", index=False)
+out_dir = Path("results") / "msm"
+out_dir.mkdir(parents=True, exist_ok=True) 
+results.to_csv(out_dir / "fe_msm_results.csv", index=False)

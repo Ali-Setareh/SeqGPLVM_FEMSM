@@ -261,4 +261,25 @@ def propensity_seqgplvm(train_id: str,
 
     out_path = propensity_dir_out / f"loggps_{train_id}.pt"
     torch.save(payload, out_path)
+    try:
+        import zstandard as zstd
+        def _compress(p: Path):
+            out = p.with_suffix(p.suffix + ".zst")     # .pt.zst
+            tmp = out.with_suffix(out.suffix + ".tmp") # .zst.tmp
+            c = zstd.ZstdCompressor(level=19)
+            with open(p, "rb") as fin, open(tmp, "wb") as fout:
+                fout.write(c.compress(fin.read()))
+            os.replace(tmp, out)
+            p.unlink()
+    except Exception:
+        import gzip, shutil
+        def _compress(p: Path):
+            out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
+            tmp = out.with_suffix(out.suffix + ".tmp") # .gz.tmp
+            with open(p, "rb") as fin, gzip.open(tmp, "wb") as fout:
+                shutil.copyfileobj(fin, fout)
+            os.replace(tmp, out)
+            p.unlink()
+    _compress(out_path)
+
     print(f"Saved log–GPS tensor to: {out_path}  shape={tuple(loggps_all.shape)}")
