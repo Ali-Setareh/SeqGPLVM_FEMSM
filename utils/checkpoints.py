@@ -7,6 +7,9 @@ import hashlib
 import torch 
 import re
 import tempfile
+from typing import Union
+
+
 
 def canonicalize(obj) -> str:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -258,26 +261,30 @@ def find_train(
             df = df[df[k] == v]
     return df
 
-def upsert_training_index(root: str | Path, row: dict):
+def upsert_training_index(root: Union[str, Path], row: dict):
     """
-    Upsert (model, train_id) into data/index/training.parquet.
+    Upsert (model, train_id) into results/index/training.parquet.
     If a row exists for the same keys, replace it; otherwise append.
     """
     import pandas as pd
+    from filelock import FileLock
+
     idx_path = Path(root) / "results" / "index" / "training.parquet"
     idx_path.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = idx_path.with_suffix(idx_path.suffix + ".lock")
     new_df = pd.DataFrame([row])
 
-    if idx_path.exists():
-        df = pd.read_parquet(idx_path)
-        mask = (df["model"] == row["model"]) & (df["train_id"] == row["train_id"])
-        df = df[~mask]
-        df = pd.concat([df, new_df], ignore_index=True)
-    else:
-        df = new_df
+    with FileLock(lock_path):
+        if idx_path.exists():
+            df = pd.read_parquet(idx_path)
+            mask = (df["model"] == row["model"]) & (df["train_id"] == row["train_id"])
+            df = df[~mask]
+            df = pd.concat([df, new_df], ignore_index=True)
+        else:
+            df = new_df
 
-    # optional: maintain one row per (model, train_id), keep latest
-    df.to_parquet(idx_path)
+        # optional: maintain one row per (model, train_id), keep latest
+        df.to_parquet(idx_path)
 
 ######### Loading Models #########
 import re 

@@ -29,7 +29,7 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
-    "seed": [1],#list(df_runs.seed.unique()), 
+    "seed": sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
     "a": [1,2], # a = [1,2]
     "p": [2,4], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented

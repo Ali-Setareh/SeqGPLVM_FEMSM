@@ -1,9 +1,19 @@
 from pathlib import Path
 import argparse, subprocess, json, os, tempfile
 
+import yaml
+
+from dgps import get_simulator
+from utils.pathing import as_path
 from utils.training import load_train_cfg_from_json, materialize_cfg
 from trainers.seqgplvm_propensity import propensity_seqgplvm
+import numpy as np
+import pandas as pd
 
+from rpy2.robjects import r, default_converter
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import pandas2ri
+from rpy2 import rinterface
 
 def run(cmd_list):
     subprocess.run(cmd_list, check=True)
@@ -85,13 +95,67 @@ def main():
     # ------------------------------------------------------------------
     print(f"[{train_id}] Computing propensity…")
 
-    propensity_seqgplvm(
+    propensity_scores  = propensity_seqgplvm(
         train_id=train_id,
         sample_count=100,
         load_data=False,
+        save_propensity=False,
     )
 
     print(f"[{train_id}] Propensity done.")
+
+    # ------------------------------------------------------------------
+    # 4) MSM ESTIMATION
+    # ------------------------------------------------------------------
+    data_path = Path(args.dgp_config)
+    manifest_path = Path(args.dgp_manifest) if args.dgp_manifest else None
+    data_cfg = yaml.safe_load(data_path.read_text()) if data_path.suffix in {".yml",".yaml"} else json.loads(data_path.read_text())
+    simulate = get_simulator(data_cfg["dgp"])
+    df = simulate(data_cfg)
+    manifest = yaml.safe_load(manifest_path.read_text()) if manifest_path.suffix in {".yml",".yaml"} else json.loads(manifest_path.read_text())
+    print(f"[{train_id}] Starting MSM estimation…")
+
+    P, T, S = propensity_scores.shape
+    arr = propensity_scores.detach().cpu().numpy().reshape(P*T, S)
+
+    # id columns
+    patient_id = np.repeat(np.arange(P), T)
+    t = np.tile(np.arange(1,T+1), P)
+
+    # build dataframe
+    batch_cols = [f"phat_batch_{i+1}" for i in range(S)]
+    propensity_df = pd.DataFrame(arr, columns=batch_cols)
+    propensity_df.insert(0, "t", t)
+    propensity_df.insert(0, "patient_id", patient_id)
+
+    df_phat = df.merge(propensity_df,on=["patient_id", "t"], how="inner")
+
+    df_phat["phat_mean"] = df_phat[batch_cols].mean(axis=1)
+    df_phat["phat_std"] = df_phat[batch_cols].std(axis=1)
+
+    tau_f = []
+    tau_c = []
+
+    k_last = manifest["params"].get("max_lag_d", 4)
+    a_val = manifest["params"].get("a", None)
+    data_id = manifest.get("run_id", None)
+    with open(as_path(manifest.get("split_file"))) as f:
+        train_ids = json.load(f)["train_ids"]
+    with open(as_path(manifest.get("split_file"))) as f:
+        val_ids = json.load(f)["val_ids"] + json.load(f)["test_ids"]
+    x_cols = [col for col in df_phat.columns if col.startswith("x")]
+
+    for i,batch in enumerate(batch_cols):
+        res_r_train = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
+        res_r_test = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
+
+        with localconverter(default_converter + pandas2ri.converter):
+            res_train_py = pandas2ri.rpy2py(res_r_train)
+            res_test_py  = pandas2ri.rpy2py(res_r_test)
+        
+
+        tau_f.append(res.params.D)
+        tau_c.append(res.params.lag_sum)
 
 
 if __name__ == "__main__":

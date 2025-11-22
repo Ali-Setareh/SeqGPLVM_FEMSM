@@ -24,6 +24,7 @@ def propensity_seqgplvm(train_id: str,
                         sample_count: int = 0,         # number of A samples to draw
                         sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
                         load_data: bool = True,
+                        save_propensity: bool = True # whether to save the propensity results
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -222,64 +223,69 @@ def propensity_seqgplvm(train_id: str,
     # an availability mask is handy downstream
     mask_all = ~torch.isnan(loggps_all)
 
-    # --- save once ------------------------------------------------------------
-    payload = {
-        "log_gps": loggps_all,        # (N_total, T)
-        "log_gps_samples_z_meaned": loggps_samples_all, # (S, N_total, T)
-        "mask": mask_all,             # (N_total, T, K)
-        "is_bernoulli": is_bernoulli,
-        # keep propensities only for binary (for convenience)
-        "propensity": prop_all,       # None or (N_total, T, K)
-        # (optional) store the z samples you used for reproducibility:
-        "z_star_train": z_star_train.cpu(),  # (K, Ntrain, Q)
-        "z_star_val":   z_star_val.cpu(),    # (K, Nval,   Q)
-        "meta": {
-            "train_id": train_id,
-            "K": K,
-            "T": T,
-            "N_total": N_total,
-            "N_train": len(train_rows),
-            "N_val":   len(val_rows),
-            "pid_col": pid_col,
-            "time_col": time_col,
-            "treatment_col": treatment_col,
-            "likelihood": type(model_base.likelihoods[0]).__name__,
-            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        },
-        # indexing helpers
-        "index": {
-            "row_by_pid": id2row,         # dict(pid -> row)
-            "train_rows": train_rows,
-            "val_rows":   val_rows,
-            "pids_train": [pid for pid in train_ids if pid in id2row],
-            "pids_val":   [pid for pid in test_val_ids if pid in id2row],
-        },
-    }
+    if  save_propensity:
 
-    if sample_count > 0:
-        payload["A_samples"] = A_samples_all  # (S, N_total, T, K)
+        # --- save once ------------------------------------------------------------
+        payload = {
+            "log_gps": loggps_all,        # (N_total, T)
+            "log_gps_samples_z_meaned": loggps_samples_all, # (S, N_total, T)
+            "mask": mask_all,             # (N_total, T, K)
+            "is_bernoulli": is_bernoulli,
+            # keep propensities only for binary (for convenience)
+            "propensity": prop_all,       # None or (N_total, T, K)
+            # (optional) store the z samples you used for reproducibility:
+            "z_star_train": z_star_train.cpu(),  # (K, Ntrain, Q)
+            "z_star_val":   z_star_val.cpu(),    # (K, Nval,   Q)
+            "meta": {
+                "train_id": train_id,
+                "K": K,
+                "T": T,
+                "N_total": N_total,
+                "N_train": len(train_rows),
+                "N_val":   len(val_rows),
+                "pid_col": pid_col,
+                "time_col": time_col,
+                "treatment_col": treatment_col,
+                "likelihood": type(model_base.likelihoods[0]).__name__,
+                "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            },
+            # indexing helpers
+            "index": {
+                "row_by_pid": id2row,         # dict(pid -> row)
+                "train_rows": train_rows,
+                "val_rows":   val_rows,
+                "pids_train": [pid for pid in train_ids if pid in id2row],
+                "pids_val":   [pid for pid in test_val_ids if pid in id2row],
+            },
+        }
 
-    out_path = propensity_dir_out / f"loggps_{train_id}.pt"
-    torch.save(payload, out_path)
-    try:
-        import zstandard as zstd
-        def _compress(p: Path):
-            out = p.with_suffix(p.suffix + ".zst")     # .pt.zst
-            tmp = out.with_suffix(out.suffix + ".tmp") # .zst.tmp
-            c = zstd.ZstdCompressor(level=19)
-            with open(p, "rb") as fin, open(tmp, "wb") as fout:
-                fout.write(c.compress(fin.read()))
-            os.replace(tmp, out)
-            p.unlink()
-    except Exception:
-        import gzip, shutil
-        def _compress(p: Path):
-            out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
-            tmp = out.with_suffix(out.suffix + ".tmp") # .gz.tmp
-            with open(p, "rb") as fin, gzip.open(tmp, "wb") as fout:
-                shutil.copyfileobj(fin, fout)
-            os.replace(tmp, out)
-            p.unlink()
-    _compress(out_path)
+        if sample_count > 0:
+            payload["A_samples"] = A_samples_all  # (S, N_total, T, K)
 
-    print(f"Saved log–GPS tensor to: {out_path}  shape={tuple(loggps_all.shape)}")
+        out_path = propensity_dir_out / f"loggps_{train_id}.pt"
+        torch.save(payload, out_path)
+        try:
+            import zstandard as zstd
+            def _compress(p: Path):
+                out = p.with_suffix(p.suffix + ".zst")     # .pt.zst
+                tmp = out.with_suffix(out.suffix + ".tmp") # .zst.tmp
+                c = zstd.ZstdCompressor(level=19)
+                with open(p, "rb") as fin, open(tmp, "wb") as fout:
+                    fout.write(c.compress(fin.read()))
+                os.replace(tmp, out)
+                p.unlink()
+        except Exception:
+            import gzip, shutil
+            def _compress(p: Path):
+                out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
+                tmp = out.with_suffix(out.suffix + ".tmp") # .gz.tmp
+                with open(p, "rb") as fin, gzip.open(tmp, "wb") as fout:
+                    shutil.copyfileobj(fin, fout)
+                os.replace(tmp, out)
+                p.unlink()
+        _compress(out_path)
+
+        print(f"Saved log–GPS tensor to: {out_path}  shape={tuple(loggps_all.shape)}")
+    
+    else: 
+        return prop_all

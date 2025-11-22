@@ -17,7 +17,7 @@ backup_jsonl = out_dir / "fe_msm_results_incremental.jsonl"
 #seed = 1 
 #df_runs_seed = df_runs[df_runs["seed"]==seed].reset_index(drop=True)
 all_rows = []
-with backup_jsonl.open("a", encoding="utf-8") as f:
+with backup_jsonl.open("a", encoding="utf-8") as backup_f:
     for index,rows in df_runs.iterrows():                     
         params = json.loads(json.loads(rows["config"]))
         mani = json.loads(rows["manifest"])
@@ -25,7 +25,7 @@ with backup_jsonl.open("a", encoding="utf-8") as f:
         df_sim = simulate(params)
 
         with open(Path(".") / mani["split_file"], "r", encoding="utf-8") as f:
-        split_data = json.load(f)
+            split_data = json.load(f)
 
         train_ids = split_data["train_ids"]              
         x_cols = [c for c in df_sim.columns if c.startswith("x")] 
@@ -42,8 +42,8 @@ with backup_jsonl.open("a", encoding="utf-8") as f:
         all_rows.append(row)
         row["seed"] = params.get("seed", None)
         print(F"{index}/{len(df_runs)}: N: {params.get('N', None)} , T: {params.get('T', None)} , a: {params.get('a', None)} , p: {params.get('p', None)}, seed: {params.get('seed', None)} done. \n {row}", end="\r")
-        row.to_json(f, orient="records", lines=True)
-        f.flush()
+        row.to_json(backup_f, orient="records", lines=True)
+        backup_f.flush()
     
 
 results = pd.concat(all_rows, ignore_index=True)
