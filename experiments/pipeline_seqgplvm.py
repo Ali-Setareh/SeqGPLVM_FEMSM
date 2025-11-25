@@ -133,29 +133,27 @@ def main():
     df_phat["phat_mean"] = df_phat[batch_cols].mean(axis=1)
     df_phat["phat_std"] = df_phat[batch_cols].std(axis=1)
 
-    tau_f = []
-    tau_c = []
+    
 
     k_last = manifest["params"].get("max_lag_d", 4)
     a_val = manifest["params"].get("a", None)
     data_id = manifest.get("run_id", None)
     with open(as_path(manifest.get("split_file"))) as f:
-        train_ids = json.load(f)["train_ids"]
-    with open(as_path(manifest.get("split_file"))) as f:
-        val_ids = json.load(f)["val_ids"] + json.load(f)["test_ids"]
+        splits = json.load(f)
+    train_ids = splits["train_ids"]
+    val_ids = splits["val_ids"] + splits["test_ids"]
+    
     x_cols = [col for col in df_phat.columns if col.startswith("x")]
 
     for i,batch in enumerate(batch_cols):
-        res_r_train = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
-        res_r_test = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
-
         with localconverter(default_converter + pandas2ri.converter):
+            res_r_train = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
+            res_r_test = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
             res_train_py = pandas2ri.rpy2py(res_r_train)
             res_test_py  = pandas2ri.rpy2py(res_r_test)
         
 
-        tau_f.append(res.params.D)
-        tau_c.append(res.params.lag_sum)
+       
 
 
 if __name__ == "__main__":
