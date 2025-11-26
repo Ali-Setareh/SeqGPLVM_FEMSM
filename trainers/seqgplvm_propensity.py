@@ -4,7 +4,7 @@ import gpytorch
 from utils.training import load_train_cfg_from_json, materialize_cfg
 from utils.checkpoints import latest_checkpoint_path, load_ckpt_any,train_dir, train_dir
 from utils.propensity import propensity_dir
-from utils.preprocessings import get_training_tensors
+from utils.preprocessings import get_training_tensors, split_monotone_ids
 import pandas as pd
 from utils.pathing import as_path
 from pathlib import Path
@@ -24,6 +24,7 @@ def propensity_seqgplvm(train_id: str,
                         sample_count: int = 0,         # number of A samples to draw
                         sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
                         load_data: bool = True,
+                        drop_monotone: bool = False,
                         save_propensity: bool = True # whether to save the propensity results
                        ):
     """
@@ -59,14 +60,17 @@ def propensity_seqgplvm(train_id: str,
         covariate_cols_prefix=covariate_cols_prefix,
         treatment_lag=train_conf["treatment_lag"],
     )
+
+    mono_path = train_out / "monotone_ids.json"
+    if mono_path.exists():
+        monotone_info = json.loads(mono_path.read_text(encoding="utf-8"))
+        variable_ids = set(monotone_info["variable"])
+    else:
+        monotone_info = split_monotone_ids(df, id_col=pid_col, treatment_col=treatment_col)
+        variable_ids = set(monotone_info["variable"])
     
     # prefer "val_ids" if present; fall back to "test_ids"
     train_ids = split.get("train_ids", [])
-    train_rows = [id2row[pid] for pid in train_ids if pid in id2row] 
-    X_train = X[train_rows].to(device)
-    A_train = A[train_rows].to(device)
-
-
 
     val_ids = split.get("val_ids", [])
     test_ids = split.get("test_ids", [])
@@ -74,8 +78,15 @@ def propensity_seqgplvm(train_id: str,
     if len(test_val_ids) == 0:
         raise ValueError("No val_ids or test_ids found in split file.")
     
+    if drop_monotone:
+        train_ids    = [pid for pid in train_ids    if pid in variable_ids]
+        test_val_ids = [pid for pid in test_val_ids if pid in variable_ids]
+    
+    train_rows = [id2row[pid] for pid in train_ids if pid in id2row] 
+    X_train = X[train_rows].to(device)
+    A_train = A[train_rows].to(device)
+    
     val_rows   = [id2row[pid] for pid in test_val_ids   if pid in id2row]
-
     X_val   = X[val_rows].to(device)
     A_val   = A[val_rows].to(device)
 
