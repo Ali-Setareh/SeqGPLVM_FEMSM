@@ -23,6 +23,8 @@ for index, row in df_runs.iterrows():
         df_runs.at[index, col] = dic.get(col, None)
 
 df_runs = df_runs[df_runs["dgp"]==dgp]
+df_runs = df_runs[df_runs["exclude_monotone"]==False].reset_index(drop=True)
+
 train_test_split = df_runs.loc[0,"train_test_ratio"]
 
 #rho = [50] #[5,10,50]  # n/T
@@ -58,7 +60,8 @@ training_cfg = {
     "x_standardize": True,
     "resume_mode": "no",
     "extra_logging": ["loss_list", "param_hist"], 
-    "extra_logging_mode": "experiment"
+    "extra_logging_mode": "experiment",
+    "drop_monotone": True # whether to drop monotone rows during training
 }
 
 
@@ -128,6 +131,7 @@ for combo in selected:
         "use_titsias": training_cfg["use_titsias"],
         "lr": training_cfg["optimize_hyperparams"]["lr"],
         "x_standardize": training_cfg["x_standardize"],
+        "drop_monotone": training_cfg["drop_monotone"],
     }
     if training_cfg["z_initializer"] == "uniform":
         train_cfg_identity["uniform_halfwidth"] = training_cfg["uniform_halfwidth"]

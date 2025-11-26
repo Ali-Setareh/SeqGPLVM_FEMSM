@@ -37,6 +37,11 @@ def main():
     train_cfg = materialize_cfg(train_cfg, device=args.device)
     train_id = train_cfg["train_id"]
     drop_monotone = train_cfg.get("drop_monotone", False)
+
+    # Where to save MSM results
+    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+    msm_dir = final_root / "results" / "msm" / "seqgplvm"
+    msm_dir.mkdir(parents=True, exist_ok=True)
     
 
     # ------------------------------------------------------------------
@@ -135,6 +140,7 @@ def main():
 
     df_phat["phat_mean"] = df_phat[batch_cols].mean(axis=1)
     df_phat["phat_std"] = df_phat[batch_cols].std(axis=1)
+    df_phat["train_id"] = train_id
 
     
 
@@ -147,13 +153,39 @@ def main():
     val_ids = splits["val_ids"] + splits["test_ids"]
     
     x_cols = [col for col in df_phat.columns if col.startswith("x")]
-
+    results = []
     for i,batch in enumerate(batch_cols):
         with localconverter(default_converter + pandas2ri.converter):
             res_r_train = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
             res_r_test = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
             res_train_py = pandas2ri.rpy2py(res_r_train)
             res_test_py  = pandas2ri.rpy2py(res_r_test)
+        
+        # Tag which subset this is (train vs val/test)
+        res_train_py["subset"] = "train"
+        res_test_py["subset"]  = "val"   # or "test" / "val+test", up to you
+        res_train_py["train_id"] = train_id
+        res_test_py["train_id"]  = train_id
+        # Also store whether this run dropped monotone units at the model stage
+        res_train_py["drop_monotone_model"] = drop_monotone
+        res_test_py["drop_monotone_model"]  = drop_monotone
+
+        # Add to list
+        results.append(res_train_py)
+        results.append(res_test_py)
+
+        if results:
+            msm_df = pd.concat(results, ignore_index=True)
+
+            final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+            msm_dir = final_root / "msm" / "seqgplvm"
+            msm_dir.mkdir(parents=True, exist_ok=True)
+
+            out_path = msm_dir / f"{train_id}_msm.parquet"
+            msm_df.to_parquet(out_path, index=False)
+            print(f"[{train_id}] Saved MSM results to {out_path} (n={len(msm_df)})")
+        else:
+            print(f"[{train_id}] WARNING: no MSM results collected.")
         
 
        
