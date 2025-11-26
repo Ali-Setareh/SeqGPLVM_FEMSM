@@ -18,6 +18,8 @@ from utils.inspectors import get_actuals_via_getters
 import time, sys, os, traceback, json 
 from utils.checkpoints import save_ckpt 
 from typing import Literal
+from utils.preprocessings import split_monotone_ids
+
 
 def train_seqgplvm_val(train_id: str,
                        pid_col: str = "patient_id",
@@ -31,7 +33,8 @@ def train_seqgplvm_val(train_id: str,
                        resume_mode: str = "auto",
                        load_data: bool = True, 
                        extra_logging: list = ["loss_list", "actual_params", "param_hist"], 
-                       extra_logging_mode: Literal["experiment", "model"] = "experiment"
+                       extra_logging_mode: Literal["experiment", "model"] = "experiment", 
+                       drop_monotone: bool = False
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -66,12 +69,18 @@ def train_seqgplvm_val(train_id: str,
         covariate_cols_prefix=covariate_cols_prefix,
         treatment_lag=train_conf["treatment_lag"],
     )
+
+    mono_path = train_out / "monotone_ids.json"
+    if mono_path.exists():
+        monotone_info = json.loads(mono_path.read_text(encoding="utf-8"))
+        variable_ids = set(monotone_info["variable"])
+    else:
+        monotone_info = split_monotone_ids(df, id_col=pid_col, treatment_col=treatment_col)
+        variable_ids = set(monotone_info["variable"])
     
     # prefer "val_ids" if present; fall back to "test_ids"
     train_ids = split.get("train_ids", [])
-    train_rows = [id2row[pid] for pid in train_ids if pid in id2row] 
-    X_train = X[train_rows].to(device)
-    A_train = A[train_rows].to(device)
+    
 
     val_ids = split.get("val_ids", [])
     test_ids = split.get("test_ids", [])
@@ -79,8 +88,17 @@ def train_seqgplvm_val(train_id: str,
     if len(test_val_ids) == 0:
         raise ValueError("No val_ids or test_ids found in split file.")
     
-    val_rows   = [id2row[pid] for pid in test_val_ids   if pid in id2row]
+    if drop_monotone:
+        train_ids    = [pid for pid in train_ids    if pid in variable_ids]
+        test_val_ids = [pid for pid in test_val_ids if pid in variable_ids]
 
+    val_rows   = [id2row[pid] for pid in test_val_ids  if pid in id2row]
+
+    train_rows = [id2row[pid] for pid in train_ids if pid in id2row] 
+    X_train = X[train_rows].to(device)
+    A_train = A[train_rows].to(device)
+
+    val_rows   = [id2row[pid] for pid in test_val_ids  if pid in id2row]
     X_val   = X[val_rows].to(device)
     A_val   = A[val_rows].to(device)
 

@@ -21,6 +21,7 @@ from utils.training import class_to_id, _update_manifest, tensor_fingerprint
 import time, traceback
 from typing import Literal
 from utils.preprocessings import FeatureStandardizer
+from utils.preprocessings import split_monotone_ids, save_json
 
 # to do : resume option for val trainer and check to see if everything works fine because I changed sth to be able to get a class as the treatment model and init z 
 # to do : also remove init z from the train identity 
@@ -48,10 +49,11 @@ def train_seqgplvm(df: pd.DataFrame,
                    param_logging_freq = 50,
                    standardize_covariates: bool = True,
                    resume_mode: str = "auto", # "auto" | "yes" | "no"
+                   drop_monotone: bool = False,
                    extra_logging: list[str] = ["loss_list", "param_hist", "actual_params"], #  "loss" | "param_hist" | "actual_params"
                    extra_logging_mode: Literal['experiment', 'diagnose'] = 'experiment', 
                    train_id: str | None = None, 
-                   _train_cfg_identity: dict | None = None
+                   _train_cfg_identity: dict | None = None, 
                      ):
 
     X,A,id2row = get_training_tensors(df,
@@ -65,8 +67,22 @@ def train_seqgplvm(df: pd.DataFrame,
     metadata_file_path = df_meta_data["split_file"]
     with open(as_path(metadata_file_path)) as f:
         train_ids = json.load(f)["train_ids"]
+    
+    # --- identify monotone vs variable-treatment units -----------------------
+    mono_path = train_out / "monotone_ids.json"
+    monotone_info = split_monotone_ids(
+        df, id_col=pid_col, treatment_col=treatment_col
+    )
+    save_json(monotone_info, mono_path)
 
-    train_rows = [id2row[pid] for pid in train_ids]
+    variable_ids = set(monotone_info["variable"])
+
+
+    if drop_monotone:
+        train_ids = [pid for pid in train_ids if pid in variable_ids]
+
+    train_rows = train_rows = [id2row[pid] for pid in train_ids if pid in id2row]
+    
     X_train = X[train_rows].to(device)
     A_train = A[train_rows].to(device)
     if standardize_covariates:
