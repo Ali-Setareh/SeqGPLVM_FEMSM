@@ -36,6 +36,7 @@ def main():
     train_cfg = load_train_cfg_from_json(args.config)
     train_cfg = materialize_cfg(train_cfg, device=args.device)
     train_id = train_cfg["train_id"]
+    drop_monotone = train_cfg.get("drop_monotone", False)
     
 
     # ------------------------------------------------------------------
@@ -66,6 +67,7 @@ def main():
         "load_data": False,
         "extra_logging": ["loss_list", "param_hist"],
         "extra_logging_mode": "experiment",
+        "drop_monotone": drop_monotone
     }
 
     tmp_root = os.environ.get("TMPDIR") or tempfile.gettempdir()
@@ -100,6 +102,7 @@ def main():
         sample_count=100,
         load_data=False,
         save_propensity=False,
+        drop_monotone=drop_monotone
     )
 
     print(f"[{train_id}] Propensity done.")

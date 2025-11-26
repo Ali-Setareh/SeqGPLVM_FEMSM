@@ -27,7 +27,8 @@ def main():
         resume_mode=cfg.get("resume_mode", "auto"),
         load_data=cfg.get("load_data", True),
         extra_logging=cfg.get("extra_logging", []),
-        extra_logging_mode=cfg.get("extra_logging_mode", "experiment")
+        extra_logging_mode=cfg.get("extra_logging_mode", "experiment"),
+        drop_monotone=cfg.get("drop_monotone", False)
 
     )
 

@@ -68,7 +68,8 @@ def main():
         extra_logging=cfg.get("extra_logging", []),
         extra_logging_mode=cfg.get("extra_logging_mode", "experiment"), 
         train_id=cfg.get("train_id", None),
-        _train_cfg_identity=train_cfg_identity
+        _train_cfg_identity=train_cfg_identity,
+        drop_monotone=cfg.get("drop_monotone", False)
     )
 
 if __name__ == "__main__":
