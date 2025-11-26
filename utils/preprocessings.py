@@ -103,3 +103,23 @@ def save_json(obj, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2)
+
+def split_monotone_ids(df: pd.DataFrame,
+                       id_col: str = "patient_id",
+                       treatment_col: str = "D"):
+    """
+    Split units into:
+      - always0: D_it == 0 for all t
+      - always1: D_it == 1 for all t
+      - variable: otherwise
+    Returns a dict of lists.
+    """
+    meanD = df.groupby(id_col)[treatment_col].mean()
+    always0 = meanD[meanD == 0].index.to_list()
+    always1 = meanD[meanD == 1].index.to_list()
+    variable = meanD[(meanD > 0) & (meanD < 1)].index.to_list()
+    return {
+        "always0": always0,
+        "always1": always1,
+        "variable": variable,
+    }
