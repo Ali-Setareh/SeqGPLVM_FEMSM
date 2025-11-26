@@ -28,7 +28,8 @@ def main():
         load_data=cfg.get("load_data", True),
         extra_logging=cfg.get("extra_logging", []),
         extra_logging_mode=cfg.get("extra_logging_mode", "experiment"),
-        drop_monotone=cfg.get("drop_monotone", False)
+        drop_monotone=cfg.get("drop_monotone", False), 
+        dgp_index_path=cfg.get("dgp_index_path", None)
 
     )
 

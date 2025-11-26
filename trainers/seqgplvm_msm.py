@@ -85,7 +85,7 @@ seqgplvm_msm_from_py <- function(df,
   df_msm <- dplyr::filter(df_fe, t == T_final)
 
   # metadata (grab from df if available)
-  training_id <- if ("training_id" %in% names(df)) unique(df$training_id)[1] else NA_character_
+  #training_id <- if ("training_id" %in% names(df)) unique(df$training_id)[1] else NA_character_
   seed        <- if ("seed"        %in% names(df)) unique(df$seed)[1]        else NA_integer_
 
   # numerator model: stabilized weights
@@ -187,7 +187,6 @@ seqgplvm_msm_from_py <- function(df,
 
   dplyr::tibble(
     data_id = data_id,
-    training_id = training_id,
     seed = seed,
     batch = propensity_scores_col,
     N = N, T = T_val, rho = rho,

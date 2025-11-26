@@ -14,6 +14,7 @@ from rpy2.robjects import r, default_converter
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects import pandas2ri
 from rpy2 import rinterface
+import trainers.seqgplvm_msm  # ensure R function is defined
 
 def run(cmd_list):
     subprocess.run(cmd_list, check=True)
@@ -37,6 +38,7 @@ def main():
     train_cfg = materialize_cfg(train_cfg, device=args.device)
     train_id = train_cfg["train_id"]
     drop_monotone = train_cfg.get("drop_monotone", False)
+    dgp_index_path = train_cfg.get("dgp_index_path", None)
 
     # Where to save MSM results
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
@@ -72,7 +74,8 @@ def main():
         "load_data": False,
         "extra_logging": ["loss_list", "param_hist"],
         "extra_logging_mode": "experiment",
-        "drop_monotone": drop_monotone
+        "drop_monotone": drop_monotone, # whether to drop monotone rows during validation same as training
+        "dgp_index_path": dgp_index_path
     }
 
     tmp_root = os.environ.get("TMPDIR") or tempfile.gettempdir()
@@ -107,7 +110,8 @@ def main():
         sample_count=100,
         load_data=False,
         save_propensity=False,
-        drop_monotone=drop_monotone
+        drop_monotone=drop_monotone,
+        dgp_index_path=dgp_index_path
     )
 
     print(f"[{train_id}] Propensity done.")
@@ -156,10 +160,9 @@ def main():
     results = []
     for i,batch in enumerate(batch_cols):
         with localconverter(default_converter + pandas2ri.converter):
-            res_r_train = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
-            res_r_test = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
-            res_train_py = pandas2ri.rpy2py(res_r_train)
-            res_test_py  = pandas2ri.rpy2py(res_r_test)
+            res_train_py = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
+            res_test_py = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
+            
         
         # Tag which subset this is (train vs val/test)
         res_train_py["subset"] = "train"
@@ -174,18 +177,18 @@ def main():
         results.append(res_train_py)
         results.append(res_test_py)
 
-        if results:
-            msm_df = pd.concat(results, ignore_index=True)
+    if results:
+        msm_df = pd.concat(results, ignore_index=True)
 
-            final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-            msm_dir = final_root / "msm" / "seqgplvm"
-            msm_dir.mkdir(parents=True, exist_ok=True)
+        final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+        msm_dir = final_root / "msm" / "seqgplvm"
+        msm_dir.mkdir(parents=True, exist_ok=True)
 
-            out_path = msm_dir / f"{train_id}_msm.parquet"
-            msm_df.to_parquet(out_path, index=False)
-            print(f"[{train_id}] Saved MSM results to {out_path} (n={len(msm_df)})")
-        else:
-            print(f"[{train_id}] WARNING: no MSM results collected.")
+        out_path = msm_dir / f"{train_id}_msm.parquet"
+        msm_df.to_parquet(out_path, index=False)
+        print(f"[{train_id}] Saved MSM results to {out_path} (n={len(msm_df)})")
+    else:
+        print(f"[{train_id}] WARNING: no MSM results collected.")
         
 
        

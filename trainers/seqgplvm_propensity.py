@@ -25,7 +25,8 @@ def propensity_seqgplvm(train_id: str,
                         sample_independent: bool = False,  # for Gaussian, sample factorized N(mu,var) instead of full MVN
                         load_data: bool = True,
                         drop_monotone: bool = False,
-                        save_propensity: bool = True # whether to save the propensity results
+                        save_propensity: bool = True, # whether to save the propensity results
+                        dgp_index_path: str = None
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -45,7 +46,12 @@ def propensity_seqgplvm(train_id: str,
         
         df = pd.read_parquet(as_path(data_ref["data_file"]) / "data.parquet")
     else: 
-        df_dgp_idx = pd.read_parquet(Path("./data/index/runs.parquet"))
+        if dgp_index_path is None:
+            print("No dgp_index_path provided, defaulting to './data/index/runs.parquet'")
+            dgp_index_path = as_path("./data/index/runs.parquet")
+        else:
+            dgp_index_path = as_path(dgp_index_path)
+        df_dgp_idx = pd.read_parquet(dgp_index_path)
         manifest = json.loads((train_out / "data_ref.json").read_text(encoding="utf-8"))
         data_config = json.loads(json.loads(df_dgp_idx[df_dgp_idx.run_id == manifest["data_run_id"]]["config"].iloc[0]))
         simulate = get_simulator(data_config["dgp"])

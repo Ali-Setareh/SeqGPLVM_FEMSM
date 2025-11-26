@@ -1,6 +1,7 @@
 from pathlib import Path
 import subprocess, os, json, tempfile   
 from itertools import product
+from utils.pathing import as_path
 from utils.training import dump_train_cfg_json
 from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
 import numpy as np 
@@ -16,7 +17,9 @@ dgp = "blackwell_yamauchi"
 
 model_name = "seqgplvm"
 
-df_runs = pd.read_parquet(Path(".")/"data"/"index"/"runs.parquet")
+dgp_index_path = as_path("./data/index/runs_monotone_included.parquet")
+
+df_runs = pd.read_parquet(dgp_index_path)
 for index, row in df_runs.iterrows():
     dic = json.loads(json.loads(row["config"]))
     for col in ["N", "T", "p", "a", "seed", "train_test_ratio","exclude_monotone"]:
@@ -31,7 +34,7 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
-    "seed": sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
+    "seed":[1,2], #sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
     "a": [1,2], # a = [1,2]
     "p": [2,4], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
@@ -61,7 +64,8 @@ training_cfg = {
     "resume_mode": "no",
     "extra_logging": ["loss_list", "param_hist"], 
     "extra_logging_mode": "experiment",
-    "drop_monotone": True # whether to drop monotone rows during training
+    "drop_monotone": True, # whether to drop monotone rows during training, 
+    "dgp_index_path": str(dgp_index_path)
 }
 
 

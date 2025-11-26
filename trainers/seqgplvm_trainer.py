@@ -68,6 +68,55 @@ def train_seqgplvm(df: pd.DataFrame,
     with open(as_path(metadata_file_path)) as f:
         train_ids = json.load(f)["train_ids"]
     
+    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
+    final_root.mkdir(parents=True, exist_ok=True)
+    scratch_root = final_root
+
+    # derive a dataset ID from params 
+    model_name = "seqgplvm"
+    data_run_id = df_meta_data.get("run_id") 
+
+    if train_id is None:
+        print("Warning: train_id is not provided, a new one will be generated based on the training configuration.")
+        # build a compact training config dict that determines the training identity
+        _train_cfg_identity = {
+            "N": X_train.size(0),
+            "T": X_train.size(1),
+            "C": X_train.size(2),
+            "latent_dim": latent_dim,
+            "num_inducing": num_inducing,
+            "num_inducing_hidden": num_inducing_hidden,
+            "treatment_lag": treatment_lag,
+            "treatment_model": class_to_id(treatment_model),
+            "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
+            "z_prior": z_prior,
+            "z_initializer": z_initializer,
+            "learn_inducing_locations": learn_inducing_locations,
+            "use_titsias": use_titsias,
+            "lr": optimize_hyperparams["lr"], 
+            "x_standardize": standardize_covariates, 
+            "drop_monotone": drop_monotone,
+        }
+
+        if z_initializer == "uniform":
+            _train_cfg_identity["uniform_halfwidth"] = uniform_halfwidth
+        elif z_initializer == "normal":
+            _train_cfg_identity["prior_std"] = prior_std
+
+        train_id = make_train_id(
+            data_run_id=data_run_id,
+            model_name=model_name,
+            train_cfg=_train_cfg_identity,
+        )
+    
+    else:
+        _train_cfg_identity["treatment_model"] = class_to_id(treatment_model)
+        _train_cfg_identity["init_z"] = tensor_fingerprint(init_z) if init_z is not None else None
+
+    #project_root = Path(".")
+    project_root = scratch_root                     
+    train_out = train_dir(project_root, model_name, train_id)
+    
     # --- identify monotone vs variable-treatment units -----------------------
     mono_path = train_out / "monotone_ids.json"
     monotone_info = split_monotone_ids(
@@ -140,54 +189,7 @@ def train_seqgplvm(df: pd.DataFrame,
     actual_params = get_actuals_via_getters(model)
     actual_params = {key: [item] for key,item in actual_params.items()}
 
-    # derive a dataset ID from params 
-    data_run_id = df_meta_data.get("run_id") 
-    model_name = "seqgplvm"
-
-    final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-    final_root.mkdir(parents=True, exist_ok=True)
-    scratch_root = final_root
-
-    if train_id is None:
-        print("Warning: train_id is not provided, a new one will be generated based on the training configuration.")
-        # build a compact training config dict that determines the training identity
-        _train_cfg_identity = {
-            "N": X_train.size(0),
-            "T": X_train.size(1),
-            "C": X_train.size(2),
-            "latent_dim": latent_dim,
-            "num_inducing": num_inducing,
-            "num_inducing_hidden": num_inducing_hidden,
-            "treatment_lag": treatment_lag,
-            "treatment_model": class_to_id(treatment_model),
-            "init_z": tensor_fingerprint(init_z) if init_z is not None else None,
-            "z_prior": z_prior,
-            "z_initializer": z_initializer,
-            "learn_inducing_locations": learn_inducing_locations,
-            "use_titsias": use_titsias,
-            "lr": optimize_hyperparams["lr"], 
-            "x_standardize": standardize_covariates
-        }
-
-        if z_initializer == "uniform":
-            _train_cfg_identity["uniform_halfwidth"] = uniform_halfwidth
-        elif z_initializer == "normal":
-            _train_cfg_identity["prior_std"] = prior_std
-
-        train_id = make_train_id(
-            data_run_id=data_run_id,
-            model_name=model_name,
-            train_cfg=_train_cfg_identity,
-        )
     
-    else:
-        _train_cfg_identity["treatment_model"] = class_to_id(treatment_model)
-        _train_cfg_identity["init_z"] = tensor_fingerprint(init_z) if init_z is not None else None
-
-    #project_root = Path(".")
-    project_root = scratch_root                     
-    train_out = train_dir(project_root, model_name, train_id)
-
     # Fresh vs resume decision
     resume = False
     if resume_mode == "no":
