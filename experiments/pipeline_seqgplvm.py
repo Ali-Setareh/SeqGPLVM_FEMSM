@@ -42,7 +42,7 @@ def main():
 
     # Where to save MSM results
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-    msm_dir = final_root / "results" / "msm" / "seqgplvm"
+    msm_dir = final_root / "msm" / "seqgplvm"
     msm_dir.mkdir(parents=True, exist_ok=True)
     
 
@@ -179,10 +179,6 @@ def main():
 
     if results:
         msm_df = pd.concat(results, ignore_index=True)
-
-        final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
-        msm_dir = final_root / "msm" / "seqgplvm"
-        msm_dir.mkdir(parents=True, exist_ok=True)
 
         out_path = msm_dir / f"{train_id}_msm.parquet"
         msm_df.to_parquet(out_path, index=False)
