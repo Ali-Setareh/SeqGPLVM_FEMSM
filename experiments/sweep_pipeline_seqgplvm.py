@@ -9,6 +9,7 @@ import pandas as pd
 from utils.training import dump_train_cfg_json
 from utils.checkpoints import make_train_id
 from utils.training import class_to_id, tensor_fingerprint
+import argparse
 
 
 def run(cmd_list): subprocess.run(cmd_list, check=True)
@@ -34,7 +35,7 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
-    "seed":[1,2], #sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
+    "seed":sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
     "a": [1,2], # a = [1,2]
     "p": [2,4], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
@@ -53,7 +54,7 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": False,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 6000},
     "checkpoint_interval": 2000,
     "param_logging_freq": 50,
     "pid_col": "patient_id",
@@ -80,16 +81,33 @@ for n, seed, a, p, z_prior in product(*params_grid.values()):
     for t in df_runs[df_runs.N==n]["T"].drop_duplicates().sort_values():
         full_grid.append({"n": n, "seed": seed, "a": a, "p": p, "T": t, "z_prior": z_prior})
   
+# ---------------------------------------------------------
+# Parse optional chunk-size (how many configs per array task)
+# ---------------------------------------------------------
+parser = argparse.ArgumentParser()
+parser.add_argument("--chunk-size", type=int, default=1)
+args = parser.parse_args()
+chunk_size = args.chunk_size
+
 # Check if we are in a Slurm array
 task_id = os.environ.get("SLURM_ARRAY_TASK_ID")
+
 if task_id is None:
-    # Fallback: run all combos sequentially (as before)
+    # Local / non-Slurm: run everything
     selected = full_grid
 else:
-    idx = int(task_id) - 1  # Slurm arrays are 1-based
-    if not (0 <= idx < len(full_grid)):
-        raise SystemExit(f"Task id {task_id} out of range (grid size={len(full_grid)})")
-    selected = [full_grid[idx]]
+    # Use 0-based array indices: --array=0-(NUM_CHUNKS-1)
+    chunk_id = int(task_id)   # 0,1,2,...
+    start = chunk_id * chunk_size
+    end   = min(start + chunk_size, len(full_grid))
+
+    if start >= len(full_grid):
+        print(f"[sweep] chunk_id={chunk_id} start={start} >= grid size={len(full_grid)}; nothing to do.")
+        raise SystemExit(0)
+
+    selected = full_grid[start:end]
+    print(f"[sweep] chunk_id={chunk_id}, processing configs [{start}:{end}) of {len(full_grid)}")
+
 
 # Scratch selection: Slurm uses TMPDIR; local uses repo configs/ and deletes after run
 is_slurm = task_id is not None
@@ -104,6 +122,9 @@ else:
     scratch = Path("configs")
     scratch.mkdir(exist_ok=True)
     delete_after = True
+
+#print("GRID_SIZE =", len(full_grid))
+#raise SystemExit
 
 for combo in selected:
     n, seed, a, p, t, z_prior = int(combo["n"]), int(combo["seed"]), int(combo["a"]), int(combo["p"]), int(combo["T"]), combo["z_prior"]
