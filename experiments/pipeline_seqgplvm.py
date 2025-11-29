@@ -148,7 +148,7 @@ def main():
 
     
 
-    k_last = manifest["params"].get("max_lag_d", 4)
+    k_last = manifest["params"].get("max_lag_d", 4)+1
     a_val = manifest["params"].get("a", None)
     data_id = manifest.get("run_id", None)
     with open(as_path(manifest.get("split_file"))) as f:
