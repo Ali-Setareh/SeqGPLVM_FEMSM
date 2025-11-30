@@ -30,6 +30,7 @@ def seqgplvm_msm_from_py_py(
     # --- subset to train_ids & sort (R: filter + arrange(patient_id, t)) ------
     df_msm = df[df["patient_id"].isin(train_ids)].copy()
     df_msm = df_msm.sort_values(["patient_id", "t"]).reset_index(drop=True)
+    N = df_msm["patient_id"].nunique()
 
     # --- classify monotone vs variable-treatment units ------------------------
     meanD = df_msm.groupby("patient_id")["D"].mean()
@@ -61,6 +62,7 @@ def seqgplvm_msm_from_py_py(
 
 
     # denominator: SeqGPLVM propensities from given column (R: df_fe[[col]])
+    w_t_var_cols = {}
     for propensity_scores_col in propensity_scores_cols:
         p_hat_var = df_msm_var[propensity_scores_col].astype(float).to_numpy()
         p_hat_var = np.clip(p_hat_var, eps, 1.0 - eps)
@@ -70,7 +72,12 @@ def seqgplvm_msm_from_py_py(
 
         # IPTW weights for all periods
         w_t_var = per_period_w(df_msm_var["p_num"].to_numpy(), df_msm_var[propensity_scores_col].to_numpy(), D_all_var)
-        df_msm_var[f"w_t_{propensity_scores_col}"] = w_t_var
+        w_t_var_cols[f"w_t_{propensity_scores_col}"] = w_t_var
+    
+    df_msm_var  = pd.concat(
+        [df_msm_var, pd.DataFrame(w_t_var_cols)], axis=1
+    )
+
 
     # cumulative product weights by patient
     T_final = int(df_msm["t"].max())
@@ -78,9 +85,13 @@ def seqgplvm_msm_from_py_py(
     mask_lastk = (df_msm["t"] >= (T_final - (k_last - 1))) & (df_msm["t"] <= T_final)
     df_msm_var = df_msm_var.loc[mask_lastk, :]
 
+    w_comprod_cols = {}
     for propensity_scores_col in propensity_scores_cols:
-        df_msm_var[f"w_cumprod_{propensity_scores_col}"] = df_msm_var.groupby("patient_id")[f"w_t_{propensity_scores_col}"].cumprod()
+        w_comprod_cols[f"w_cumprod_{propensity_scores_col}"] = df_msm_var.groupby("patient_id")[f"w_t_{propensity_scores_col}"].cumprod()
 
+    df_msm_var = pd.concat(
+        [df_msm_var, pd.DataFrame(w_comprod_cols)], axis=1
+    )
 
     df_msm_var = df_msm_var[df_msm_var.t == T_final]
 
@@ -119,27 +130,29 @@ def seqgplvm_msm_from_py_py(
         res = model.fit(cov_type="HC2")
         return res
     
-    results = {}
+    results = {"batch_id": []}
     items = ["tau_f_seqgplvm", "tau_c_seqgplvm", "tau_f_seqgplvm_se", "tau_c_seqgplvm_se",
              "tau_f_seqgplvm_imp", "tau_c_seqgplvm_imp", "tau_f_seqgplvm_se_imp", "tau_c_seqgplvm_se_imp"]
     for item in items:
-        for col in propensity_scores_cols:
-            results[f"{item}_{col}"] = np.nan
+        results[item] = []
+    
+
 
     for propensity_scores_col in propensity_scores_cols:
 
         res_fe_var = fit_wls(df_msm_var, f"w_cumprod_{propensity_scores_col}") 
  
         # extract coefficients & SEs (like R code)
-        results[f"tau_f_seqgplvm_{propensity_scores_col}"] = res_fe_var.params["D"]
-        results[f"tau_c_seqgplvm_{propensity_scores_col}"] = res_fe_var.params["lag_sum3"]
-        results[f"tau_f_seqgplvm_se_{propensity_scores_col}"] = res_fe_var.bse["D"]
-        results[f"tau_c_seqgplvm_se_{propensity_scores_col}"] = res_fe_var.bse["lag_sum3"]
+        results["batch_id"].append(propensity_scores_col)
+        results[f"tau_f_seqgplvm"].append(res_fe_var.params["D"])
+        results[f"tau_c_seqgplvm"].append(res_fe_var.params["lag_sum3"])
+        results[f"tau_f_seqgplvm_se"].append(res_fe_var.bse["D"])
+        results[f"tau_c_seqgplvm_se"].append(res_fe_var.bse["lag_sum3"])
         
-        results[f"tau_f_seqgplvm_imp_{propensity_scores_col}"] = res_fe_var.params["D"]
-        results[f"tau_c_seqgplvm_imp_{propensity_scores_col}"] = res_fe_var.params["lag_sum3"]
-        results[f"tau_f_seqgplvm_se_imp_{propensity_scores_col}"] = res_fe_var.bse["D"]
-        results[f"tau_c_seqgplvm_se_imp_{propensity_scores_col}"] = res_fe_var.bse["lag_sum3"]
+        results[f"tau_f_seqgplvm_imp"].append(res_fe_var.params["D"])
+        results[f"tau_c_seqgplvm_imp"].append(res_fe_var.params["lag_sum3"])
+        results[f"tau_f_seqgplvm_se_imp"].append(res_fe_var.bse["D"])
+        results[f"tau_c_seqgplvm_se_imp"].append(res_fe_var.bse["lag_sum3"])
         
 
         # combine always0, always1, variable back for the regression with imputation
@@ -152,26 +165,20 @@ def seqgplvm_msm_from_py_py(
             df_msm_imp = pd.concat([df_msm_var, df_msm_always0, df_msm_always1]).sort_values(["patient_id", "t"]).reset_index(drop=True)
             res_fe_imp = fit_wls(df_msm_imp, f"w_cumprod_{propensity_scores_col}")
 
-            results[f"tau_f_seqgplvm_imp_{propensity_scores_col}"] = res_fe_imp.params["D"]
-            results[f"tau_c_seqgplvm_imp_{propensity_scores_col}"] = res_fe_imp.params["lag_sum3"]
-            results[f"tau_f_seqgplvm_se_imp_{propensity_scores_col}"] = res_fe_imp.bse["D"]
-            results[f"tau_c_seqgplvm_se_imp_{propensity_scores_col}"] = res_fe_imp.bse["lag_sum3"]
-    
-    
-    out = {}
-    for key, val in results.items():
-        out[key] = val 
+            results[f"tau_f_seqgplvm_imp"][-1] = res_fe_imp.params["D"]
+            results[f"tau_c_seqgplvm_imp"][-1] = res_fe_imp.params["lag_sum3"]
+            results[f"tau_f_seqgplvm_se_imp"][-1] = res_fe_imp.bse["D"]
+            results[f"tau_c_seqgplvm_se_imp"][-1] = res_fe_imp.bse["lag_sum3"]
     
     
     # --- metadata ------------------------------------------------------------
-    N = df["patient_id"].nunique()
     T_val = T_final
     rho = int(N / T_val) if T_val > 0 else np.nan
     p_count = len(x_cols)
     out = pd.DataFrame(
-        [
+        
             {
-                **out,
+                **results,
                 "data_id": data_id,
                 "a": a_val,
                 "N": N,
@@ -181,7 +188,7 @@ def seqgplvm_msm_from_py_py(
                 "always0": len(always0_pids),
                 "always1": len(always1_pids)
             }
-        ]
+        
     )
     return out
 
