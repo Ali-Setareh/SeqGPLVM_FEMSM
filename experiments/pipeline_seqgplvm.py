@@ -10,11 +10,14 @@ from trainers.seqgplvm_propensity import propensity_seqgplvm
 import numpy as np
 import pandas as pd
 
-from rpy2.robjects import r, default_converter
-from rpy2.robjects.conversion import localconverter
-from rpy2.robjects import pandas2ri
-from rpy2 import rinterface
-import trainers.seqgplvm_msm_r  # ensure R function is defined
+#from rpy2.robjects import r, default_converter
+#from rpy2.robjects.conversion import localconverter
+#from rpy2.robjects import pandas2ri
+#from rpy2 import rinterface
+#import trainers.seqgplvm_msm_r  # ensure R function is defined
+
+from trainers.seqgplvm_msm_py import seqgplvm_msm_from_py_py
+
 
 def run(cmd_list):
     subprocess.run(cmd_list, check=True)
@@ -67,7 +70,7 @@ def main():
 
     val_cfg = {
         "train_id": train_id,
-        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 4000},
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 100},
         "checkpoint_interval": 2000,
         "param_logging_freq": 50,
         "resume_mode": "no",
@@ -157,34 +160,30 @@ def main():
     val_ids = splits["val_ids"] + splits["test_ids"]
     
     x_cols = [col for col in df_phat.columns if col.startswith("x")]
-    results = []
-    for i,batch in enumerate(batch_cols):
-        with localconverter(default_converter + pandas2ri.converter):
-            res_train_py = r["seqgplvm_msm_from_py"](df_phat, train_ids, batch, k_last, a_val, data_id, x_cols)
-            res_test_py = r["seqgplvm_msm_from_py"](df_phat, val_ids, batch, k_last, a_val, data_id, x_cols)
+    
+    res_train_py = seqgplvm_msm_from_py_py(df_phat, train_ids, batch_cols, k_last, a_val, data_id, x_cols)
+    res_test_py = seqgplvm_msm_from_py_py(df_phat, val_ids, batch_cols, k_last, a_val, data_id, x_cols)
             
         
-        # Tag which subset this is (train vs val/test)
-        res_train_py["subset"] = "train"
-        res_test_py["subset"]  = "val"   # or "test" / "val+test", up to you
-        res_train_py["train_id"] = train_id
-        res_test_py["train_id"]  = train_id
-        # Also store whether this run dropped monotone units at the model stage
-        res_train_py["drop_monotone_model"] = drop_monotone
-        res_test_py["drop_monotone_model"]  = drop_monotone
+    # Tag which subset this is (train vs val/test)
+    res_train_py["subset"] = "train"
+    res_test_py["subset"]  = "val"   # or "test" / "val+test", up to you
+    res_train_py["train_id"] = train_id
+    res_test_py["train_id"]  = train_id
+    # Also store whether this run dropped monotone units at the model stage
+    res_train_py["drop_monotone_model"] = drop_monotone
+    res_test_py["drop_monotone_model"]  = drop_monotone
 
-        # Add to list
-        results.append(res_train_py)
-        results.append(res_test_py)
+    
 
-    if results:
-        msm_df = pd.concat(results, ignore_index=True)
+    if not res_train_py.empty and not res_test_py.empty:
+        msm_df = pd.concat([res_train_py, res_test_py], ignore_index=True)
 
         out_path = msm_dir / f"{train_id}_msm.parquet"
         msm_df.to_parquet(out_path, index=False)
         print(f"[{train_id}] Saved MSM results to {out_path} (n={len(msm_df)})")
     else:
-        print(f"[{train_id}] WARNING: no MSM results collected.")
+        print(f"[{train_id}] No MSM results to save.")
         
 
        

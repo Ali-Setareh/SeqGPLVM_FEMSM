@@ -57,7 +57,7 @@ def seqgplvm_msm_from_py_py(
 
     # --- subset to variable-treatment patients only for denominator ---------------
 
-    df_msm_var = df_msm[df_msm["patient_id"].isin(var_pids)].copy()
+    df_msm_var = df_msm[df_msm["patient_id"].isin(var_pids)].copy().reset_index(drop=True)
     D_all_var = df_msm_var["D"].astype(int).to_numpy()
 
 
@@ -93,7 +93,7 @@ def seqgplvm_msm_from_py_py(
         [df_msm_var, pd.DataFrame(w_comprod_cols)], axis=1
     )
 
-    df_msm_var = df_msm_var[df_msm_var.t == T_final]
+    df_msm_var = df_msm_var[df_msm_var.t == T_final].copy().reset_index(drop=True)
 
 
     always0 = always1 = 0
@@ -139,6 +139,7 @@ def seqgplvm_msm_from_py_py(
 
 
     for propensity_scores_col in propensity_scores_cols:
+        df_msm_always0_temp = df_msm_always1_temp = pd.DataFrame()
 
         res_fe_var = fit_wls(df_msm_var, f"w_cumprod_{propensity_scores_col}") 
  
@@ -157,12 +158,12 @@ def seqgplvm_msm_from_py_py(
 
         # combine always0, always1, variable back for the regression with imputation
         if always0 == 1: 
-            df_msm_always0.rename(columns={"w_cumprod": f"w_cumprod_{propensity_scores_col}"}, inplace=True)
+            df_msm_always0_temp = df_msm_always0.rename(columns={"w_cumprod": f"w_cumprod_{propensity_scores_col}"}).copy()
         if always1 == 1:
-            df_msm_always1.rename(columns={"w_cumprod": f"w_cumprod_{propensity_scores_col}"}, inplace=True)
+            df_msm_always1_temp = df_msm_always1.rename(columns={"w_cumprod": f"w_cumprod_{propensity_scores_col}"}).copy()
 
         if always1 == 1 or always0 == 1:
-            df_msm_imp = pd.concat([df_msm_var, df_msm_always0, df_msm_always1]).sort_values(["patient_id", "t"]).reset_index(drop=True)
+            df_msm_imp = pd.concat([df_msm_var, df_msm_always0_temp, df_msm_always1_temp]).sort_values(["patient_id", "t"]).reset_index(drop=True)
             res_fe_imp = fit_wls(df_msm_imp, f"w_cumprod_{propensity_scores_col}")
 
             results[f"tau_f_seqgplvm_imp"][-1] = res_fe_imp.params["D"]

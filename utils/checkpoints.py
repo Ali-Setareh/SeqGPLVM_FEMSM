@@ -274,7 +274,7 @@ def upsert_training_index(root: Union[str, Path], row: dict):
     lock_path = idx_path.with_suffix(idx_path.suffix + ".lock")
     new_df = pd.DataFrame([row])
 
-    with FileLock(lock_path):
+    with FileLock(str(lock_path)):
         if idx_path.exists():
             df = pd.read_parquet(idx_path)
             mask = (df["model"] == row["model"]) & (df["train_id"] == row["train_id"])
@@ -284,7 +284,10 @@ def upsert_training_index(root: Union[str, Path], row: dict):
             df = new_df
 
         # optional: maintain one row per (model, train_id), keep latest
-        df.to_parquet(idx_path)
+        # ATOMIC WRITE: write to tmp then replace
+        tmp_path = idx_path.with_suffix(idx_path.suffix + ".tmp")
+        df.to_parquet(tmp_path)
+        os.replace(tmp_path, idx_path)
 
 ######### Loading Models #########
 import re 
