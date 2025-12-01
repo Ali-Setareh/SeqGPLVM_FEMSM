@@ -2,13 +2,14 @@ import os
 import glob
 from datetime import datetime
 from pathlib import Path 
+import shutil
 import json, platform, subprocess, gzip
 import hashlib
 import torch 
 import re
 import tempfile
 from typing import Union
-
+import pandas as pd
 
 
 def canonicalize(obj) -> str:
@@ -263,32 +264,70 @@ def find_train(
 
 def upsert_training_index(root: Union[str, Path], row: dict):
     """
-    Upsert (model, train_id) into results/index/training.parquet.
-    If a row exists for the same keys, replace it; otherwise append.
+    Write a JSON file for this (model, train_id) under
+    results/index/training_rows/.
+
+    One file per training run, no shared Parquet index (safe for many jobs).
     """
-    import pandas as pd
-    from filelock import FileLock
+    root = Path(root)
 
-    idx_path = Path(root) / "results" / "index" / "training.parquet"
-    idx_path.parent.mkdir(parents=True, exist_ok=True)
-    lock_path = idx_path.with_suffix(idx_path.suffix + ".lock")
-    new_df = pd.DataFrame([row])
+    model = row.get("model", "unknown_model")
+    out_dir = root / "results" / "index" / model
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    with FileLock(str(lock_path)):
-        if idx_path.exists():
-            df = pd.read_parquet(idx_path)
-            mask = (df["model"] == row["model"]) & (df["train_id"] == row["train_id"])
-            df = df[~mask]
-            df = pd.concat([df, new_df], ignore_index=True)
-        else:
+    train_id = row["train_id"]
+
+    # e.g. seqgplvm__086c3fee44.json
+    fname = f"{model}__{train_id}.json"
+    final_path = out_dir / fname
+    tmp_path = out_dir / (fname + ".tmp")
+
+    # atomic-ish write: write to tmp, then replace
+    tmp_path.write_text(json.dumps(row))
+    os.replace(tmp_path, final_path)
+######### Building Parquet Index from Rows #########
+def build_training_parquet(root: str | Path = ".", model_name: str | None = None):
+    """
+    Read all JSON files from results/index/training_rows/
+    and write a combined results/index/training.parquet.
+    """
+    root = Path(root)
+    if model_name is not None:
+        rows_dir = root / "results" / "index" / model_name
+    idx_path = root / "results" / "index" / "training.parquet"
+
+    rows = []
+    if not rows_dir.exists():
+        raise FileNotFoundError(f"No training_rows directory found at {rows_dir}")
+
+    for p in rows_dir.glob("*.json"):
+        with p.open("r") as f:
+            rows.append(json.load(f))
+
+    if not rows:
+        raise RuntimeError(f"No JSON files found in {rows_dir}, nothing to write.")
+
+    new_df = pd.DataFrame(rows)
+
+    # --- append to existing parquet if it exists ---
+    if idx_path.exists():
+        try:
+            old_df = pd.read_parquet(idx_path)
+            df = pd.concat([old_df, new_df], ignore_index=True)
+            # optional: keep only one row per (model, train_id)
+            if {"model", "train_id"}.issubset(df.columns):
+                df = df.drop_duplicates(subset=["model", "train_id"], keep="last")
+        except Exception as e:
+            print(f"[merge_training_index] WARNING: could not read existing {idx_path}: {e!r}")
+            print("Recreating index from new rows only.")
             df = new_df
+    else:
+        df = new_df
+    
 
-        # optional: maintain one row per (model, train_id), keep latest
-        # ATOMIC WRITE: write to tmp then replace
-        tmp_path = idx_path.with_suffix(idx_path.suffix + ".tmp")
-        df.to_parquet(tmp_path)
-        os.replace(tmp_path, idx_path)
-
+    # ---- cleanup: delete the entire training_rows directory ----
+    shutil.rmtree(rows_dir)
+   
 ######### Loading Models #########
 import re 
 _step_re = re.compile(r"^step_(\d+)\.pt(?:\.(?:zst|gz))?$")

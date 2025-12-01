@@ -386,7 +386,7 @@ def train_seqgplvm(df: pd.DataFrame,
 
         row = make_training_index_row(
             root=project_root,
-            model_name="seqgplvm",
+            model_name=model_name,
             train_id=train_id,
             train_cfg=_train_cfg_identity,
             data_run_id=data_run_id,

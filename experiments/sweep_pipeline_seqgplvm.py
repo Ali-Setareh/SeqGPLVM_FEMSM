@@ -7,7 +7,7 @@ from gpytorch.likelihoods import BernoulliLikelihood, GaussianLikelihood
 import numpy as np 
 import pandas as pd
 from utils.training import dump_train_cfg_json
-from utils.checkpoints import make_train_id
+from utils.checkpoints import make_train_id, build_training_parquet
 from utils.training import class_to_id, tensor_fingerprint
 import argparse
 
@@ -36,8 +36,8 @@ train_test_split = df_runs.loc[0,"train_test_ratio"]
 params_grid = {
     "n": [200], #n = [200, 500, 1000, 3000],
     "seed":[1],#sorted(list(df_runs.seed.unique())), # seed = [0,1,2,3,4]
-    "a": [1,2], # a = [1,2]
-    "p": [2,4], # p = [2,4]
+    "a": [1],#,2], # a = [1,2]
+    "p": [2],#,4], # p = [2,4]
     "z_prior": ["normal"] # [normal, uniform] hidden confounder prior types, only normal for now becaue the KL term for uniform prior is not implemented
 }
 
@@ -54,7 +54,7 @@ training_cfg = {
     "treatment_model": BernoulliLikelihood,
     "learn_inducing_locations": False,
     "use_titsias": False,
-    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 100},
+    "optimize_hyperparams": {"lr": 1e-2, "num_epochs": 1},
     "checkpoint_interval": 2000,
     "param_logging_freq": 50,
     "pid_col": "patient_id",
@@ -189,6 +189,7 @@ for combo in selected:
             "--device", device
         ])
     finally:
+
         if delete_after:
                 # keep local workspace clean
                 try: dgp_cfg_path.unlink(missing_ok=True)
