@@ -71,7 +71,7 @@ def main():
 
     val_cfg = {
         "train_id": train_id,
-        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 1},
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 4000},
         "checkpoint_interval": 2000,
         "param_logging_freq": 50,
         "resume_mode": "no",
@@ -150,6 +150,8 @@ def main():
     df_phat["phat_mean"] = df_phat[batch_cols].mean(axis=1)
     df_phat["phat_std"] = df_phat[batch_cols].std(axis=1)
     df_phat["train_id"] = train_id
+
+    batch_cols.append("phat_mean")  # also run for mean propensity
 
     
 
