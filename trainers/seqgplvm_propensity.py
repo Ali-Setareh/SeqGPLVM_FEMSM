@@ -11,6 +11,8 @@ from pathlib import Path
 from models.SeqGPLVM import SeqGPLVM, SeqGPLVMVal
 import time,  os, json 
 from dgps import get_simulator
+import shutil
+
 
 
 
@@ -26,7 +28,8 @@ def propensity_seqgplvm(train_id: str,
                         load_data: bool = True,
                         drop_monotone: bool = False,
                         save_propensity: bool = True, # whether to save the propensity results
-                        dgp_index_path: str = None
+                        dgp_index_path: str = None, 
+                        keep_checkpoints: bool = True # whether to keep existing train/val checkpoints files in the output directory
                        ):
     """
     Validation fine-tuning: load a trained SeqGPLVM, attach validation latents, 
@@ -239,6 +242,12 @@ def propensity_seqgplvm(train_id: str,
 
     # an availability mask is handy downstream
     mask_all = ~torch.isnan(loggps_all)
+
+    if not keep_checkpoints:
+        # remove existing checkpoint files in the output directory
+        shutil.rmtree(train_out/"ckpts")
+        shutil.rmtree(val_out/"ckpts")
+        
 
     if  save_propensity:
 
