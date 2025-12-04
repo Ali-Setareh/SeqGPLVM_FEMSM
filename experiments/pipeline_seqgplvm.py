@@ -172,6 +172,8 @@ def main():
     res_test_py["subset"]  = "val"   # or "test" / "val+test", up to you
     res_train_py["train_id"] = train_id
     res_test_py["train_id"]  = train_id
+    res_train_py["data_id"] = data_id
+    res_test_py["data_id"]  = data_id
     # Also store whether this run dropped monotone units at the model stage
     res_train_py["drop_monotone_model"] = drop_monotone
     res_test_py["drop_monotone_model"]  = drop_monotone
