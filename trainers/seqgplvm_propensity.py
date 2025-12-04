@@ -247,8 +247,25 @@ def propensity_seqgplvm(train_id: str,
         # remove existing checkpoint files in the output directory
         shutil.rmtree(train_out/"ckpts")
         shutil.rmtree(val_out/"ckpts")
-        
+    
+    pids_val = [pid for pid in test_val_ids if pid in id2row]
+    log_gps_z_meaned = loggps_all[pids_val].mean(dim = 2)
+    log_gps_samples_z_meaned = loggps_samples_all[:,pids_val,:]
+    ppc = (log_gps_samples_z_meaned<log_gps_z_meaned).to(torch.float32).mean(dim=1).mean(dim = 0)
+    ppc_cpu = ppc.detach().cpu().tolist() 
+    metrics = {
+    "train_id": train_id,
+    "ppc": ppc_cpu,          # length T
+    "T": len(ppc_cpu),
+    "S": int(log_gps_samples_z_meaned.shape[0]),  # if you want
+    }
 
+    out_dir = propensity_dir_out  # or any metrics directory
+    out_path = out_dir / f"ppc_{train_id}.json"
+
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(metrics, f)
+        
     if  save_propensity:
 
         # --- save once ------------------------------------------------------------
@@ -301,7 +318,7 @@ def propensity_seqgplvm(train_id: str,
                 os.replace(tmp, out)
                 p.unlink()
         except Exception:
-            import gzip, shutil
+            import gzip
             def _compress(p: Path):
                 out = p.with_suffix(p.suffix + ".gz")      # .pt.gz
                 tmp = out.with_suffix(out.suffix + ".tmp") # .gz.tmp

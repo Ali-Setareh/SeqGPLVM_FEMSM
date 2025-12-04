@@ -66,7 +66,8 @@ training_cfg = {
     "extra_logging": ["loss_list", "param_hist"], 
     "extra_logging_mode": "experiment",
     "drop_monotone": True, # whether to drop monotone rows during training, 
-    "dgp_index_path": str(dgp_index_path)
+    "dgp_index_path": str(dgp_index_path), 
+    "keep_checkpoints": False # whether to keep existing train/val checkpoints files in the output directory
 }
 
 
@@ -126,7 +127,7 @@ else:
 #print("GRID_SIZE =", len(full_grid))
 #raise SystemExit
 
-for combo in selected:
+for combo in selected[:1]:
     n, seed, a, p, t, z_prior = int(combo["n"]), int(combo["seed"]), int(combo["a"]), int(combo["p"]), int(combo["T"]), combo["z_prior"]
     df_runs_subset = df_runs.query("dgp==@dgp and N==@n and T==@t and p==@p and seed==@seed and a==@a")
     

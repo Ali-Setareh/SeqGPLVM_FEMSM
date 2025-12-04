@@ -42,6 +42,7 @@ def main():
     train_id = train_cfg["train_id"]
     drop_monotone = train_cfg.get("drop_monotone", False)
     dgp_index_path = train_cfg.get("dgp_index_path", None)
+    keep_checkpoints = train_cfg.get("keep_checkpoints", True)
 
     # Where to save MSM results
     final_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
@@ -114,7 +115,8 @@ def main():
         load_data=False,
         save_propensity=False,
         drop_monotone=drop_monotone,
-        dgp_index_path=dgp_index_path
+        dgp_index_path=dgp_index_path, 
+        keep_checkpoints= keep_checkpoints
     )
 
     print(f"[{train_id}] Propensity done.")
