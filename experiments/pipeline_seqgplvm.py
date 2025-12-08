@@ -116,7 +116,8 @@ def main():
         save_propensity=False,
         drop_monotone=drop_monotone,
         dgp_index_path=dgp_index_path, 
-        keep_checkpoints= keep_checkpoints
+        keep_checkpoints= keep_checkpoints, 
+        device = "cpu"
     )
 
     print(f"[{train_id}] Propensity done.")
