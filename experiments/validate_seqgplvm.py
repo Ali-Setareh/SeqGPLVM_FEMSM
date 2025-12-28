@@ -3,8 +3,12 @@ import argparse, json, yaml, torch, pandas as pd
 from pathlib import Path
 import os
 
-torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
+n = int(os.environ.get("OMP_NUM_THREADS")
+        or os.environ.get("SLURM_CPUS_PER_TASK")
+        or "1")
+torch.set_num_threads(n)
 torch.set_num_interop_threads(1)
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", required=True)

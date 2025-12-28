@@ -6,8 +6,12 @@ from utils.training import load_train_cfg_from_json, materialize_cfg
 from dgps import get_simulator
 import os
 
-torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
+n = int(os.environ.get("OMP_NUM_THREADS")
+        or os.environ.get("SLURM_CPUS_PER_TASK")
+        or "1")
+torch.set_num_threads(n)
 torch.set_num_interop_threads(1)
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--dgp_config", required=True)
