@@ -4,7 +4,10 @@ from pathlib import Path
 from utils.runs import load_by_params
 from utils.training import load_train_cfg_from_json, materialize_cfg
 from dgps import get_simulator
+import os
 
+torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
+torch.set_num_interop_threads(1)
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--dgp_config", required=True)

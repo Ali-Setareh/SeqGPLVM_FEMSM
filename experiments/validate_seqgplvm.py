@@ -1,7 +1,10 @@
 from trainers.seqgplvm_val_trainer import train_seqgplvm_val
 import argparse, json, yaml, torch, pandas as pd
 from pathlib import Path
+import os
 
+torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
+torch.set_num_interop_threads(1)
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--config", required=True)
