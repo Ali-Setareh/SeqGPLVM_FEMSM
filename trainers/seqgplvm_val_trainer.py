@@ -1,7 +1,7 @@
 import shutil
 import torch
 from dgps import get_simulator
-from utils.checkpoints import latest_checkpoint_path, load_checkpoint, load_ckpt_any,train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
+from utils.checkpoints import _stepnum, latest_checkpoint_path, load_checkpoint, load_ckpt_any,train_dir, train_dir, get_epochs_completed_prior, upsert_training_index, make_training_index_row
 from utils.preprocessings import get_training_tensors
 import pandas as pd
 from utils.pathing import as_path
@@ -145,10 +145,7 @@ def train_seqgplvm_val(train_id: str,
     optimizer = torch.optim.Adam(model.Z_val.parameters(), lr=optimize_hyperparams_val["lr"])
     num_epochs = optimize_hyperparams_val["num_epochs"]
 
-    # Progress logger (same behavior as train)
-    is_tty = sys.stderr.isatty()
-    iterator = trange(num_epochs, leave=is_tty, disable=not is_tty, dynamic_ncols=True)
-
+    
     # 5) Create a *new* run directory for validation, linked to its parent
     val_cfg_identity = {
         "mode": "val", 
@@ -210,9 +207,17 @@ def train_seqgplvm_val(train_id: str,
         loss_list     = extra.get("loss_list", loss_list)
         param_hist    = extra.get("param_hist", param_hist)
         actual_params = extra.get("actual_params", actual_params)
-        epochs_completed_prior = get_epochs_completed_prior(val_out)
+        epochs_completed_prior = _stepnum(ckpt_path) #get_epochs_completed_prior(val_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
+    remaining = max(0, num_epochs - epochs_completed_prior)
+    is_tty = sys.stderr.isatty()
+    iterator = trange(
+        remaining,
+        leave=is_tty,
+        disable=not is_tty,
+        dynamic_ncols=True
+    )
     print(f"\n Validation training for DGP with paramters:  \n on device {device} with train_id {train_id}\n")
 
     extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
@@ -239,7 +244,7 @@ def train_seqgplvm_val(train_id: str,
                 for k, v in real_params.items():
                     actual_params[k].append(v)
 
-            if (i + 1) % checkpoint_interval == 0:
+            if (global_step) % checkpoint_interval == 0:
                 save_ckpt(
                     val_out,
                     step=epochs_completed + epochs_completed_prior,

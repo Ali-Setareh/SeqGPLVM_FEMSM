@@ -22,6 +22,9 @@ from trainers.seqgplvm_msm_py import seqgplvm_msm_from_py_py
 def run(cmd_list):
     subprocess.run(cmd_list, check=True)
 
+import os, torch
+torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "1")))
+torch.set_num_interop_threads(1)
 
 def main():
     parser = argparse.ArgumentParser()

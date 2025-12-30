@@ -12,7 +12,7 @@ from models.SeqGPLVM import SeqGPLVM
 from utils.inspectors import get_actuals_via_getters 
 from utils.preprocessings import get_training_tensors 
 from utils.checkpoints import make_train_id, write_train_files, save_ckpt, make_training_index_row, train_dir
-from utils.checkpoints import upsert_training_index,latest_checkpoint_path, load_checkpoint, load_ckpt_any,get_epochs_completed_prior
+from utils.checkpoints import upsert_training_index,latest_checkpoint_path, _stepnum, load_ckpt_any,get_epochs_completed_prior
 import shutil,os, sys
 from utils.pathing import as_path
 from utils.progress import ProgressLogger
@@ -165,15 +165,6 @@ def train_seqgplvm(df: pd.DataFrame,
     optimizer = torch.optim.Adam(model.parameters(), lr=optimize_hyperparams["lr"])
     num_epochs = optimize_hyperparams["num_epochs"]
 
-    # tqdm: pretty (interactive), quiet (batch logs)
-    is_tty = sys.stderr.isatty()
-    iterator = trange(
-        num_epochs,
-        leave=is_tty,
-        disable=not is_tty,
-        dynamic_ncols=True
-    )
-
     if os.environ.get("SLURM_JOB_ID"):
         progress_root = Path(os.environ.get("FINAL_ROOT", "./results")).expanduser()
         plog = ProgressLogger(max_iters=num_epochs, root=progress_root, every=20)
@@ -246,9 +237,17 @@ def train_seqgplvm(df: pd.DataFrame,
         loss_list     = extra.get("loss_list", loss_list)
         param_hist    = extra.get("param_hist", param_hist)
         actual_params = extra.get("actual_params", actual_params)
-        epochs_completed_prior = get_epochs_completed_prior(train_out)
+        epochs_completed_prior = _stepnum(ckpt_path) #get_epochs_completed_prior(train_out)
         print(f"[resume] {ckpt_path.name} | prior epochs={epochs_completed_prior}")
     
+    remaining = max(0, num_epochs - epochs_completed_prior)
+    is_tty = sys.stderr.isatty()
+    iterator = trange(
+        remaining,
+        leave=is_tty,
+        disable=not is_tty,
+        dynamic_ncols=True
+    )
     print(f"\n Training for DGP with paramters:  \n on device {device} with train_id: {train_id}\n")
 
     if standardize_covariates:
@@ -293,7 +292,7 @@ def train_seqgplvm(df: pd.DataFrame,
                     actual_params[key].append(item)
 
             # periodic checkpoint
-            if (i + 1) % checkpoint_interval == 0:
+            if (global_step) % checkpoint_interval == 0:
                 save_ckpt(
                     train_out,
                     step=epochs_completed + epochs_completed_prior,
