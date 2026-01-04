@@ -1,0 +1,16 @@
+\documentclass{article}
+\usepackage{csquotes} % recommended for biblatex
+
+\usepackage[
+  backend=biber,
+  style=apa,
+  natbib=true
+]{biblatex}
+\DeclareLanguageMapping{english}{english-apa}
+\addbibresource{references.bib}
+
+\begin{document}
+I have a paper here : \parencite{blackwellAdjustingUnmeasuredConfounding2021}. and also here \textcite{hattSequentialDeconfoundingCausal2024}
+
+\printbibliography
+\end{document}

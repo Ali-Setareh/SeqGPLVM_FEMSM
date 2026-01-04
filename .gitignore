@@ -327,3 +327,35 @@ figure/
 # renv (keep renv.lock and renv/activate.R, ignore libs)
 renv/library/
 renv/staging/
+
+
+# ===== LaTeX build artifacts (paper/) =====
+paper/build/
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.bcf
+paper/**/*.blg
+paper/**/*.fdb_latexmk
+paper/**/*.fls
+paper/**/*.log
+paper/**/*.out
+paper/**/*.run.xml
+paper/**/*.synctex.gz
+paper/**/*.toc
+paper/**/*.lof
+paper/**/*.lot
+paper/**/*.nav
+paper/**/*.snm
+paper/**/*.vrb
+paper/**/*.xdv
+
+# minted / pygments
+paper/**/_minted*
+paper/**/*.pyg
+
+# latexmk temp
+paper/**/*.temp
+
+# macOS / Windows noise (optional)
+.DS_Store
+Thumbs.db
