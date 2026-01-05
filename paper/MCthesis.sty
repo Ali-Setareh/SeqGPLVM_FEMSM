@@ -1,0 +1,137 @@
+\ProvidesPackage{MCthesis}[2022/05/24 Package for a thesis template]
+
+\RequirePackage[utf8]{inputenc} % allow utf-8 input
+\RequirePackage[lmargin=1.5in,rmargin=1in,tmargin=1in,bmargin=1in]{geometry}
+\RequirePackage{graphicx}
+\RequirePackage{etoolbox}
+\RequirePackage[onehalfspacing]{setspace}
+
+% University colors
+\RequirePackage{xcolor}         % colors
+\definecolor{red}{RGB}{165,30,55} 
+\definecolor{gray}{RGB}{195,195,195} 
+\definecolor{lightgray}{RGB}{203,203,203} 
+\definecolor{gold}{RGB}{180,160,105}
+
+
+
+% TITLE PAGE
+\newcommand*{\fromCity}{\gdef\@fromCity}
+\newcommand*{\matnr}{\gdef\@matnr}
+
+% SUPERVISION
+\newcommand*{\supervisor}[3]{\gdef\@firstS{#1} \gdef\@secondS{#2} \gdef\@thirdS{#3}}
+\newcommand*{\reviewer}[3]{\gdef\@firstR{#1} \gdef\@secondR{#2} \gdef\@thirdR{#3}}
+
+\pagestyle{plain}
+\DeclareOption{final}{
+\renewcommand{\maketitle}{
+\newgeometry{hmarginratio=1:1,tmargin=10pt}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=70mm, keepaspectratio=true]{qds.png}
+	\par 
+	\vspace*{-15mm}
+	\hspace*{1cm}{\color{gold}\hrule height 0.3mm\hfill}\hspace*{1cm}\\
+	{\scshape\huge \smallskip \@title \par}
+	\hspace*{1cm}{\color{gold}\hrule height 0.3mm\hfill}\hspace*{1cm}\par
+	\vspace{1cm}
+	{ \textbf{Master Thesis} (M.Sc.)\\
+in \\\textit{Quantitative Data Science Methods\\Psychometrics, Econometrics and Machine Learning}\\
+Faculty of Economics and Social Sciences \\
+at the University of Tübingen\\
+\textbf{Methods Center}
+\par}
+	\vspace{2.5cm}
+	{submitted by \\
+	\@author \\
+	from \@fromCity\\
+	(Matriculation number: \@matnr)
+	\par}
+	\vspace{2.5cm}
+	{Submitted in Tübingen \\
+	\@date\par}
+	
+
+	\vfill
+
+% Bottom of the page
+% 	{\large \today\par}
+\end{titlepage}
+
+\restoregeometry
+
+%\newcommand{\makesecond}{
+\newpage\null\thispagestyle{empty}\newpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\renewcommand{\arraystretch}{1.5}
+\begin{table*}[!b]
+\begin{tabular}{ll}
+1. Supervisor: \quad \ \ \ &\@firstS \\
+\ifdefempty{\@secondS}{}
+{2. Supervisor: &\@secondS \\}
+\ifdefempty{\@thirdS}{}
+{3. Supervisor: &\@thirdS \\}
+& \\
+1. Reviewer: &\@firstR \\
+\ifdefempty{\@secondR}{}
+{2. Reviewer: &\@secondR \\}
+\ifdefempty{\@thirdR}{}
+{3. Reviewer: &\@thirdR \\}
+
+\end{tabular}
+\end{table*}
+\renewcommand{\arraystretch}{1}
+\newpage\null\thispagestyle{empty}\newpage
+\thispagestyle{empty}
+\textbf{Declaration of Academic Integrity}
+\\
+
+Hereby, I declare that I have composed the presented paper independently on my own and without any other resources than the ones indicated. All thoughts taken directly or indirectly from external sources are properly denoted as such.
+\\
+
+This thesis has neither been previously submitted as a whole or in any significant part as part of any other examination process, and the thesis has not been published as a whole or in any significant part, and that the copy submitted in electronic file form is identical in content to the bound copies submitted.
+
+\vspace{13cm}
+\par\noindent\rule{5cm}{0.4pt}\hspace{5cm}\rule{6cm}{0.4pt}\\
+Name\hspace{9cm}Place, Date
+\vspace{2cm}
+
+\par\noindent\rule{5cm}{0.4pt}\\
+Signature
+\newpage
+\thispagestyle{empty}
+\newpage
+%\let\cleardoublepage\clearpage
+\frontmatter
+
+\tableofcontents
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+\mainmatter
+}
+}
+\DeclareOption{work}{
+\renewcommand{\maketitle}{
+\newgeometry{hmarginratio=1:1,tmargin=10pt}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=70mm, keepaspectratio=true]{qds.png}
+	\par 
+	\vspace*{-15mm}
+	\hspace*{1cm}{\color{gold}\hrule height 0.3mm\hfill}\hspace*{1cm}\\
+	{\scshape\large \smallskip \@title \par}
+	\hspace*{1cm}{\color{gold}\hrule height 0.3mm\hfill}\hspace*{1cm}\par
+	{by \\
+	\@author
+	\par
+	Version of: \@date}
+	\frontmatter
+	\tableofcontents
+	\mainmatter
+\end{titlepage}
+\restoregeometry}
+\let\cleardoublepage\clearpage
+
+}
+\ProcessOptions\relax
