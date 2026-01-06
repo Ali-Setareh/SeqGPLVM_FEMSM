@@ -1,0 +1,41 @@
+\chapter{Simulation Study}
+In this section, we present a simulation study designed to evaluate the performance 
+of the two methods for estimating causal effects with time-varying treatments 
+under time-invariant unmeasured confounding. The data generation process (DGP) is taken 
+from the DGP described in Section 5.1 of \cite{blackwellEffectPoliticalAdvertising2024}. 
+We simulate longitudinal data for $n \in \{200, 500, 1000, 3000\}$ individuals. For the
+length of the time serieses for each n, we consider three different lenghts: $\rho = n/T$ 
+with $\rho \in \{5,10,50\}$. The data is balanced. menaning that each individual has 
+the same number of time points. In Eq.~\eqref{eq:blackwelldynamics}, we present 
+the governing equations for the DGP. $\operatorname{expit}(x) = \frac{1}{1 + e^{-x}}$.
+
+\begin{subequations}\label{eq:blackwelldynamics}
+\begin{align}
+X_{it} &\sim \mathcal{N}\!\left(-\frac{1}{2}\mathbbm{1},\, \Sigma\right), \qquad \Sigma_{jk} =
+\begin{cases}
+1, & j=k,\\
+0.2, & j\neq k.
+\end{cases}\\
+U_i    &\sim \operatorname{Unif}(-a, a) \\
+A_{it} &\sim \operatorname{Bernoulli}\!\left(\operatorname{expit}\!\left(U_i + \varphi A_{i,t-1} + \beta^{\top} X_{it}\right)\right) \\
+\epsilon_{iT} &\sim \mathcal{N}(0,1) \\
+Y_{iT} &= U_i + \tau_F D_{iT} + \tau_C \sum_{t=T-3}^{T-1} D_{it}
+        + \gamma^{\top}\bar{X}_{iT} + \epsilon_{iT}
+\end{align}
+\end{subequations}
+
+We simulate for two different values of $a \in \{1, 2\}$ \hl{to control the
+contribution of the unmeasured confounder $U_i$ to the variance of the linear predictor.}. For the number 
+of covariates, we simulate for $p \in \{2, 4\}$. 
+The coefficients are set to $\beta = (-0.5, -0.5)^{\top}$ when $p=2$ and 
+$\beta = (-0.5, -0.5, 1, -0.5)^{\top}$ when $p=4$. \hl{(add some note about why we chose 
+these coeffs based on the variance or sth)}. We set $\varphi = 0.3$. Note that we generate 
+the covariates $X_{it}$ exogenously to the treatments. So we do not have the 
+treatment-confounder feedback. This is done to isolate the effect of
+adjusting for unmeasred time-invariant confounding. Also note that theere is no dynamics 
+in the covariates and the distribution of $X_{it}$ is the same for all time points. The parameters 
+for the outcome model are set to $\tau_F = 1$, $\tau_C = 0.3$, and $\gamma = (1, 0.5)^{\top}$ 
+when $p=2$ and when $p=4$. $\gamma = (1, 0.5, 1, 1)^{\top}$.
+
+
+
