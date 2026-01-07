@@ -2,25 +2,35 @@
 In this section, we present a simulation study designed to evaluate the performance 
 of the two methods for estimating causal effects with time-varying treatments 
 under time-invariant unmeasured confounding. The data generation process (DGP) is taken 
-from the DGP described in Section 5.1 of \cite{blackwellEffectPoliticalAdvertising2024}. 
+from the DGP described in Section 5.1 of \cite{blackwellEffectPoliticalAdvertising2024}. In this 
+DGP, the scenario which we simulate is a study design where individuals are exposed to a binary treatment
+(e.g., receiving a political advertisement) over a period fixed period of time, and the outcome of interest
+is measured only once at the end of the study period (e.g., voting behavior). The treatment assignment
+is influenced by both observed covariates and an unmeasured time-invariant confounder (e.g., political
+leaning). The outcome is affected by the treatment received at the final time point, the cumulative 
+effect of treatments received in the last three time points, the sum of observed covariates at the final time point, 
+and the unmeasured confounder. 
+
 We simulate longitudinal data for $n \in \{200, 500, 1000, 3000\}$ individuals. For the
 length of the time serieses for each n, we consider three different lenghts: $\rho = n/T$ 
 with $\rho \in \{5,10,50\}$. The data is balanced. menaning that each individual has 
 the same number of time points. In Eq.~\eqref{eq:blackwelldynamics}, we present 
-the governing equations for the DGP. $\operatorname{expit}(x) = \frac{1}{1 + e^{-x}}$.
+the governing equations for the DGP. Here, $\operatorname{expit}(x) = \frac{1}{1 + e^{-x}}$ and 
+$\bar{X}_{iT} = \frac{1}{T}\sum_{t=1}^T X_{it}$.
 
-\begin{subequations}\label{eq:blackwelldynamics}
+\begin{subequations}\label{eq:blackwell_scm}
 \begin{align}
-X_{it} &\sim \mathcal{N}\!\left(-\frac{1}{2}\mathbbm{1},\, \Sigma\right), \qquad \Sigma_{jk} =
-\begin{cases}
-1, & j=k,\\
-0.2, & j\neq k.
-\end{cases}\\
-U_i    &\sim \operatorname{Unif}(-a, a) \\
-A_{it} &\sim \operatorname{Bernoulli}\!\left(\operatorname{expit}\!\left(U_i + \varphi A_{i,t-1} + \beta^{\top} X_{it}\right)\right) \\
-\epsilon_{iT} &\sim \mathcal{N}(0,1) \\
-Y_{iT} &= U_i + \tau_F D_{iT} + \tau_C \sum_{t=T-3}^{T-1} D_{it}
-        + \gamma^{\top}\bar{X}_{iT} + \epsilon_{iT}
+U_i &:= a(2V_i-1), \qquad V_i \sim \operatorname{Unif}(0,1),
+\\
+X_{it} &:= -\tfrac12\mathbbm{1} + L \xi_{it} \qquad \xi_{it}\sim \mathcal{N}(0,I), \qquad LL^\top=\Sigma,
+\\
+A_{it} &:= \mathbbm{1}\!\left\{\eta_{it} \le
+\operatorname{expit}\!\left(U_i+\varphi A_{i,t-1}+\beta^\top X_{it}\right)\right\},
+\qquad \eta_{it} \sim \operatorname{Unif}(0,1),
+\\
+Y_{iT} &:= U_i + \tau_F A_{iT} + \tau_C \sum_{t=T-3}^{T-1} A_{it}
++ \gamma^\top \bar X_{iT} + \epsilon_{iT},
+\qquad \epsilon_{iT} \sim \mathcal{N}(0,1).
 \end{align}
 \end{subequations}
 
@@ -35,7 +45,9 @@ treatment-confounder feedback. This is done to isolate the effect of
 adjusting for unmeasred time-invariant confounding. Also note that theere is no dynamics 
 in the covariates and the distribution of $X_{it}$ is the same for all time points. The parameters 
 for the outcome model are set to $\tau_F = 1$, $\tau_C = 0.3$, and $\gamma = (1, 0.5)^{\top}$ 
-when $p=2$ and when $p=4$. $\gamma = (1, 0.5, 1, 1)^{\top}$.
+when $p=2$ and when $p=4$, $\gamma = (1, 0.5, 1, 1)^{\top}$.
+
+Our target estimands are $\tau_F$ and  and the cumulative effect of the last three treatments:
 
 
 
