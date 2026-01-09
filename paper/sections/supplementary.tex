@@ -1,0 +1,78 @@
+\chapter{Supplementary Material}
+\section{Data-generating processes vs.\ marginal structural models}
+\label{sec:dgp_vs_msm}
+
+A recurring source of confusion in longitudinal causal inference is that the same algebraic expression can play two conceptually distinct roles: as a \emph{data-generating process} (DGP) in the factual world, and as a \emph{marginal structural model} (MSM) in the counterfactual (interventional) world. This distinction is purely conceptual, but it matters for interpretation of parameters such as $\tau_F$ and $\tau_C$ in simulation studies and pedagogical examples.
+
+\paragraph{DGP (structural world).}
+A DGP specifies \emph{how the observed data are produced}. In particular, a structural DGP posits assignments of the form
+\[
+X_{it} := f_X(\cdot), \qquad
+A_{it} := f_A(\cdot), \qquad
+Y_{iT} := f_Y(\cdot),
+\]
+together with exogenous noise variables (and possibly latent heterogeneity such as $U_i$). Such equations encode which variables exist, which variables depend on which, and with what randomness. In simulation studies, the DGP constitutes the ``truth'' that generates the joint distribution of the observed data $(\underline X_i, \underline A_i, Y_{iT})$.
+
+\paragraph{MSM (policy world).}
+An MSM is \emph{not} a model for the observed conditional distribution of $Y$ given covariates and treatment (e.g.\ $\mathbb E[Y\mid \underline A, \underline X]$). Instead, it is a model for a different object: the \emph{causal mean response surface}
+\[
+\mu(\underline a) \;:=\; \mathbb E\!\left[\,Y(\underline a)\,\right],
+\]
+i.e., the mean potential outcome under an intervention that sets the treatment history to $\underline a$. An MSM postulates a low-dimensional parametrization
+\[
+\mathbb E\!\left[\,Y(\underline a)\,\right] \;=\; g(\underline a;\gamma),
+\]
+for instance a linear function of the final treatment and recent treatment history. In practice, inverse-probability weighting is used to construct a pseudo-population in which treatment is (approximately) independent of measured confounders, so that a weighted regression of $Y$ on treatment history targets $\mu(\underline a)$ (or its projection onto the chosen family $g$).
+
+\paragraph{How structural equations define potential outcomes.}
+A purely statistical specification such as
+\[
+Y \mid A=a \sim \mathcal N(m(a),1)
+\]
+only fixes the distribution of $Y$ in the factual world and does not, by itself, determine the joint behavior of $(Y(0),Y(1))$ for the same unit. By contrast, a structural model with shared exogenous noise \emph{induces} potential outcomes via the standard ``intervention-as-surgery'' convention: under $do(A=a)$, the treatment assignment equation is replaced by $A:=a$ while all other structural equations and the unit's exogenous variables are held fixed. Hence, once a structural DGP is specified, the entire collection of potential outcomes $\{Y(\underline a): \underline a\}$ is implicitly defined.
+
+\paragraph{When DGP and MSM parameters coincide (and when they do not).}
+In simple settings (e.g.\ linear-additive outcome models with covariates unaffected by treatment), the induced causal mean $\mu(\underline a)$ may lie exactly in the MSM family, so that coefficients in the DGP and MSM coincide. This is why lectures and simulation studies often reuse the same functional form: it makes the estimand and ``truth'' align and isolates finite-sample and weighting effects. In general, however, if the true causal mean is nonlinear or contains interactions not represented in $g(\underline a;\gamma)$, then the fitted MSM parameters are no longer structural ``true'' coefficients. Rather, they are best-approximation (projection) parameters that summarize the true causal response surface within the chosen model class and for the target population induced by the weighting scheme.
+
+```latex
+\section{Defining ``truth'' under MSM misspecification}
+\label{sec:truth_under_misspec}
+
+When the true data-generating process (DGP) implies a nonlinear causal mean response surface, but the analyst fits a linear marginal structural model (MSM), there is typically no single ``true'' coefficient $(\tau_F,\tau_C)$ embedded in the DGP that the estimator is meant to recover. Instead, the relevant benchmark depends on the estimand implied by the fitted MSM. Two common and mathematically well-defined notions of ``truth'' are as follows.
+
+\paragraph{Projection (pseudo-true) MSM parameters.}
+Let the working MSM be
+\[
+g(\underline a;\gamma)
+=
+\alpha + \tau_F a_T + \tau_C \sum_{t=T-k}^{T-1} a_t,
+\qquad
+Z_i := (1, A_{iT}, S_i)^\top,\ \ S_i := \sum_{t=T-k}^{T-1} A_{it}.
+\]
+If estimation proceeds by (stabilized) inverse-probability weighting and weighted least squares, then under correct weighting the population target is the \emph{pseudo-true} (projection) parameter
+\[
+\gamma^\star
+:=
+\arg\min_{\gamma}\;
+\mathbb E^\ast\!\left[\bigl(\mu(\underline A_i)-\gamma^\top Z_i\bigr)^2\right]
+=
+\bigl(\mathbb E^\ast[Z_i Z_i^\top]\bigr)^{-1}\mathbb E^\ast\!\bigl[Z_i\,\mu(\underline A_i)\bigr],
+\]
+where $\mu(\underline a):=\mathbb E\!\left[Y(\underline a)\right]$ is the true causal mean under intervention and $\mathbb E^\ast[\cdot]$ denotes expectation in the target (pseudo-)population induced by the weighting scheme. The appropriate ``true'' values for parameter-level bias are then the components $(\tau_F^\star,\tau_C^\star)$ of $\gamma^\star$, i.e.,
+\[
+\text{Bias}(\hat\tau_F)=\mathbb E[\hat\tau_F]-\tau_F^\star,
+\qquad
+\text{Bias}(\hat\tau_C)=\mathbb E[\hat\tau_C]-\tau_C^\star.
+\]
+In simulation studies, $\gamma^\star$ can be approximated to arbitrary accuracy either by (i) computing the above population moments analytically when feasible, or (ii) generating an extremely large sample from the known DGP, forming the corresponding true weights, and fitting the same weighted regression used in finite samples.
+
+\paragraph{Policy-level comparisons via causal mean outcomes.}
+If the main scientific goal is to recover intervention-specific mean outcomes rather than the coefficients themselves, then one may compare the MSM-implied predictions
+\[
+\hat\mu(\underline a):=g(\underline a;\hat\gamma)
+\]
+directly to the true causal means $\mu(\underline a)=\mathbb E[Y(\underline a)]$ over a set of regimes $\underline a\in\mathcal A$ (e.g., treat at $T$ only, treat in the last $k$ periods, etc.). Accuracy can then be summarized via $\hat\mu(\underline a)-\mu(\underline a)$, RMSE over $\mathcal A$, or integrated squared error. This approach is often most interpretable when the MSM is knowingly misspecified.
+
+\paragraph{Why Taylor linearizations are not the ``truth'' in general.}
+A first-order Taylor expansion of the true structural outcome function yields a \emph{local} linear approximation around a chosen expansion point (e.g., $d_0$ or $\mathbb E^\ast[D]$). By contrast, the pseudo-true MSM parameters $\gamma^\star$ are defined by a \emph{global} $L^2$ projection with respect to the (pseudo-)population distribution of the regressors. These coincide only in special cases (e.g., when the regressor has negligible variance around the expansion point or the true response is approximately linear on its support). Consequently, using a Taylor slope as ``truth'' generally changes the estimand and does not correspond to the population target of the fitted linear MSM.
+```

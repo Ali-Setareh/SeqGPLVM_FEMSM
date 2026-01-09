@@ -1,23 +1,24 @@
-@online{blackwellAdjustingUnmeasuredConfounding2021,
+@misc{blackwellAdjustingUnmeasuredConfounding2021,
   title = {Adjusting for {{Unmeasured Confounding}} in {{Marginal Structural Models}} with {{Propensity-Score Fixed Effects}}},
   author = {Blackwell, Matthew and Yamauchi, Soichiro},
-  date = {2021-06-09},
+  year = 2021,
+  month = jun,
+  number = {arXiv:2105.03478},
   eprint = {2105.03478},
-  eprinttype = {arXiv},
-  eprintclass = {stat},
+  primaryclass = {stat},
+  publisher = {arXiv},
   doi = {10.48550/arXiv.2105.03478},
-  url = {http://arxiv.org/abs/2105.03478},
   abstract = {Marginal structural models are a popular tool for investigating the effects of time-varying treatments, but they require an assumption of no unobserved confounders between the treatment and outcome. With observational data, this assumption may be difficult to maintain, and in studies with panel data, many researchers use fixed effects models to purge the data of time-constant unmeasured confounding. Unfortunately, traditional linear fixed effects models are not suitable for estimating the effects of time-varying treatments, since they can only estimate lagged effects under implausible assumptions. To resolve this tension, we a propose a novel inverse probability of treatment weighting estimator with propensity-score fixed effects to adjust for time-constant unmeasured confounding in marginal structural models of fixed-length treatment histories. We show that these estimators are consistent and asymptotically normal when the number of units and time periods grow at a similar rate. Unlike traditional fixed effect models, this approach works even when the outcome is only measured at a single point in time as is common in marginal structural models. We apply these methods to estimating the effect of negative advertising on the electoral success of candidates for statewide offices in the United States.},
-  pubstate = {prepublished},
+  archiveprefix = {arXiv},
   keywords = {Statistics - Applications,Statistics - Methodology}
 }
 
-@report{blackwellEffectPoliticalAdvertising2024,
-  title = {The {{Eﬀect}} of {{Political Advertising}} after {{Citizen}}’s {{United}}: {{Adjusting}} for {{Unmeasured Confounding}} in {{Marginal Structural Models}}},
+@techreport{blackwellEffectPoliticalAdvertising2024,
+  title = {The {{Effect}} of {{Political Advertising}} after {{Citizen}}'s {{United}}: {{Adjusting}} for {{Unmeasured Confounding}} in {{Marginal Structural Models}}},
   author = {Blackwell, Matthew and Yamauchi, Soichiro},
-  date = {2024-02-05},
-  url = {https://www.mattblackwell.org/files/papers/psfe.pdf},
-  abstract = {Corporations, unions, and other interest groups have become key sponsors of television advertising in United States elections after the Supreme Court’s decision in Citizen’s United v. FEC that eliminated restrictions on such spending. This paper estimates the partisan effects of ads sponsored by these groups to obtain a more complete picture of voter behavior and electoral politics. Advertising strategies vary over the course of the campaign, and so marginal structural models are a natural tool to estimate these effects. Unfortunately, this approach requires an assumption of no unobserved confounders between the treatment and outcome, which may not be plausible with observational electoral data. To address this, we propose a novel inverse probability of treatment weighting estimator with propensity-score fixed effects to adjust for time-constant unmeasured confounding in marginal structural models of fixed-length treatment histories. We show that these estimators are consistent and asymptotically normal when the number of units and time periods grow at a similar rate. Unlike traditional fixed effect models, this approach works even when the outcome is only measured at a single point in time as in our setting, though the method does rely on some degree of treatment switching within units. Against conventional wisdom, we find that interest group ads are only effective when run by groups supporting Democratic candidates and that these effects are most prominent after Donald Trump became a presidential candidate in 2016.},
+  year = 2024,
+  month = feb,
+  abstract = {Corporations, unions, and other interest groups have become key sponsors of television advertising in United States elections after the Supreme Court's decision in Citizen's United v. FEC that eliminated restrictions on such spending. This paper estimates the partisan effects of ads sponsored by these groups to obtain a more complete picture of voter behavior and electoral politics. Advertising strategies vary over the course of the campaign, and so marginal structural models are a natural tool to estimate these effects. Unfortunately, this approach requires an assumption of no unobserved confounders between the treatment and outcome, which may not be plausible with observational electoral data. To address this, we propose a novel inverse probability of treatment weighting estimator with propensity-score fixed effects to adjust for time-constant unmeasured confounding in marginal structural models of fixed-length treatment histories. We show that these estimators are consistent and asymptotically normal when the number of units and time periods grow at a similar rate. Unlike traditional fixed effect models, this approach works even when the outcome is only measured at a single point in time as in our setting, though the method does rely on some degree of treatment switching within units. Against conventional wisdom, we find that interest group ads are only effective when run by groups supporting Democratic candidates and that these effects are most prominent after Donald Trump became a presidential candidate in 2016.},
   langid = {english}
 }
 
@@ -25,12 +26,11 @@
   title = {Sequential {{Deconfounding}} for {{Causal Inference}} with {{Unobserved Confounders}}},
   booktitle = {Proceedings of the {{Third Conference}} on {{Causal Learning}} and {{Reasoning}}},
   author = {Hatt, Tobias and Feuerriegel, Stefan},
-  date = {2024-03-15},
+  year = 2024,
+  month = mar,
   pages = {934--956},
   publisher = {PMLR},
   issn = {2640-3498},
-  url = {https://proceedings.mlr.press/v236/hatt24a.html},
   abstract = {Observational data is often used to estimate the effect of a treatment when randomized experiments are infeasible or costly. However, observational data often yields biased estimates of treatment effects, since treatment assignment can be confounded by unobserved variables. A remedy is offered by deconfounding methods that adjust for such unobserved confounders. In this paper, we develop the Sequential Deconfounder, a method that enables estimating individualized treatment effects over time in presence of unobserved confounders. This is the first deconfounding method that can be used with a single treatment assigned at each timestep. The Sequential Deconfounder uses a novel Gaussian process latent variable model to infer substitutes for the unobserved confounders, which are then used in conjunction with an outcome model to estimate treatment effects over time. We prove that using our method yields unbiased estimates of individualized treatment responses over time. Using simulated and real medical data, we demonstrate the efficacy of our method in deconfounding the estimation of treatment responses over time.},
-  eventtitle = {Causal {{Learning}} and {{Reasoning}}},
   langid = {english}
 }
