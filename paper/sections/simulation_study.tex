@@ -1,4 +1,6 @@
 \chapter{Simulation Study}
+\label{sec:simulation_study} 
+\section{Data Generating Process}
 In this section, we present a simulation study designed to evaluate the performance 
 of the two methods for estimating causal effects with time-varying treatments 
 under time-invariant unmeasured confounding. The data generation process (DGP) is taken 
@@ -47,11 +49,35 @@ in the covariates and the distribution of $X_{it}$ is the same for all time poin
 for the outcome model are set to $\tau_F = 1$, $\tau_C = 0.3$, and $\gamma = (1, 0.5)^{\top}$ 
 when $p=2$ and when $p=4$, $\gamma = (1, 0.5, 1, 1)^{\top}$.
 
-Our target estimands are the average treatment of the last treatment: 
-$\mathbb{E}\!\left[ Y_i\!\left({A}_{T} = 1\right)  -  Y_i\!\left({A}_{T} = 0\right) \right]$ and the average 
-treatment effect of changing one of the last three treatments from 0 to 1: 
-$\mathbb{E}\!\left[ Y_i\!\left(\underline{d}_{T-k}\right) \right]$,
- and  and the cumulative effect of the last three treatments:
+\section{Estimation}
+For defining our estimation goals, first we need specify the causal question of interest. The causal
+question we want to answer is: What is the average effect of the treatment received at the final time on the 
+final outcome, fixing the last $K$ treatments before $T$. : 
+$\mathbb{E}\left[ Y_{iT}\left(d_T = 1, \bar{D}_{i,T-K:T-1}\right) - Y_{iT}\left(d_T = 0, \bar{D}_{i,T-K:T-1}\right) \right]$, and the 
+average effect of receiving one additional treatment in the last three time points, before $T$ on the final outcome, keeping 
+the rest of the treatments the same. To express 
+this mathematically, we first define $S_k(\bar{d}_{T-K:T-1}) := \sum_{t=T-K}^{T-1} d_t \in \{0,1,2,\dots, K\}.$ as the sum 
+of treatments received in the last $K$ time points. Then, the average effect of receiving one additional treatment 
+in the last $K$ time points on the final outcome is defined as 
+$\mathbb{E}\left[Y_{iT}\left(\underline{d}_{T-K:T-1}^{S_K = s}\right) - Y_{iT}\left(\underline{d}_{T-K:T-1}^{S_K = s+1}\right)\right], s \in \{0,1,\dots,K-1\}$. 
+To answer these causal questions, we can propose a marginal structural model (MSM) 
+that relates the treatment history to the expected potential outcome at the final time: 
+$\mathbb{E\left[Y_{iT}\left(\underline{d}_{T-k:T}\right)\right]} = g(\underline{d}_{T-k:T}, \gamma_0)$
+Our target estimand is the parameters of the marginal structural model (MSM): 
+$\mathbb{E}\left[ Y_i\left(\underline{d}_{T-k}\right) \right] = g\left(\underline{d}_{T-k}; \gamma_0 \right)$, 
+where $k=3$. To only focus on the adjustment for the unmeasred confounder, for both of the methods, 
+we specify $g\left(\underline{d}_{T-k}; \gamma \right)$ as the correctly specified linear MSM
+\begin{equation}
+    g\left(\underline{d}_{T-k}; \gamma \right) = \alpha' + \tau_F' d_T + \tau_C' \sum_{t=T-3}^{T-1} d_t,
+\end{equation}
+\subsection{Fix-effect Marginal structural Model}
+
+\section{Results}
+
+
+
+ 
+ 
 
 
 
