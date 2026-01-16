@@ -223,6 +223,10 @@ def train_seqgplvm_val(train_id: str,
     extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
     extra_logging_set = {item: extra_logging_map[item] for item in extra_logging}
 
+    if remaining == 0:
+        print("Validation training already complete. Exiting.")
+        return
+
     try:
         for i in iterator:
             optimizer.zero_grad()

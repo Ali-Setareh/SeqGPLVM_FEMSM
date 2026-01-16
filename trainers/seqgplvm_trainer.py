@@ -261,6 +261,12 @@ def train_seqgplvm(df: pd.DataFrame,
     extra_logging_map = {"loss_list": loss_list, "param_hist": param_hist, "actual_params": actual_params}
     extra_logging_set = {item: extra_logging_map[item] for item in extra_logging}
 
+    if remaining == 0:
+        print("Training already completed. Exiting.")
+        return
+
+     # --- TRAINING LOOP -----------
+
     try:
 
         for i in iterator:
