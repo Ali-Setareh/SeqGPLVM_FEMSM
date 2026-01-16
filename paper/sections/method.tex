@@ -1,0 +1,14 @@
+\chapter{Method}
+\label{sec:method}
+In this section, we describe the two proposed methods 
+for adjusting for unmeasured time-invariant confounding: the fixed-effect marginal 
+structural model (FE-MSM) proposed by \cite{blackwellEffectPoliticalAdvertising2024}
+and the sequential Gaussian process latent variable model (SeqGPLVM) 
+proposed by \cite{hattSequentialDeconfoundingCausal2024}. Both of 
+these methods consist of two stages:  
+(i) a latent variable treatment model that that aimes to estimate the propensity scores, conditioning 
+on both observed covariates and latent variables that capture the unmeasured time-invariant confounding,
+and (ii) a marginal structural model that uses the estimated propensity scores to adjust for confounding 
+using inverse probability of treatment weighting (IPTW).
+
+for estimating causal effects in the presence of unmeasured time-invariant confounding in longitudinal data with time-varying treatments. We begin by outlining the assumptions underlying our approach, followed by a detailed description of the FE-MSM framework and the estimation procedure.

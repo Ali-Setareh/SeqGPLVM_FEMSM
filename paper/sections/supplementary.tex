@@ -74,5 +74,92 @@ If the main scientific goal is to recover intervention-specific mean outcomes ra
 directly to the true causal means $\mu(\underline a)=\mathbb E[Y(\underline a)]$ over a set of regimes $\underline a\in\mathcal A$ (e.g., treat at $T$ only, treat in the last $k$ periods, etc.). Accuracy can then be summarized via $\hat\mu(\underline a)-\mu(\underline a)$, RMSE over $\mathcal A$, or integrated squared error. This approach is often most interpretable when the MSM is knowingly misspecified.
 
 \paragraph{Why Taylor linearizations are not the ``truth'' in general.}
-A first-order Taylor expansion of the true structural outcome function yields a \emph{local} linear approximation around a chosen expansion point (e.g., $d_0$ or $\mathbb E^\ast[D]$). By contrast, the pseudo-true MSM parameters $\gamma^\star$ are defined by a \emph{global} $L^2$ projection with respect to the (pseudo-)population distribution of the regressors. These coincide only in special cases (e.g., when the regressor has negligible variance around the expansion point or the true response is approximately linear on its support). Consequently, using a Taylor slope as ``truth'' generally changes the estimand and does not correspond to the population target of the fitted linear MSM.
+A first-order Taylor expansion of the true structural outcome function yields a \emph{local} linear approximation around a chosen expansion point (e.g., $d_0$ or $\mathbb E^\ast[D]$). By contrast, the pseudo-true MSM parameters $\gamma^\star$ are defined by a \emph{global} $L^2$ projection with respect to the (pseudo-)population distribution of the regressors. These coincide only in special cases (e.g., when the regressor has negligible variance around the expansion point or the true response is approximately linear on its support). Consequently, using a Taylor slope as ``truth'' generally changes the estimand and does not correspond to the population target of the fitted linear MSM. 
+
+\section{Ground-truth targets for MSM coefficients in simulation studies}
+\label{sec:msm_ground_truth}
+
+Consider a data-generating process (DGP) that induces well-defined potential outcomes
+$Y_i(\bar d)$ for treatment regimes $\bar d$ (possibly truncated to the last $k$ periods).
+In the truncated setting used by \cite{blackwellEffectPoliticalAdvertising2024}, the truncated potential
+outcome holds the pre-window treatment history fixed at its natural value and intervenes
+only on the last $k$ treatments:
+\begin{equation}
+Y_i(d_{T-k:T}) \;\equiv\; Y_i\!\big(D_{i,1:T-k-1},\, d_{T-k:T}\big).
+\end{equation}
+An MSM specifies a parametric model for the marginal mean of these potential outcomes,
+\begin{equation}
+\mathbb E\!\left[ Y_i(d_{T-k:T}) \right] \;=\; g\!\left(d_{T-k:T};\gamma\right),
+\end{equation}
+and estimation proceeds via inverse-probability weights and a corresponding (typically
+weighted) estimating equation, which for linear MSMs with identity link reduces to
+weighted least squares.
+
+When the working MSM $g(\cdot;\gamma)$ is misspecified relative to the DGP, the fitted MSM
+coefficients do not in general equal structural coefficients from the outcome equation,
+nor do they necessarily equal a single causal contrast. Instead, the estimator targets a
+\emph{pseudo-true} parameter (a population projection) determined by the chosen MSM, the
+estimating equation, and the weighting scheme. Two equivalent practical approaches can be
+used to compute meaningful ``ground truth'' values for MSM coefficients in a simulation
+study:
+
+\paragraph{Approach 1: Large-sample ``oracle'' implementation of the estimator.}
+\begin{enumerate}
+\item Generate a very large simulated dataset from the DGP (large $N$, fixed $T$).
+\item Compute the inverse-probability weights $W$ using the \emph{true} treatment assignment
+probabilities implied by the DGP (and apply the same stabilization and trimming rules used
+in the finite-sample estimator).
+\item Fit the MSM by the same weighted estimating equation / weighted least squares
+procedure used in the analysis.
+\item The resulting coefficients provide a Monte Carlo approximation to the population
+target $\gamma^\star$ of the estimator. For linear identity-link MSMs, $\gamma^\star$
+can be characterized as the weighted least-squares minimizer
+\begin{equation}
+\gamma^\star \;=\; \arg\min_{\gamma}\;
+\mathbb E\!\left[\, W\Big(Y - g(D_{T-k:T};\gamma)\Big)^2 \right],
+\end{equation}
+equivalently as the solution to the population estimating equation
+\begin{equation}
+\mathbb E\!\left[\, W\, h(D_{T-k:T})
+\Big(Y - g(D_{T-k:T};\gamma^\star)\Big)\right] \;=\; 0,
+\end{equation}
+where $h(\cdot)$ denotes the regressor vector appearing in the estimating equation.
+\end{enumerate}
+This approach is straightforward and ensures that the ``truth'' matches the exact
+estimator, including any stabilization or truncation of weights.
+
+\paragraph{Approach 2: Compute regime means $\mu(d)$ and project onto the MSM.}
+This approach separates the ``true causal response surface'' from its parametric MSM
+approximation.
+\begin{enumerate}
+\item Define the regime mean function for the intervention on the last $k$ treatments:
+\begin{equation}
+\mu(d_{T-k:T}) \;\equiv\; \mathbb E\!\left[ Y_i(d_{T-k:T}) \right].
+\end{equation}
+\item Compute $\mu(d_{T-k:T})$ for each regime $d_{T-k:T}$ by Monte Carlo do-simulation
+under the DGP: simulate pre-window quantities naturally, set the last $k$ treatments to
+$d_{T-k:T}$, propagate all downstream covariates and outcomes (including any
+treatment--covariate feedback), and average the resulting $Y$.
+\item Obtain the MSM ``ground-truth'' coefficients as the best-fitting projection of
+$\mu(d)$ onto the chosen MSM model class. For a linear MSM
+$g(d;\gamma)=Z(d)^\top\gamma$, define
+\begin{equation}
+\gamma^\star \;=\; \arg\min_{\gamma}\; \sum_{d\in\mathcal D}
+q(d)\,\Big(\mu(d)-Z(d)^\top\gamma\Big)^2,
+\end{equation}
+where $\mathcal D$ is the set of regimes under consideration (e.g., all $2^k$ binary
+histories) and $q(d)$ specifies a weighting over regimes. A common choice is uniform
+$q(d)$, while a choice aligned to the stabilized-weight target distribution can be used if
+one wishes $\gamma^\star$ to match the exact population estimating-equation target.
+\end{enumerate}
+
+\paragraph{Usage in simulation evaluation.}
+In a simulation study with a potentially misspecified MSM, estimator performance (bias,
+RMSE, coverage) for MSM coefficients should be assessed relative to $\gamma^\star$
+computed by either approach above (they coincide when implemented consistently). Separately,
+one may report approximation error of the MSM itself by comparing $g(d;\gamma^\star)$ to
+$\mu(d)$ across regimes, to quantify how well the linear MSM summarizes the true regime
+mean surface.
+
+
 ```

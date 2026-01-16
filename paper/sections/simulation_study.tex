@@ -33,6 +33,7 @@ A_{it} &:= \mathbbm{1}\!\left\{\eta_{it} \le
 Y_{iT} &:= U_i + \tau_F A_{iT} + \tau_C \sum_{t=T-3}^{T-1} A_{it}
 + \gamma^\top \bar X_{iT} + \epsilon_{iT},
 \qquad \epsilon_{iT} \sim \mathcal{N}(0,1)
+\label{eq:blackwell_scm_outcome}
 \end{align}
 \end{subequations}
 
@@ -44,32 +45,71 @@ $\beta = (-0.5, -0.5, 1, -0.5)^{\top}$ when $p=4$. \hl{(add some note about why 
 these coeffs based on the variance or sth)}. We set $\varphi = 0.3$. Note that we generate 
 the covariates $X_{it}$ exogenously to the treatments. So we do not have the 
 treatment-confounder feedback. This is done to isolate the effect of
-adjusting for unmeasred time-invariant confounding. Also note that theere is no dynamics 
+adjusting for unmeasred time-invariant confounding and make the simulation simpler and it has important 
+implications in interpreting the causal effects. see section \ref{estimation}. Also note that theere is no dynamics 
 in the covariates and the distribution of $X_{it}$ is the same for all time points. The parameters 
 for the outcome model are set to $\tau_F = 1$, $\tau_C = 0.3$, and $\gamma = (1, 0.5)^{\top}$ 
 when $p=2$ and when $p=4$, $\gamma = (1, 0.5, 1, 1)^{\top}$.
 
 \section{Estimation}
+\label{estimation}
 For defining our estimation goals, first we need specify the causal question of interest. The causal
 question we want to answer is: What is the average effect of the treatment received at the final time on the 
-final outcome, fixing the last $K$ treatments before $T$. : 
-$\mathbb{E}\left[ Y_{iT}\left(d_T = 1, \bar{D}_{i,T-K:T-1}\right) - Y_{iT}\left(d_T = 0, \bar{D}_{i,T-K:T-1}\right) \right]$, and the 
-average effect of receiving one additional treatment in the last three time points, before $T$ on the final outcome, keeping 
-the rest of the treatments the same. To express 
+final outcome, fixing the last $K$ treatments before $T$: 
+$\mathbb{E}\left[ Y_{iT}\left(d_T = 1, \bar{d}_{i,T-K:T-1}\right) - Y_{iT}\left(d_T = 0, \bar{d}_{i,T-K:T-1}\right) \right]$, and the 
+average effect of receiving one additional treatment in the last three time points, before $T$ on the final outcome, fixing 
+the last treatments. To express 
 this mathematically, we first define $S_k(\bar{d}_{T-K:T-1}) := \sum_{t=T-K}^{T-1} d_t \in \{0,1,2,\dots, K\}.$ as the sum 
-of treatments received in the last $K$ time points. Then, the average effect of receiving one additional treatment 
-in the last $K$ time points on the final outcome is defined as 
-$\mathbb{E}\left[Y_{iT}\left(\underline{d}_{T-K:T-1}^{S_K = s}\right) - Y_{iT}\left(\underline{d}_{T-K:T-1}^{S_K = s+1}\right)\right], s \in \{0,1,\dots,K-1\}$. 
-To answer these causal questions, we can propose a marginal structural model (MSM) 
+of treatments received in the last $K$ time points before $T$. Then, the average effect of receiving one additional treatment 
+in these $K$ time points on the final outcome is defined as 
+$\mathbb{E}\left[Y_{iT}\left({S_k(\bar{d}_{T-K:T-1}) = s, d_{iT}}\right) - Y_{iT}\left({S_k(\bar{d}_{T-K:T-1}) = s+1, d_{iT}}\right)\right], s \in \{0,1,\dots,K-1\}$. 
+To answer both of these causal questions, we can propose a marginal structural model (MSM) 
 that relates the treatment history to the expected potential outcome at the final time: 
-$\mathbb{E\left[Y_{iT}\left(\underline{d}_{T-k:T}\right)\right]} = g(\underline{d}_{T-k:T}, \gamma_0)$
-Our target estimand is the parameters of the marginal structural model (MSM): 
-$\mathbb{E}\left[ Y_i\left(\underline{d}_{T-k}\right) \right] = g\left(\underline{d}_{T-k}; \gamma_0 \right)$, 
-where $k=3$. To only focus on the adjustment for the unmeasred confounder, for both of the methods, 
-we specify $g\left(\underline{d}_{T-k}; \gamma \right)$ as the correctly specified linear MSM
+$\mathbb{E\left[Y_{iT}\left(\bar{d}_{T-k:T}\right)\right]} = g(\bar{d}_{T-k:T}, \gamma_0)$, where 
+$g(\bar{d}_{T-k:T}, \gamma_0)$ is the true unkown function parameterized by $\gamma_0$. Our job is 
+to first propose a function $f(\bar{d}_{T-k:T}, \gamma)$ and then estimate its parameters $\gamma$. In this 
+DGP, the true function $g$, is: 
 \begin{equation}
-    g\left(\underline{d}_{T-k}; \gamma \right) = \alpha' + \tau_F' d_T + \tau_C' \sum_{t=T-3}^{T-1} d_t,
+    \label{truemsm}
+    g\left(\underline{d}_{T-k}; \gamma_0 \right) = \alpha_0 + \tau_{F} d_T + \tau_{C} \sum_{t=T-3}^{T-1} d_t
 \end{equation}
+
+to see this, we begin from Eq.~\eqref{eq:blackwell_scm_outcome}. First note that since this is 
+a sctructural equation model, we can replace the random variables by their interventions. So we have:
+\begin{align}
+\label{truemsmproof}
+Y_{iT}\!\left(\bar d_{T-k:T}\right)
+&= U_i + \tau_F d_T + \tau_C \sum_{t=T-3}^{T-1} d_t + \gamma^\top \bar X_{iT} + \epsilon_{iT} \\
+\implies\quad
+\mathbb{E}\!\left[Y_{iT}\!\left(\bar d_{T-k:T}\right)\right]
+&= \mathbb{E}[U_i] + \tau_F d_T + \tau_C \sum_{t=T-3}^{T-1} d_t
+   + \gamma^\top \mathbb{E}[\bar X_{iT}] + \mathbb{E}[\epsilon_{iT}] \\
+\implies\quad
+\mathbb{E}\!\left[Y_{iT}\!\left(\bar d_{T-k:T}\right)\right]
+&= \mathbb{E}\!\left[U_i + \gamma^\top \bar X_{iT}\right]
+   + \tau_F d_T + \tau_C \sum_{t=T-3}^{T-1} d_t \\
+\implies\quad
+\mathbb{E}\!\left[Y_{iT}\!\left(\bar d_{T-k:T}\right)\right]
+&= \alpha_0 + \tau_F d_T + \tau_C \sum_{t=T-3}^{T-1} d_t,
+\qquad
+\alpha_0 := \mathbb{E}\!\left[U_i + \gamma^\top \bar X_{iT}\right].
+\end{align}
+
+\hl{The important point to note here is that since $X_{it}$ is exogenous to the treatment, we do not have 
+terms involving $X_{it}(\underline{d}_{T-k})$ which are counterfactual covariates under 
+the specified treatment regime and we could substitute it with a constant.} From 
+Eq.~\eqref{truemsmproof}, we can see 
+$\mathbb{E}\left[ Y_{iT}\left(d_T = 1, \bar{d}_{i,T-K:T-1}\right) - Y_{iT}\left(d_T = 0, \bar{d}_{i,T-K:T-1}\right) \right] = \tau_F$ and 
+$\mathbb{E}\left[Y_{iT}\left({S_k(\bar{d}_{T-K:T-1}) = s, d_{iT}}\right) - Y_{iT}\left({S_k(\bar{d}_{T-K:T-1}) = s+1, d_{iT}}\right)\right] = \tau_C$. 
+The equality between these causal effects and the parameters of the MSM is a result of the linearity of the DGP and the absence of treatment-confounder feedback. 
+See \ref{sec:msm_ground_truth} for more discussion on this.
+
+To only focus on the adjustment for the unmeasred confounder, for both of the methods, 
+we specify $f\left(\underline{d}_{T-k}; \gamma \right)$ as the correctly specified linear MSM:
+\begin{equation}
+    f\left(\underline{d}_{T-k}; \gamma \right) = \alpha' + \tau_F' d_T + \tau_C' \sum_{t=T-3}^{T-1} d_t
+\end{equation}
+where $\gamma = (\alpha', \tau_F', \tau_C')$. 
 \subsection{Fix-effect Marginal structural Model}
 
 \section{Results}
