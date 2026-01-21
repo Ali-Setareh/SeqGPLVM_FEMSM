@@ -32,7 +32,9 @@
 \usepackage{soul}
 \usepackage{cleveref}
 \usepackage{bbm}
-
+\usepackage{tikz}
+\usepackage{pdflscape}
+\usetikzlibrary{positioning, arrows.meta, shapes.geometric, backgrounds, fit}
 %\sethlcolor{red}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -41,7 +43,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET VARIABLES FOR TITLE PAGE
-\title{A Comparative Study of Two Methods for Estimating Causal Effects with Time-Varying Treatments under Time-Invariant Unmeasured}
+\title{A Comparative Study of Two Methods for Estimating Causal Effects with Time-Varying Treatments under Time-Invariant Unmeasured Confounding}
 \author{Ali Setareh Kokab}
 \fromCity{Tübingen}
 \matnr{6332297}
@@ -63,10 +65,11 @@
 \maketitle
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
-
+\input{sections/thingstodiscuss.tex}
 \input{sections/notation}
 \input{sections/method}
 \input{sections/simulation_study}
+\input{sections/appendix.tex}
 \input{sections/supplementary}
 \bibliographystyle{apacite}
 \bibliography{references}

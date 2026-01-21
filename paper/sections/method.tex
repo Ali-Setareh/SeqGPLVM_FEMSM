@@ -9,6 +9,12 @@ these methods consist of two stages:
 (i) a latent variable treatment model that that aimes to estimate the propensity scores, conditioning 
 on both observed covariates and latent variables that capture the unmeasured time-invariant confounding,
 and (ii) a marginal structural model that uses the estimated propensity scores to adjust for confounding 
-using inverse probability of treatment weighting (IPTW).
+using inverse probability of treatment weighting (IPTW). 
 
-for estimating causal effects in the presence of unmeasured time-invariant confounding in longitudinal data with time-varying treatments. We begin by outlining the assumptions underlying our approach, followed by a detailed description of the FE-MSM framework and the estimation procedure.
+In this section, we first describe the first stage for each method including 
+their assumptions and then describe the second stage that is common between the methods, i.e., 
+the MSM estimation using IPTW. 
+Finally, we discuss the differences between the two methods and their implications.
+
+\input{sections/method_seqgplvm.tex}
+\input{sections/method_fe_msm.tex}
