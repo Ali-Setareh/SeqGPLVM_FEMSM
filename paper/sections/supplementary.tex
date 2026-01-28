@@ -34,11 +34,15 @@ only fixes the distribution of $Y$ in the factual world and does not, by itself,
 \paragraph{When DGP and MSM parameters coincide (and when they do not).}
 In simple settings (e.g.\ linear-additive outcome models with covariates unaffected by treatment), the induced causal mean $\mu(\underline a)$ may lie exactly in the MSM family, so that coefficients in the DGP and MSM coincide. This is why lectures and simulation studies often reuse the same functional form: it makes the estimand and ``truth'' align and isolates finite-sample and weighting effects. In general, however, if the true causal mean is nonlinear or contains interactions not represented in $g(\underline a;\gamma)$, then the fitted MSM parameters are no longer structural ``true'' coefficients. Rather, they are best-approximation (projection) parameters that summarize the true causal response surface within the chosen model class and for the target population induced by the weighting scheme.
 
-```latex
 \section{Defining ``truth'' under MSM misspecification}
 \label{sec:truth_under_misspec}
-
-When the true data-generating process (DGP) implies a nonlinear causal mean response surface, but the analyst fits a linear marginal structural model (MSM), there is typically no single ``true'' coefficient $(\tau_F,\tau_C)$ embedded in the DGP that the estimator is meant to recover. Instead, the relevant benchmark depends on the estimand implied by the fitted MSM. Two common and mathematically well-defined notions of ``truth'' are as follows.
+When the true data-generating process (DGP) implies a nonlinear causal mean 
+response surface, but the analyst fits a linear marginal structural model (MSM), 
+there is typically no single ``true'' coefficient $(\tau_F,\tau_C)$ 
+embedded in the DGP that the estimator is meant to recover. 
+Instead, the relevant benchmark depends on the estimand implied 
+by the fitted MSM. Two common and mathematically well-defined notions 
+of ``truth'' are as follows.
 
 \paragraph{Projection (pseudo-true) MSM parameters.}
 Let the working MSM be

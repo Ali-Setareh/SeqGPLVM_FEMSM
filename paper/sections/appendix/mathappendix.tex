@@ -1,0 +1,337 @@
+% ------------------------------------------------------------
+% Appendix: Deriving the (negative) ELBO loss for the SeqGPLVM
+% ------------------------------------------------------------
+
+\section{SeqGPLVM loss function}
+\label{sec:seqgplvm_loss}
+In this section, we derive the ELBO (evidence lower bound) for the sequential Gaussian process latent variable 
+model (SeqGPLVM) introduced in Section~\ref{sec:seqgplvm}. 
+
+\subsection{Notation}
+We use bold uppercase letters to denote matrices, bold lowercase
+letters to denote vectors, and plain letters to denote scalars. Let $\mathbf{X} \in \mathbb{R}^{N\times T \times D}$
+denote the covariate data 
+where \(N\) is the number of individuals and 
+\(D\) is the number of covariates and \(T\) is the number of time points, and $\mathbf{A} \in \{0,1\}^{N \times T}$ the observed outcomes (treatments). Here, 
+we assume scalar outcomes for simplicity, but the 
+extension to multi-dimensional outcomes is straightforward. Also, we assume 
+a binary outcome for concreteness; 
+however, this restriction is not required 
+for the theoretical results. We index individuals 
+by \(i \in \{1,\dots,N\}\) and time by \(t \in \{1,\dots,T\}\).
+Bold lowercase symbols (e.g., $\mathbf{a}_t$) denote vectors collecting
+observations for all $N$ units at time $t$, while plain symbols (e.g., $x_{i,d,t}$
+and $a_{i,t}$) denote scalar observations for unit $i$ at time $t$. We use $\boldsymbol{\lambda}$ to denote 
+the vector of \textit{all} latent variables which we want to calculate the 
+posterior, including the \emph{time-invariant} latent confounder $\mathbf{Z} \in \mathbb{R}^{N \times P}$, where 
+\(P\) is the latent dimensionality,
+and $\boldsymbol{\gamma}$ to denote the \emph{generative} hyperparameters and $\boldsymbol{\psi}$ 
+to denote the \emph{variational} hyperparameters. Generative hyperparameters are those that define 
+how the data is generated and they are in prior and likelihood, 
+e.g., the kernel lengthscale and variance in GPs, 
+while variational hyperparameters are those that define the 
+variational family, e.g., the mean and variance in Gaussian 
+variational distributions. 
+
+\subsection{Variational inference background}
+\label{sec:variational_inference_background}
+Our inferential target is the posterior distribution over latent variables given the data and hyperparameters:
+\(
+p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})
+\). Bayes' rule gives 
+
+\begin{equation}
+p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})
+=
+\frac{p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})}
+     {p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})},
+\label{eq:bayes-posterior}
+\end{equation}
+where the denominator
+\(
+p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
+\)
+(the \emph{marginal likelihood} / \emph{evidence}) is the normalizing constant. Note that 
+we show the parameterization both likehood and prior with $\boldsymbol{\gamma}$ to make the 
+notation consicer, but in practice, they can have different hyperparameters.
+Rewriting the logarithm of evidence as an 
+integral over latent variables,  
+\begin{equation}
+\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) = \log \int p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})\,\mathrm{d}\boldsymbol{\lambda}.
+\end{equation}
+In latent-variable models this integral is typically intractable which means the 
+posterior cannot be computed exactly; introducing a tractable variational density \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\) 
+yields a lower bound on \(\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid\mathbf{X})\). 
+The gap between this bound and the true log-evidence is a KL divergence to the true posterior, 
+so maximizing the bound pushes \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\) 
+towards \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\). To see this, 
+the marginal likelihood can be written as
+\begin{align}
+\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
+&= \log \int p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})\,\mathrm{d}\boldsymbol{\lambda}
+\nonumber\\
+&= \log \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,
+\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
+\mathrm{d}\boldsymbol{\lambda}
+\nonumber\\
+&\ge \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
+\log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
+\mathrm{d}\boldsymbol{\lambda}
+\;=:\; \mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma}),
+\label{eq:elbo-def}
+\end{align}
+where the inequality is Jensen's inequality. $\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})$ is called the evidence lower bound (ELBO).
+Using Bayes' rule,
+\(
+p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})
+=
+p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})/p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
+\),
+one obtains the standard identity
+\begin{align}
+\mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\right)
+&=
+\int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
+\log\frac{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}{p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})}\,
+\mathrm{d}\boldsymbol{\lambda}
+\nonumber\\
+&=
+\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\psi})
+-\int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
+\log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X},\boldsymbol{\psi})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
+\mathrm{d}\boldsymbol{\lambda}
+\nonumber\\
+&= \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) - \mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma}).
+\label{eq:logp-elbo-kl}
+\end{align}
+Equivalently,
+\begin{equation}
+\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
+=
+\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})
++
+\mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\right),
+\label{eq:logp-decomp}
+\end{equation}
+so maximizing \(\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})\) w.r.t.\ \(q\) minimizes the KL divergence to the true posterior (and equality holds iff \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}) = p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\)). 
+This is true since the lhs of \eqref{eq:logp-decomp} does not depend on \(q\). 
+Thus, we can use \(\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})\) as a surrogate objective for approximate inference. 
+We can rewrite \(\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})\) as 
+\begin{align}
+\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})
+&= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log\!\left(\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda} \mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\right)\, d\boldsymbol{\lambda} \\
+&= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda} \mid \mathbf{X})\, d\boldsymbol{\lambda}
+   \;-\; \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\, d\boldsymbol{\lambda} \\
+&= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log\!\Big( p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X}) \Big)\, d\boldsymbol{\lambda}
+   \;-\; \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\, d\boldsymbol{\lambda} \\
+&= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\, d\boldsymbol{\lambda}
+   \;-\; \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log\!\left(\frac{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}{p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})}\right)\, d\boldsymbol{\lambda} \\
+&= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\, d\boldsymbol{\lambda}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\right).
+    \label{eq:elbo-rewrite}
+\end{align}
+Thus to setup variational inference, we need to specify the model likelihood \(p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\), 
+the prior over latents \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\), 
+and the variational family \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\).
+
+\subsection{Variational Inference for Bayesian Gaussian process latent variable models}
+In this section, we briefly review variational inference in \emph{Bayesian} Gaussian 
+process latent variable models (GPLVMs) \cite{titsiasBayesianGaussianProcess2010}. The word Bayesian 
+here is to distinguish it from the original GPLVM \cite{lawrenceGaussianProcessLatent2003} 
+where the latent variables \( \mathbf{Z} \) are point estimated rather than 
+inferred in a fully Bayesian manner. From now on, by GPLVMs we mean Bayesian GPLVMs. 
+The idea behind GPLVMs is to place a Gaussian processes (GPs) as a 
+prior in Eq.~\ref{eq:elbo-rewrite}. To show the machinary 
+of GPLVMs, first forget about the time index \(t\) or 
+equivalently think of slice the data at a fixed time \(t' \). We 
+define \(\widetilde{\boldsymbol{X}}_{t'} \in \mathbb{R}^{N \times (D+p)}\) 
+as the augmented input defined 
+on the joint space of observed covariates and latent variables: 
+\begin{equation}
+    \widetilde{\boldsymbol{x}}_{i,t'} = (\boldsymbol{x}_{i,t'}, \mathbf{z}_i), \quad i=1,\dots,N.
+\end{equation}
+Then, we define a GP prior over the latent function \(f(\cdot)\) that maps 
+these augmented inputs to the observed outcomes:
+\begin{equation}
+    f(\cdot) \sim \mathcal{GP}\left(m(\cdot), k(\cdot, \cdot; \boldsymbol{\gamma})\right),
+\end{equation}
+where \(m(\cdot)\) is the mean function, \(k(\cdot, \cdot; \boldsymbol{\gamma})\) is the kernel function 
+parameterized by hyperparameters \(\boldsymbol{\gamma}\). We then perform inference 
+over the finite vector of function values,
+\begin{equation}
+\mathbf{f}_{\widetilde{\mathbf{X}}} = f(\widetilde{\mathbf{X}}) \in \mathbb{R}^{N}
+\end{equation}
+Hence, the latent variables in GPLVMs are 
+\( \boldsymbol{\lambda} = (\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z}) \) and 
+the posterior we are interested in is \(p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z} \mid \mathbf{X}, \mathbf{Y})\). 
+As we described in \ref{sec:variational_inference_background}, to perform variational inference, 
+we need to specify the prior over latents \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\). In GPLVMs,
+we can decompose the prior as follows: 
+\begin{align}
+    p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X}) 
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z} \mid \mathbf{X}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{X}, \mathbf{Z}) p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}),
+\end{align}
+where the first term is the GP prior conditional on the inputs. 
+In vanilla GPLVMs, 
+we assume that the latent variables are \emph{a priori} 
+independent of the observed covariates, and that they are i.i.d.\ 
+with a standard normal prior, e.g., \(\mathcal{N}(\mathbf{0}, \mathbf{I}_P)\).
+\begin{align}
+p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})
+&= p(\mathbf{Z})\\
+&= \prod_{i=1}^N \mathcal{N}(\mathbf{z}_i \mid \mathbf{0}, \mathbf{I}_P).
+\label{eq:gplvm_latent_prior}
+\end{align}
+
+Next, we need to specify the variational family $q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})$. 
+Following the standard construction in variational inference for Gaussian process models, 
+we define a partially collapsed variational family in which only the latent variables $\mathbf{Z}$ 
+are approximated variationally, while the conditional distribution of the GP function values is 
+kept exact. Shortly we will see the advantage of this parameterization when we derive the ELBO. Specifically, we set
+\begin{align}
+    q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda}) 
+    &= q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z}) q_{\boldsymbol{\psi}}(\mathbf{Z}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z}) \prod_{i=1}^N q_{\boldsymbol{\psi}}(\mathbf{z}_i),
+    \label{eq:gplvm_var_posterior}
+\end{align}  
+ 
+Note that the variational distribution is indexed by both 
+\(\boldsymbol{\psi}\) and \(\boldsymbol{\gamma}\) because of this choice unlike the usual 
+variational inference setting. The factorization in Eq.~\ref{eq:gplvm_var_posterior} is known as 
+the mean field approximation. It assumes that the 
+latent variables are independent across data points in the variational posterior. Moreover, we assume 
+a fully factorized Gaussian variational distribution for each latent variable:
+\begin{equation}
+    q_{\boldsymbol{\psi}}(\mathbf{z}_i) = \prod_{j=1}^P \mathcal{N}(z_{ij} \mid \mu_{ij}, \sigma_{ij}^2).
+\end{equation}
+
+substituting the prior and variational family into the ELBO in Eq.~\ref{eq:elbo-rewrite}, we obtain
+\begin{align}
+\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})
+&= \int q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\, d\boldsymbol{\lambda}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\right) \\
+&= \int q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\mathbf{f}_{\widetilde{\mathbf{X}}})\, d\mathbf{f}_{\widetilde{\mathbf{X}}} d\mathbf{Z}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})\right) \\
+&= \mathbb{E}_{q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z})}
+\left[\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\mathbf{f}_{\widetilde{\mathbf{X}}})\right]
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})\right).
+\label{eq:gplvm_elbo}
+\end{align}
+
+\subsection{Sparse GPLVMs}
+The ELBO in Eq.~\ref{eq:gplvm_elbo} is still computationally expensive to evaluate
+because it involves the full GP prior \(p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z})\), which 
+scales cubically with the number of data points \(N\). To address this issue, we can
+\subsection{SeqGPLVM: inducing variables and the resulting ELBO}
+
+\paragraph{Inducing variables and GP conditionals.}
+For each time step \(t\in\{1,\dots,T\}\), let \(\mathbf{f}_t\in\mathbb{R}^{N}\) denote latent GP function values at the \(N\) observed inputs and \(\mathbf{u}_t\in\mathbb{R}^{M}\) the inducing variables at inducing inputs \(\mathbf{M}_t\) (collecting \(M\) inducing locations). With kernel hyperparameters \(\boldsymbol{\psi}_t\), define kernel matrices
+\(
+\mathbf{K}^{(t)}_{NN}, \mathbf{K}^{(t)}_{NM}, \mathbf{K}^{(t)}_{MN}, \mathbf{K}^{(t)}_{MM}
+\)
+computed from the (time-\(t\)) GP inputs (in the GPLVM these inputs may involve \(\mathbf{X}\) and the latent \(\mathbf{z}\); we suppress this dependence in the conditioning to keep notation light).
+The sparse GP prior uses
+\begin{align}
+p(\mathbf{u}_t\mid \boldsymbol{\psi}_t) &= \mathcal{N}\!\left(\mathbf{0},\mathbf{K}^{(t)}_{MM}\right),
+\\
+p(\mathbf{f}_t\mid \mathbf{u}_t,\boldsymbol{\psi}_t)
+&=\mathcal{N}\!\left(
+\mathbf{K}^{(t)}_{NM}(\mathbf{K}^{(t)}_{MM})^{-1}\mathbf{u}_t,\;
+\mathbf{K}^{(t)}_{NN}-\mathbf{K}^{(t)}_{NM}(\mathbf{K}^{(t)}_{MM})^{-1}\mathbf{K}^{(t)}_{MN}
+\right).
+\label{eq:gp-conditional}
+\end{align}
+
+\paragraph{Latent variables and variational family.}
+Let \(\mathbf{z}\in\mathbb{R}^{d}\) denote the (global) latent variable(s) with prior
+\begin{equation}
+p(\mathbf{z})=\mathcal{N}(\mathbf{0},\mathbf{I}).
+\label{eq:z-prior}
+\end{equation}
+Collect all latents as
+\(
+\boldsymbol{\lambda} := (\mathbf{z},\mathbf{f}_{1:T},\mathbf{u}_{1:T})
+\),
+where \(\mathbf{f}_{1:T}:=(\mathbf{f}_1,\dots,\mathbf{f}_T)\) and similarly for \(\mathbf{u}_{1:T}\).
+We use the standard sparse variational GP factorization
+\begin{equation}
+q(\boldsymbol{\lambda})
+=
+q(\mathbf{z})\prod_{t=1}^{T} q(\mathbf{u}_t)\,p(\mathbf{f}_t\mid \mathbf{u}_t,\boldsymbol{\psi}_t),
+\qquad
+q(\mathbf{z})=\mathcal{N}(\mathbf{m}_z,\mathbf{S}_z),
+\quad
+q(\mathbf{u}_t)=\mathcal{N}(\mathbf{m}_{u_t},\mathbf{S}_{u_t}).
+\label{eq:q-factorization}
+\end{equation}
+
+\paragraph{Sequential likelihood factorization.}
+Assume a time-factorized observation model (conditional on the latent state):
+\begin{equation}
+p(\mathbf{Y}\mid \mathbf{X},\mathbf{z},\mathbf{f}_{1:T},\boldsymbol{\psi})
+=
+\prod_{t=1}^{T}
+p\!\left(\mathbf{y}_t \mid \mathbf{X}_t,\mathbf{Y}_{1:t-1},\mathbf{z},\mathbf{f}_t,\boldsymbol{\psi}_t\right),
+\label{eq:seq-likelihood}
+\end{equation}
+where \(\mathbf{y}_t\in\mathbb{R}^{N}\) is the vector of observations at time \(t\) and \(\mathbf{Y}_{1:t-1}\) collects past observations.
+
+\paragraph{ELBO for the SeqGPLVM.}
+Plugging \eqref{eq:q-factorization} and \eqref{eq:seq-likelihood} into the generic ELBO \eqref{eq:elbo-def} yields
+\begin{align}
+\mathcal{L}(q)
+&=
+\mathbb{E}_{q(\boldsymbol{\lambda})}
+\left[
+\log p(\mathbf{Y}\mid \mathbf{X},\boldsymbol{\lambda},\boldsymbol{\psi})
+\right]
+-
+\mathrm{KL}\!\left(q(\boldsymbol{\lambda})\,\|\,p(\boldsymbol{\lambda}\mid \mathbf{X},\boldsymbol{\psi})\right)
+\nonumber\\
+&=
+\sum_{t=1}^{T}
+\mathbb{E}_{q(\mathbf{z})\,q(\mathbf{u}_t)\,p(\mathbf{f}_t\mid \mathbf{u}_t,\boldsymbol{\psi}_t)}
+\left[
+\log p\!\left(\mathbf{y}_t \mid \mathbf{X}_t,\mathbf{Y}_{1:t-1},\mathbf{z},\mathbf{f}_t,\boldsymbol{\psi}_t\right)
+\right]
+\nonumber\\
+&\quad
+-\sum_{t=1}^{T}\mathrm{KL}\!\left(q(\mathbf{u}_t)\,\|\,p(\mathbf{u}_t\mid \boldsymbol{\psi}_t)\right)
+-\mathrm{KL}\!\left(q(\mathbf{z})\,\|\,p(\mathbf{z})\right).
+\label{eq:seqgplvm-elbo}
+\end{align}
+The corresponding training loss is the negative ELBO,
+\begin{equation}
+\mathcal{J}_{\text{VI}}(\boldsymbol{\psi})
+:=
+-\mathcal{L}(q),
+\label{eq:neg-elbo-loss}
+\end{equation}
+optionally optimized jointly over the variational parameters \(\{(\mathbf{m}_z,\mathbf{S}_z),(\mathbf{m}_{u_t},\mathbf{S}_{u_t})\}_{t=1}^T\) and hyperparameters \(\boldsymbol{\psi}\).
+
+\paragraph{Optional: hyperprior regularization.}
+If a hyperprior \(p(\boldsymbol{\psi})\) is used, then (up to an additive constant) one targets
+\begin{equation}
+\log p(\boldsymbol{\psi}\mid \mathbf{X},\mathbf{Y})
+\propto
+\log p(\mathbf{Y}\mid \mathbf{X},\boldsymbol{\psi}) + \log p(\boldsymbol{\psi})
+\;\approx\;
+\mathcal{L}(q) + \log p(\boldsymbol{\psi}),
+\label{eq:elbo-plus-hyperprior}
+\end{equation}
+and in the time-separable case \( \log p(\boldsymbol{\psi}) = \sum_{t=1}^{T}\log p(\boldsymbol{\psi}_t)\).
+
+\begin{landscape}
+\begin{figure}[p]
+  \centering
+  \includegraphics[width=\paperwidth,trim=0.5cm 0.5cm 0.5cm 0.5cm,
+  clip]{figures/build/fit_seqgplvm_dag.pdf}
+  \caption{...}
+  \label{fig:seqdecon-dag}
+\end{figure}
+\end{landscape}
+
+
+
