@@ -60,22 +60,22 @@ integral over latent variables,
 \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) = \log \int p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})\,\mathrm{d}\boldsymbol{\lambda}.
 \end{equation}
 In latent-variable models this integral is typically intractable which means the 
-posterior cannot be computed exactly; introducing a tractable variational density \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\) 
+posterior cannot be computed exactly; introducing a tractable variational density \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})\) 
 yields a lower bound on \(\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid\mathbf{X})\). 
 The gap between this bound and the true log-evidence is a KL divergence to the true posterior, 
-so maximizing the bound pushes \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\) 
+so maximizing the bound pushes \(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})\) 
 towards \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\). To see this, 
 the marginal likelihood can be written as
 \begin{align}
 \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
 &= \log \int p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})\,\mathrm{d}\boldsymbol{\lambda}
 \nonumber\\
-&= \log \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,
-\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
+&= \log \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})\,
+\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})}\,
 \mathrm{d}\boldsymbol{\lambda}
 \nonumber\\
-&\ge \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
-\log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
+&\ge \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})
+\log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})}\,
 \mathrm{d}\boldsymbol{\lambda}
 \;=:\; \mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma}),
 \label{eq:elbo-def}
@@ -88,21 +88,13 @@ p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})
 p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})/p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})
 \),
 one obtains the standard identity
-\begin{align}
-\mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\right)
-&=
-\int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
-\log\frac{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}{p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})}\,
-\mathrm{d}\boldsymbol{\lambda}
-\nonumber\\
-&=
-\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\psi})
--\int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})
-\log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X},\boldsymbol{\psi})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})}\,
-\mathrm{d}\boldsymbol{\lambda}
-\nonumber\\
-&= \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) - \mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma}).
-\label{eq:logp-elbo-kl}
+\begin{align} \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})\right) 
+    &= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) \log\frac{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})}{p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})}\, \mathrm{d}\boldsymbol{\lambda} \nonumber\\ 
+    &= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) \left [ \log q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) - \log {p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})}\right ] \, \mathrm{d}\boldsymbol{\lambda} \nonumber\\ 
+    &= \int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) \left [ \log q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) - \log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X})}\right ] \, \mathrm{d}\boldsymbol{\lambda} \nonumber\\ 
+    &= \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) -\int q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X}) \log\frac{p_{\boldsymbol{\gamma}}(\mathbf{A},\boldsymbol{\lambda}\mid \mathbf{X})}{q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}\mid \mathbf{X})}\, \mathrm{d}\boldsymbol{\lambda} \nonumber\\ 
+    &= \log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X}) - \mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma}). 
+    \label{eq:logp-elbo-kl} 
 \end{align}
 Equivalently,
 \begin{equation}
@@ -150,27 +142,27 @@ on the joint space of observed covariates and latent variables:
 \begin{equation}
     \widetilde{\boldsymbol{x}}_{i,t'} = (\boldsymbol{x}_{i,t'}, \mathbf{z}_i), \quad i=1,\dots,N.
 \end{equation}
-Then, we define a GP prior over the latent function \(f(\cdot)\) that maps 
+Then, we define a GP prior over the latent function \(f_{t'}(\cdot)\) that maps 
 these augmented inputs to the observed outcomes:
 \begin{equation}
-    f(\cdot) \sim \mathcal{GP}\left(m(\cdot), k(\cdot, \cdot; \boldsymbol{\gamma})\right),
+    f_{t'}(\cdot) \sim \mathcal{GP}\left(m(\cdot), k(\cdot, \cdot; \boldsymbol{\gamma}_{t'})\right),
 \end{equation}
 where \(m(\cdot)\) is the mean function, \(k(\cdot, \cdot; \boldsymbol{\gamma})\) is the kernel function 
 parameterized by hyperparameters \(\boldsymbol{\gamma}\). We then perform inference 
 over the finite vector of function values,
 \begin{equation}
-\mathbf{f}_{\widetilde{\mathbf{X}}} = f(\widetilde{\mathbf{X}}) \in \mathbb{R}^{N}
+\mathbf{f}_{t'} = f_{t'}(\widetilde{\mathbf{X}}_{t'}) \in \mathbb{R}^{N}
 \end{equation}
 Hence, the latent variables in GPLVMs are 
-\( \boldsymbol{\lambda} = (\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z}) \) and 
-the posterior we are interested in is \(p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z} \mid \mathbf{X}, \mathbf{Y})\). 
+\( \boldsymbol{\lambda}_{t'} = (\mathbf{f}_{t'}, \mathbf{Z}) \) and 
+the posterior we are interested in is \(p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'}, \mathbf{Z} \mid \mathbf{X}_{t'}, \mathbf{Y}_{t'})\). 
 As we described in \ref{sec:variational_inference_background}, to perform variational inference, 
-we need to specify the prior over latents \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\). In GPLVMs,
+we need to specify the prior over latents \(p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'}\mid \mathbf{X}_{t'})\). In GPLVMs,
 we can decompose the prior as follows: 
 \begin{align}
-    p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X}) 
-    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z} \mid \mathbf{X}) \\
-    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{X}, \mathbf{Z}) p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}),
+    p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'}\mid \mathbf{X}_{t'}) 
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'}, \mathbf{Z} \mid \mathbf{X}_{t'}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{X}_{t'}, \mathbf{Z}) p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}_{t'}),
 \end{align}
 where the first term is the GP prior conditional on the inputs. 
 In vanilla GPLVMs, 
@@ -178,22 +170,22 @@ we assume that the latent variables are \emph{a priori}
 independent of the observed covariates, and that they are i.i.d.\ 
 with a standard normal prior, e.g., \(\mathcal{N}(\mathbf{0}, \mathbf{I}_P)\).
 \begin{align}
-p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})
+p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}_{t'})
 &= p(\mathbf{Z})\\
 &= \prod_{i=1}^N \mathcal{N}(\mathbf{z}_i \mid \mathbf{0}, \mathbf{I}_P).
 \label{eq:gplvm_latent_prior}
 \end{align}
 
-Next, we need to specify the variational family $q_{\boldsymbol{\psi}}(\boldsymbol{\lambda})$. 
+Next, we need to specify the variational family $q_{\boldsymbol{\psi}}(\boldsymbol{\lambda}_{t'}\mid \mathbf{X}_{t'})$. 
 Following the standard construction in variational inference for Gaussian process models, 
 we define a partially collapsed variational family in which only the latent variables $\mathbf{Z}$ 
 are approximated variationally, while the conditional distribution of the GP function values is 
 kept exact. Shortly we will see the advantage of this parameterization when we derive the ELBO. Specifically, we set
 \begin{align}
-    q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda}) 
-    &= q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}}, \mathbf{Z}) \\
-    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z}) q_{\boldsymbol{\psi}}(\mathbf{Z}) \\
-    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z}) \prod_{i=1}^N q_{\boldsymbol{\psi}}(\mathbf{z}_i),
+    q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'}\mid \mathbf{X}_{t'}) 
+    &= q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\mathbf{f}_{t'}, \mathbf{Z}\mid \mathbf{X}_{t'}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{Z}, \mathbf{X}_{t'}) q_{\boldsymbol{\psi}}(\mathbf{Z}\mid \mathbf{X}_{t'}) \\
+    &= p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{Z}, \mathbf{X}_{t'}) \prod_{i=1}^N q_{\boldsymbol{\psi}}(\mathbf{z}_i),
     \label{eq:gplvm_var_posterior}
 \end{align}  
  
@@ -201,7 +193,10 @@ Note that the variational distribution is indexed by both
 \(\boldsymbol{\psi}\) and \(\boldsymbol{\gamma}\) because of this choice unlike the usual 
 variational inference setting. The factorization in Eq.~\ref{eq:gplvm_var_posterior} is known as 
 the mean field approximation. It assumes that the 
-latent variables are independent across data points in the variational posterior. Moreover, we assume 
+latent variables are independent across data points in the variational posterior. We also assume that 
+the variational distribution over the latent variables is not conditioned on the observed covariates, i.e.,
+\(q_{\boldsymbol{\psi}}(\mathbf{Z}\mid \mathbf{X}_{t'}) = q_{\boldsymbol{\psi}}(\mathbf{Z})\). This is called 
+the none-amortized variational inference. Moreover, we assume 
 a fully factorized Gaussian variational distribution for each latent variable:
 \begin{equation}
     q_{\boldsymbol{\psi}}(\mathbf{z}_i) = \prod_{j=1}^P \mathcal{N}(z_{ij} \mid \mu_{ij}, \sigma_{ij}^2).
@@ -209,14 +204,16 @@ a fully factorized Gaussian variational distribution for each latent variable:
 
 substituting the prior and variational family into the ELBO in Eq.~\ref{eq:elbo-rewrite}, we obtain
 \begin{align}
-\mathcal{L}(\boldsymbol{\psi},\boldsymbol{\gamma})
-&= \int q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\boldsymbol{\lambda})\, d\boldsymbol{\lambda}
-    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X})\right) \\
-&= \int q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\mathbf{f}_{\widetilde{\mathbf{X}}})\, d\mathbf{f}_{\widetilde{\mathbf{X}}} d\mathbf{Z}
-    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})\right) \\
-&= \mathbb{E}_{q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{\widetilde{\mathbf{X}}} \mid \mathbf{Z})}
-\left[\log p_{\boldsymbol{\gamma}}(\mathbf{A}\mid \mathbf{X},\mathbf{f}_{\widetilde{\mathbf{X}}})\right]
-    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X})\right).
+\mathcal{L}_{t'}(\boldsymbol{\psi},\boldsymbol{\gamma})
+&= \int q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}_{t'}\mid \mathbf{X}_{t'},\boldsymbol{\lambda}_{t'})\, d\boldsymbol{\lambda}_{t'}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi},\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'})\,\|\,p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}_{t'}\mid \mathbf{X}_{t'})\right) \\
+&= \int q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{Z})\,\log p_{\boldsymbol{\gamma}}(\mathbf{A}_{t'}\mid \mathbf{X}_{t'},\mathbf{f}_{t'})\, d\mathbf{f}_{t'} d\mathbf{Z}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}_{t'})\right) \\
+&= \sum_{i=1}^N \int q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{Z})\,\log p_{\boldsymbol{\gamma}}(a_{i,t'}\mid,f_{i,t'})\,d\mathbf{Z}
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}_{t'})\right) \\
+&= \mathbb{E}_{q_{\boldsymbol{\psi}}(\mathbf{Z})\,p_{\boldsymbol{\gamma}}(\mathbf{f}_{t'} \mid \mathbf{Z})}
+\left[\log p_{\boldsymbol{\gamma}}(\mathbf{A}_{t'}\mid \mathbf{X}_{t'},\mathbf{f}_{t'})\right]
+    \;-\; \mathrm{KL}\!\left(q_{\boldsymbol{\psi}}(\mathbf{Z})\,\|\,p_{\boldsymbol{\gamma}}(\mathbf{Z}\mid \mathbf{X}_{t'})\right).
 \label{eq:gplvm_elbo}
 \end{align}
 

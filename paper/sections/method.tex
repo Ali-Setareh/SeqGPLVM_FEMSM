@@ -6,8 +6,9 @@ structural model (FE-MSM) proposed by \cite{blackwellEffectPoliticalAdvertising2
 and the sequential Gaussian process latent variable model (SeqGPLVM) 
 proposed by \cite{hattSequentialDeconfoundingCausal2024}. Both of 
 these methods consist of two stages:  
-(i) a latent variable treatment model that that aimes to estimate the propensity scores, conditioning 
-on both observed covariates and latent variables that capture the unmeasured time-invariant confounding,
+(i) A treatment model that that aimes to estimate the propensity scores, conditioning 
+on both observed covariates and the unmeasured confounder substitute that 
+capture the unmeasured time-invariant confounding,
 and (ii) a marginal structural model that uses the estimated propensity scores to adjust for confounding 
 using inverse probability of treatment weighting (IPTW). 
 
@@ -16,5 +17,7 @@ their assumptions and then describe the second stage that is common between the 
 the MSM estimation using IPTW. 
 Finally, we discuss the differences between the two methods and their implications.
 
+
+\input{sections/method/method_assumptions.tex}
 \input{sections/method/method_seqgplvm.tex}
 \input{sections/method/method_fe_msm.tex}

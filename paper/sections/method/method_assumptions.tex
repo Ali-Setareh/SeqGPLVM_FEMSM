@@ -1,0 +1,14 @@
+\section{Assumptions}
+\label{sec:assumptions}
+Both methods described in this section rely on a set of assumptions to ensure the identifiability
+of the causal effects in the presence of unmeasured time-invariant confounding. 
+We summarize these assumptions below:
+\begin{itemize}
+    \item \textbf{Consistency}: The observed outcome for each individual under their observed treatment history is equal to the potential outcome under that treatment history. Formally, for each individual \(i\) and time \(t\), if \(A_{i,t} = a\), then \(Y_{i,t} = Y_{i,t}(a)\).
+    
+    \item \textbf{Positivity}: For all possible values of the observed covariates and latent variables, there is a positive probability of receiving each treatment level at each time point. Formally, for all \(t\), \(P(A_{i,t} = a \mid \mathbf{X}_{i,t}, \boldsymbol{\lambda}_i) > 0\) for all treatment levels \(a\).
+    
+    \item \textbf{Latent Ignorability}: Given the observed covariates and the latent variables that capture unmeasured confounding, the treatment assignment at each time point is independent of the potential outcomes. Formally, for all \(t\), \(Y_{i,t}(a) \perp A_{i,t} \mid \mathbf{X}_{i,t}, \boldsymbol{\lambda}_i\).
+    
+    \item \textbf{Time-Invariance of Unmeasured Confounding}: The unmeasured confounding captured by the latent variables is assumed to be time-invariant. This means that the latent variables do not change over time and consistently affect both treatment assignment and outcomes across all time points.
+\end{itemize}
