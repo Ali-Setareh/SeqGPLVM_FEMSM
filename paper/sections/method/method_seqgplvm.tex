@@ -44,7 +44,7 @@ To avoid these issues, in our implementation, we use the estimated propensities 
 SeqGPLVM treatment model directly in the MSM using IPTW. This choice is also conceptually closer to 
 the FE-MSM method described in section \ref{sec:fe-msm}. 
 
-The sequential latent variable model in stage 1 is implemented using Gaussian processes (GPs). 
+The sequential latent variable model in stage 1 is implemented using Gaussian processes latent variable models (GPLVMs) \cite{lawrenceGaussianProcessLatent2003}. 
 Specifically, we place GP priors on the functions that map the latent variables and 
 observed covariates to the treatment assignments at each time point, i.e., \(f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))\) 
 for \(t = 1, \ldots, T\), where \(k_t\) is the kernel function at time \(t\).

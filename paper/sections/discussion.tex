@@ -15,6 +15,8 @@
     because of the pinpointability assumption, there is a high chance that the those more complicated relationships in the dgp, 
     cannot satisfied the pinpointability assumption. It would be nice if I can find a dgps that is not very complicated but 
     violates the pinpointability assumption. Maybe reading D'amor critique paper again can help with this.
+    \item discuss about the SeqGPLVM architecture choice of having separate parameters for each time step vs having shared parameters across time steps and its
+    implications. Note that this is not the most efficient way to parameterize a time series model if we believe that the dgp's paramters do not change over time.  
 \end{itemize}
 
 \section{Problem of reusing the estimated latent variables in a second stage outcome model involving propensity score estimation}
