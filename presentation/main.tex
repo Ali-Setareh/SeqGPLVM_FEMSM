@@ -1,0 +1,341 @@
+% !TeX root = main.tex
+
+\documentclass[aspectratio=169]{beamer}
+
+% --- Theme (safe default) ---
+\usetheme{Madrid}
+\usecolortheme{default}
+\setbeamertemplate{navigation symbols}{}
+
+% --- Packages ---
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{bbm}   % for \mathbbm{1}
+\usepackage{bm}    % for bold vectors
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+% --- Bib (self-contained) ---
+\begin{filecontents*}{refs.bib}
+@article{blackwellEffectPoliticalAdvertising2024,
+  title   = {The Effect of Political Advertising after Citizen's United: Adjusting for Unmeasured Confounding in Marginal Structural Models},
+  author  = {Blackwell, Matthew and Yamauchi, Soichiro},
+  year    = {2024},
+  note    = {Working paper / manuscript (Feb 2024 version)},
+}
+
+@article{hattSequentialDeconfoundingCausal2024,
+  title   = {Sequential Deconfounding for Causal Inference with Unobserved Confounders},
+  author  = {Hatt, Tobias and Feuerriegel, Stefan},
+  year    = {2024},
+  note    = {arXiv:2104.09323 (latest version referenced in thesis draft)},
+}
+\end{filecontents*}
+
+\bibliographystyle{apalike}
+
+% --- Metadata ---
+\title[Fixed Effects vs SeqGPLVM]{Adjusting for Time-Invariant Unmeasured Confounding \\in Longitudinal Causal Inference: \\A Comparative Study of Fixed-Effects and SeqGPLVM}
+\author{Ali Setareh Kokab}
+\institute{University of Tübingen} %\;--\; Methods Center}
+\date{February 2026}
+
+\begin{document}
+
+% ==========================================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ==========================================================
+%\begin{frame}{Motivation (one sentence)}
+%\begin{itemize}
+ % \item In longitudinal observational studies, treatment decisions adapt over time.
+  %\item Standard IPTW/MSMs need sequential ignorability --- often violated by \textbf{unmeasured} confounders.
+  %\item Focus today: \textbf{time-invariant} unmeasured confounding (a stable trait of the unit).
+%\end{itemize}
+
+%\vspace{0.3cm}
+%\textbf{Goal:} compare two ways to ``recover'' the footprint of the time-invariant confounder from treatment history:
+%\begin{itemize}
+ % \item Fixed-effects propensity scores for MSMs \cite{blackwellEffectPoliticalAdvertising2024}
+  %\item Sequential GP latent variable model (SeqGPLVM) \cite{hattSequentialDeconfoundingCausal2024}
+%\end{itemize}
+%\end{frame}
+
+% ==========================================================
+\begin{frame}{A simple scenario (blood pressure pill)}
+Imagine:
+\begin{itemize}
+  \item $N$ individuals, $T=12$ months.
+  \item Each month: take pill ($A_{it}=1$) or not ($A_{it}=0$).
+  \item Measure outcome once at the end: $Y_{i,T+1}$ (blood pressure).
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{RCT ideal:} randomize $A_{it}$ each month $\Rightarrow$
+$\mathbb{E}\!\left[Y_{i,T+1}\mid\text{do}(\bar A_T=\bar a_T)\right]
+=
+\mathbb{E}\!\left[Y_{i,T+1}(\bar a_T)\right]
+=
+\mathbb{E}\!\left[Y_{i,T+1}\mid \bar A_T=\bar a_T\right]
+$.
+
+
+\vspace{0.2cm}
+\textbf{Reality:} observational data $\Rightarrow$ treatment depends on health status, behavior, genetics, etc.
+\end{frame}
+
+% ==========================================================
+\begin{frame}{What goes wrong: confounding}
+Confounding = a third variable affects both treatment and outcome.
+
+\vspace{0.2cm}
+In our setting:
+\begin{itemize}
+  \item Measured confounders: observed covariates $X_{it}$ (e.g doctor visits).
+  \item If we measure all the right covariates, we have sequential ignorability:
+        $A_{it} \perp Y_{i,T+1}(\bar a_T) \mid \bar A_{i,t-1}, X_{it}$.
+  \item We can use IPTW/MSMs to adjust for measured confounding and estimate causal effects: 
+        $\mathbb{E}\!\left[Y_{i,T+1}(\bar a_T)\right] = \mathbb{E}\!\left[\frac{\mathbbm{1}\{\bar A_{iT}=\bar a_T\}}{\prod_t \Pr(A_{it}=a_{it} \mid \bar A_{i,t-1}, X_{it})} Y_{i,T+1}\right]$.
+  \item \textbf{Intuition:} IPTW reweights the sample to create a pseudo-population where treatment is independent of confounders. 
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}{Key challenge: time-invariant unmeasured confounding}
+  
+    
+\textbf{Unmeasured time-invariant confounder:} $U_i$ (e.g., genetic predisposition / baseline severity).
+  
+\vspace{0.2cm}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{dgp_presentation.png}
+    \caption{DAG illustrating the data generating process with measured confounders $X_{it}$, time-invariant unmeasured confounder $U_i$, and the outcome $Y_{i,T+1}$.}
+    \label{fig:unmeasured_confounding_dag}
+\end{figure}
+
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Causal target (kept simple)}
+Let $\bar A_{i,t}=(A_{i1},\dots,A_{it})$ be treatment history, and $Y_{i,T+1}(\bar a_T)$ a potential outcome.
+
+\vspace{0.2cm}
+Example estimand (pill effect in last month, conditional on the past):
+\[
+\mathbb{E}\!\left[\,Y_{i,T+1}(\bar A_{T-1},1)-Y_{i,T+1}(\bar A_{T-1},0)\,\right].
+\]
+
+\vspace{0.2cm}
+\textbf{Key identification condition:}\\
+treatment is ``as-good-as-random'' given the past \emph{and} the missing time-invariant factor: 
+\[A_{it} \perp Y_{i,T+1}(\bar a_T) \mid \bar A_{i,t-1}, X_{it}, U_i.\]
+
+\textbf{problem:} $U_i$ is unobserved, so we can't directly adjust for it in the propensity model.
+
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Two methods, one shared pipeline}
+Both approaches follow the same high-level recipe:
+
+\vspace{0.2cm}
+\textbf{Stage 1 (treatment model):}
+estimate propensity scores
+\[
+\pi_{it} \approx \Pr(A_{it}=1 \mid \text{history}, X_{it}, \text{confounder substitute}).
+\]
+
+\vspace{0.2cm}
+\textbf{Stage 2 (MSM + IPTW):}
+construct weights $W_i=\prod_t w_{it}$ and fit a (truncated) marginal structural model for $Y_{i,T+1}$.
+
+\vspace{0.3cm}
+\textbf{Difference:} how we build the ``confounder substitute'' used in Stage 1.
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Method 1: Fixed-effects MSM (IPTW-FE)}
+\textbf{Idea:} put a unit-specific intercept in the propensity model to soak up all time-constant factors.
+
+\vspace{0.2cm}
+Typical example (logit):
+\[
+\text{logit}\,\Pr(A_{it}=1 \mid A_{i,t-1},X_{it},\alpha_i)
+=
+\alpha_i + \phi A_{i,t-1} + \beta^\top X_{it}.
+\]
+
+\vspace{0.2cm}
+\textbf{Why it helps:} $\alpha_i$ can capture time-invariant measured + unmeasured confounding.
+
+\vspace{0.2cm}
+\textbf{Practical requirements:}
+\begin{itemize}
+  \item Enough within-unit treatment switching (not always treated / always control).
+  \item Panel length matters (large $T$ helps).
+  \item convergence 
+\end{itemize}
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Method 2: SeqGPLVM (Sequential Deconfounder)}
+\textbf{Idea:} infer a latent variable $Z_i$ from the \emph{entire treatment trajectory} (and covariates),
+then condition on it in the treatment model.
+
+\vspace{0.2cm}
+Assumption: treatment assignment follows a \textbf{conditional Markov model} given $Z_i$:
+\[
+p(\bar a_{iT}\mid \bar x_{iT}, Z_i)
+=
+p(a_{i1}\mid x_{i1}, Z_i)\prod_{t=2}^T p(a_{it}\mid a_{i,t-1},x_{it},Z_i).
+\]
+
+\vspace{0.2cm}
+\textbf{Instantiation:} use Gaussian process latent variable models (GP priors for time-specific functions).
+This makes the propensity model flexible/nonlinear. \cite{hattSequentialDeconfoundingCausal2024}
+
+\vspace{0.2cm}
+\textbf{In my implementation:} use SeqGPLVM-estimated propensities directly inside IPTW (avoid refitting a second propensity model).
+\end{frame}
+
+\begin{frame}{SeqGPLVM inference DAG}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{fit_seqgplvm_dag.png}
+    \caption{DAG illustrating the SeqGPLVM inference process. The latent variable posterior distribution $q(Z_i)$ is inferred from the observed treatment history $\bar A_{iT}$ and covariates $\bar X_{iT}$. Samples from $q(Z_i)$ are then used to compute the propensity scores for each time point.}
+    \label{fig:seqgplvm_dag}
+\end{figure}
+  
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Simulation study (aligned with Blackwell--Yamauchi)}
+I benchmark both approaches on a known DGP with time-invariant unmeasured confounding:
+
+\small
+\begin{subequations}
+\begin{align}
+U_i &:= a(2V_i-1), \qquad V_i \sim \operatorname{Unif}(0,1)
+\\
+X_{it} &:= -\tfrac12\mathbbm{1} + L \xi_{it},
+\qquad \xi_{it}\sim \mathcal{N}(0,I), \qquad LL^\top=\Sigma
+\\
+A_{it} &:= \mathbbm{1}\!\left\{\eta_{it} \le
+\operatorname{expit}\!\left(U_i+\varphi A_{i,t-1}+\beta^\top X_{it}\right)\right\},
+\qquad \eta_{it} \sim \operatorname{Unif}(0,1)
+\\
+Y_{iT} &:= U_i + \tau_F A_{iT} + \tau_C \sum_{t=T-3}^{T-1} A_{it}
++ \gamma^\top \bar X_{i} + \epsilon_{iT},
+\qquad \epsilon_{iT} \sim \mathcal{N}(0,1).
+\end{align}
+\end{subequations}
+
+\vspace{-0.25cm}
+\footnotesize
+\[
+\operatorname{expit}(x)=\frac{1}{1+\exp(-x)}, \qquad
+\bar X_{i}=\frac{1}{T}\sum_{t=1}^T X_{it}.
+\]
+
+\vspace{0.2cm}
+Grid:
+\begin{itemize}
+  \item $N\in\{200,500,1000,3000\}$, and $\rho=N/T\in\{5,10,50\}$ (so $T$ varies with $N$).
+  \item Low vs high heterogeneity via $a\in\{1,2\}$.
+\end{itemize}
+\end{frame}
+
+
+
+% ==========================================================
+
+%\begin{frame}{DGP DAG}
+ % \begin{figure}
+  %  \centering
+   % \includegraphics[width=0.7\linewidth]{dgp_dag.pdf}
+    %\label{fig:sim_results}
+  %\end{figure}
+%\end{frame}
+% ==========================================================
+\begin{frame}{Results}
+%Representative setting: estimate $\tau_C$ and $\tau_F$
+%under low heterogeneity ($a=1$) and ($a=2$).
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.73\linewidth]{results.png}
+    \caption{Simulation results comparing IPTW-True (oracle), IPTW (no fix / no latent), IPTW-FE (impute), and IPTW-SeqGPLVM (impute) across different sample sizes and heterogeneity levels. Metrics include bias, coverage of 90\% confidence intervals, and average standard error.}
+    \label{fig:sim_results}
+\end{figure}
+%\vspace{0.2cm}
+%\begin{center}
+%\begin{tabular}{lccc}
+%\toprule
+%Method & Bias & Coverage (90\%) & Avg. SE \\
+%\midrule
+%IPTW-True (oracle) & 0.020 & 0.83 & 0.088 \\
+%IPTW (no fix / no latent) & 0.255 & 0.03 & 0.067 \\
+%IPTW-FE (impute) & 0.027 & 0.83 & 0.142 \\
+%IPTW-SeqGPLVM (impute) & 0.066 & 0.80 & 0.102 \\
+%\bottomrule
+%\end{tabular}
+%\end{center}
+%\vspace{0.2cm}
+%Takeaways:
+%\begin{itemize}
+ % \item Ignoring $U_i$ can be disastrous (high bias, poor coverage).
+  %\item IPTW-FE gets close to oracle when heterogeneity is moderate.
+  %\item SeqGPLVM helps, but can be less stable (and can overfit $\Rightarrow$ extreme weights).
+%\end{itemize}
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Discussion}
+\textbf{Fixed effects MSM:}
+\begin{itemize}
+  \item Needs switching; always-treated/control units cause in-sample positivity issues.
+  \item Trimming / imputation is a bias--variance trade-off.
+\end{itemize}
+
+\vspace{0.2cm}
+\textbf{SeqGPLVM:}
+\begin{itemize}
+  \item If you infer $Z_i$ from $\bar A_{iT}$ and then refit a propensity model for $A_{it}$ using $Z_i$,
+        you risk a circular ``generated regressor'' problem.
+  \item A safer route is to integrate over the posterior of $Z_i$ or use SeqGPLVM propensities directly.
+  \item Theory relies on assumptions like the conditional Markov structure and (often discussed) ``pinpointability''.
+\end{itemize}
+\end{frame}
+
+% ==========================================================
+\begin{frame}{Conclusion}
+\textbf{Main message:} both methods try to reconstruct the missing time-invariant factor from treatment histories,
+but they trade off simplicity vs flexibility.
+
+\vspace{0.2cm}
+\begin{itemize}
+  \item IPTW-FE: simple, fast, interpretable; works well with enough $T$ and switching.
+  \item SeqGPLVM: flexible treatment model; promising but can be sensitive (overfitting / weight instability / assumptions).
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Next steps (thesis direction):}
+\begin{itemize}
+  \item More diagnostics for weight stability + sensitivity to panel length.
+  \item Clarify the ``two-stage'' issue and when posterior integration is needed.
+  \item Explore DGPs that stress-test key assumptions (e.g., pinpointability).
+\end{itemize}
+\end{frame}
+
+% ==========================================================
+\appendix
+\begin{frame}[allowframebreaks]{References}
+\bibliography{refs}
+\end{frame}
+
+\end{document}

@@ -12,6 +12,17 @@
   keywords = {Causal inference,Longitudinal design,Mixture model,Potential outcomes,Sequential treatment}
 }
 
+@article{bellemareLaggedExplanatoryVariables2015,
+  title = {Lagged {{Explanatory Variables}} and the {{Estimation}} of {{Causal Effects}}},
+  author = {Bellemare, Marc F. and Masaki, Takaaki and Pepinsky, Thomas B.},
+  year = 2015,
+  journal = {SSRN Electronic Journal},
+  issn = {1556-5068},
+  doi = {10.2139/ssrn.2568724},
+  abstract = {Across the social sciences, lagged explanatory variables are a common strategy to confront challenges to causal identification using observational data. We show that ``lag identification''---the use of lagged explanatory variables to solve endogeneity problems---is an illusion: lagging independent variables merely moves the channel through which endogeneity biases causal estimates, replacing a ``selection on observables'' assumption with an equally untestable ``no dynamics among unobservables'' assumption. We build our argument intuitively using directed acyclic graphs, then provide analytical results on the bias resulting from lag identification in a simple linear regression framework. We then present simulation results that characterize how, even under favorable conditions, lag identification leads to incorrect inferences. These findings have important implications for current practice among applied researchers in political science, economics, and related disciplines. We conclude by specifying the conditions under which lagged explanatory variables are appropriate for identifying causal effects.},
+  langid = {english}
+}
+
 @inproceedings{bicaTimeSeriesDeconfounder2020,
   title = {Time Series Deconfounder: Estimating Treatment Effects over Time in the Presence of Hidden Confounders},
   shorttitle = {Time Series Deconfounder},
@@ -50,6 +61,13 @@
   langid = {english}
 }
 
+@article{bollenFixedRandomEffects,
+  title = {Fixed and {{Random Effects}} in {{Panel Data Using Structural Equations Models}}},
+  author = {Bollen, Kenneth A and Brand, Jennie E},
+  abstract = {Applications of classic fixed and random effects models for panel data are common in sociology and in ASR. A primary advantage of these models is the ability to control for time-invariant omitted variables that may bias observed relationships. This paper shows how to incorporate fixed and random effects models into structural equation models (SEMs) and how to extend the standard models to a wide variety of more flexible models. For instance, a researcher can test whether a covariate's impact on the repeated measure stays the same across all waves of data; test whether the error variances should be allowed to vary over time; include lagged covariates or lagged dependent variables; estimate the covariance of the latent time-invariant variables with the observed timevarying covariates; and include observed time-invariant variables in a fixed effects model. The paper explains how to take advantage of the estimation, testing, and fit assessment capabilities that are readily available for SEMs and how to reveal flaws not visible with typical assessment techniques. The paper is oriented towards applied researchers with most technical details given in the appendix and footnotes.},
+  langid = {english}
+}
+
 @misc{bouchattaouiCausalDynamicVariational2025,
   title = {Causal {{Dynamic Variational Autoencoder}} for {{Counterfactual Regression}} in {{Longitudinal Data}}},
   author = {Bouchattaoui, Mouad El and Tami, Myriam and Lepetit, Benoit and Courn{\`e}de, Paul-Henry},
@@ -75,6 +93,35 @@
   publisher = {PMLR},
   issn = {2640-3498},
   abstract = {Observational data is often used to estimate the effect of a treatment when randomized experiments are infeasible or costly. However, observational data often yields biased estimates of treatment effects, since treatment assignment can be confounded by unobserved variables. A remedy is offered by deconfounding methods that adjust for such unobserved confounders. In this paper, we develop the Sequential Deconfounder, a method that enables estimating individualized treatment effects over time in presence of unobserved confounders. This is the first deconfounding method that can be used with a single treatment assigned at each timestep. The Sequential Deconfounder uses a novel Gaussian process latent variable model to infer substitutes for the unobserved confounders, which are then used in conjunction with an outcome model to estimate treatment effects over time. We prove that using our method yields unbiased estimates of individualized treatment responses over time. Using simulated and real medical data, we demonstrate the efficacy of our method in deconfounding the estimation of treatment responses over time.},
+  langid = {english}
+}
+
+@article{helskeEstimatingCausalEffects2024,
+  title = {Estimating Causal Effects from Panel Data with Dynamic Multivariate Panel Models},
+  author = {Helske, Jouni and Tikka, Santtu},
+  year = 2024,
+  month = jun,
+  journal = {Advances in Life Course Research},
+  volume = {60},
+  pages = {100617},
+  issn = {1569-4909},
+  doi = {10.1016/j.alcr.2024.100617},
+  abstract = {Panel data are ubiquitous in scientific fields such as social sciences. Various modeling approaches have been presented for observational causal inference based on such data. Existing approaches typically impose restrictive assumptions on the data-generating process such as Gaussian responses or time-invariant effects, or they can only consider short-term causal effects. To surmount these restrictions, we present the dynamic multivariate panel model (DMPM) that supports time-varying, time-invariant, and individual-specific effects, multiple responses across a wide variety of distributions, and arbitrary dependency structures of lagged responses of any order. We formally demonstrate how DMPM facilitates causal inference within the structural causal modeling framework and we take a Bayesian approach for the estimation of the posterior distributions of the model parameters and causal effects of interest. We demonstrate the use of DMPM by applying the approach to both real and synthetic data.},
+  keywords = {Bayesian methods,Causal inference,Intervention,Markov models,Panel data,Prediction}
+}
+
+@article{imaiWhenShouldWe2019,
+  title = {When {{Should We Use Unit Fixed Effects Regression Models}} for {{Causal Inference}} with {{Longitudinal Data}}?},
+  author = {Imai, Kosuke and Kim, In Song},
+  year = 2019,
+  month = apr,
+  journal = {American Journal of Political Science},
+  volume = {63},
+  number = {2},
+  pages = {467--490},
+  issn = {0092-5853, 1540-5907},
+  doi = {10.1111/ajps.12417},
+  abstract = {Many researchers use unit fixed effects regression models as their default methods for causal inference with longitudinal data. We show that the ability of these models to adjust for unobserved time-invariant confounders comes at the expense of dynamic causal relationships, which are permitted under an alternative selection-on-observables approach. Using the nonparametric directed acyclic graph, we highlight two key causal identification assumptions of unit fixed effects models: Past treatments do not directly influence current outcome, and past outcomes do not affect current treatment. Furthermore, we introduce a new nonparametric matching framework that elucidates how various unit fixed effects models implicitly compare treated and control observations to draw causal inference. By establishing the equivalence between matching and weighted unit fixed effects estimators, this framework enables a diverse set of identification strategies to adjust for unobservables in the absence of dynamic causal relationships between treatment and outcome variables. We illustrate the proposed methodology through its application to the estimation of GATT membership effects on dyadic trade volume.},
   langid = {english}
 }
 
