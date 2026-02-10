@@ -55,7 +55,7 @@ when $p=2$ and when $p=4$, $\gamma = (1, 0.5, 1, 1)^{\top}$.
 \label{estimation}
 For defining our estimation goals, first we need specify the causal question of interest. The causal
 question we want to answer is: What is the average effect of the treatment received at the final time on the 
-final outcome, fixing the last $K$ treatments before $T$: 
+final outcome, conditioned on the last $K$ treatments before $T$: 
 $\mathbb{E}\left[ Y_{iT}\left(d_T = 1, S_k(\bar{D}_{T-K:T-1})\right) - Y_{iT}\left(d_T = 0, S_k(\bar{D}_{T-K:T-1})\right) \right]$, and the 
 average effect of receiving one additional treatment in the last three time points, before $T$ on the final outcome, fixing 
 the last treatment. To express 

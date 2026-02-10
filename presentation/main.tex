@@ -1,5 +1,3 @@
-% !TeX root = main.tex
-
 \documentclass[aspectratio=169]{beamer}
 
 % --- Theme (safe default) ---
@@ -30,7 +28,7 @@
   title   = {Sequential Deconfounding for Causal Inference with Unobserved Confounders},
   author  = {Hatt, Tobias and Feuerriegel, Stefan},
   year    = {2024},
-  note    = {arXiv:2104.09323 (latest version referenced in thesis draft)},
+  note    = {arXiv:2104.09323},
 }
 \end{filecontents*}
 
@@ -101,6 +99,7 @@ In our setting:
   \item We can use IPTW/MSMs to adjust for measured confounding and estimate causal effects: 
         $\mathbb{E}\!\left[Y_{i,T+1}(\bar a_T)\right] = \mathbb{E}\!\left[\frac{\mathbbm{1}\{\bar A_{iT}=\bar a_T\}}{\prod_t \Pr(A_{it}=a_{it} \mid \bar A_{i,t-1}, X_{it})} Y_{i,T+1}\right]$.
   \item \textbf{Intuition:} IPTW reweights the sample to create a pseudo-population where treatment is independent of confounders. 
+  \item Positivity assumption: we need $0< \Pr(A_{it}=a_{it} \mid \bar A_{i,t-1}, X_{it}) < 1$ for all $a_{it}$ and covariate histories.
 \end{itemize}
 \end{frame}
 
@@ -121,11 +120,12 @@ In our setting:
 \end{frame}
 
 % ==========================================================
-\begin{frame}{Causal target (kept simple)}
-Let $\bar A_{i,t}=(A_{i1},\dots,A_{it})$ be treatment history, and $Y_{i,T+1}(\bar a_T)$ a potential outcome.
+\begin{frame}{Causal target}
+Let $\bar A_{i,T}=(A_{i1},\dots,A_{iT})$ be treatment history, and $Y_{i,T+1}(\bar{A}_{T-k},\underbar{a}_{T-k})$ a \emph{truncated} potential outcome.
+
 
 \vspace{0.2cm}
-Example estimand (pill effect in last month, conditional on the past):
+Example estimand (pill effect in last month, conditional on the past treatment history):
 \[
 \mathbb{E}\!\left[\,Y_{i,T+1}(\bar A_{T-1},1)-Y_{i,T+1}(\bar A_{T-1},0)\,\right].
 \]
@@ -152,22 +152,24 @@ estimate propensity scores
 
 \vspace{0.2cm}
 \textbf{Stage 2 (MSM + IPTW):}
-construct weights $W_i=\prod_t w_{it}$ and fit a (truncated) marginal structural model for $Y_{i,T+1}$.
+construct weights $W_i=\prod_t w_{it}$ with $w_{it} = \frac{\mathbbm{1}\{A_{it} = a_{it}\}}{\pi_{it}^{a_{it}} (1-\pi_{it})^{1-a_{it}}}$ and fit a (truncated) marginal structural 
+model for $Y_{i,T+1}(\bar a_{T-k}, \underbar{a}_{T-k})$. e.g.,
+\[\mathbb{E}\!\left[Y_{i,T+1}(\bar a_{T-k}, \underbar{a}_{T-k})\right] = \alpha + \tau_F a_{iT} + \tau_C \sum_{t=T-k}^{T-1} a_{it}\]
 
 \vspace{0.3cm}
 \textbf{Difference:} how we build the ``confounder substitute'' used in Stage 1.
 \end{frame}
 
 % ==========================================================
-\begin{frame}{Method 1: Fixed-effects MSM (IPTW-FE)}
+\begin{frame}{Method 1: Fixed-effects MSM (IPTW-FE) \cite{blackwellEffectPoliticalAdvertising2024}}
 \textbf{Idea:} put a unit-specific intercept in the propensity model to soak up all time-constant factors.
 
 \vspace{0.2cm}
 Typical example (logit):
 \[
-\text{logit}\,\Pr(A_{it}=1 \mid A_{i,t-1},X_{it},\alpha_i)
+\text{logit}\,\Pr(A_{it}=1 \mid a_{i,t-1},x_{it},\alpha_i)
 =
-\alpha_i + \phi A_{i,t-1} + \beta^\top X_{it}.
+\alpha_i + \phi a_{i,t-1} + \beta^\top x_{it}.
 \]
 
 \vspace{0.2cm}
@@ -177,30 +179,33 @@ Typical example (logit):
 \textbf{Practical requirements:}
 \begin{itemize}
   \item Enough within-unit treatment switching (not always treated / always control).
-  \item Panel length matters (large $T$ helps).
-  \item convergence 
+  \item convergence is relying on both $N\to\infty$ and $T\to\infty$ with fixed $N/T$ ratio.
+  \item \textbf{Big limitation:} The propensity model is parametric and it needs to be correctly specified.
 \end{itemize}
 \end{frame}
 
 % ==========================================================
-\begin{frame}{Method 2: SeqGPLVM (Sequential Deconfounder)}
+\begin{frame}{Method 2: SeqGPLVM (Sequential Deconfounder)\cite{hattSequentialDeconfoundingCausal2024}}
 \textbf{Idea:} infer a latent variable $Z_i$ from the \emph{entire treatment trajectory} (and covariates),
 then condition on it in the treatment model.
 
 \vspace{0.2cm}
 Assumption: treatment assignment follows a \textbf{conditional Markov model} given $Z_i$:
 \[
-p(\bar a_{iT}\mid \bar x_{iT}, Z_i)
+p(\bar a_{iT}\mid \bar x_{iT}, Z_i, \Theta)
 =
-p(a_{i1}\mid x_{i1}, Z_i)\prod_{t=2}^T p(a_{it}\mid a_{i,t-1},x_{it},Z_i).
+p(a_{i1}\mid x_{i1}, Z_i,\theta_1)\prod_{t=2}^T p(a_{it}\mid a_{i,t-1},x_{it},Z_i,\theta_t).
 \]
 
 \vspace{0.2cm}
 \textbf{Instantiation:} use Gaussian process latent variable models (GP priors for time-specific functions).
-This makes the propensity model flexible/nonlinear. \cite{hattSequentialDeconfoundingCausal2024}
-
-\vspace{0.2cm}
-\textbf{In my implementation:} use SeqGPLVM-estimated propensities directly inside IPTW (avoid refitting a second propensity model).
+This makes the propensity model flexible/nonlinear: 
+\[
+p(\bar a_{iT}\mid \bar x_{iT}, z_i, \overline{\boldsymbol{f}})
+=
+p(a_{i1}\mid x_{i1}, z_i,f_1)\prod_{t=2}^T p(a_{it}\mid a_{i,t-1},x_{it},z_i,f_t).
+\]
+where $f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))$. 
 \end{frame}
 
 \begin{frame}{SeqGPLVM inference DAG}
@@ -300,15 +305,17 @@ Grid:
 \begin{itemize}
   \item Needs switching; always-treated/control units cause in-sample positivity issues.
   \item Trimming / imputation is a bias--variance trade-off.
+  \item It works only if the unmeasured confounder does not interact with time-varying covariates. 
 \end{itemize}
 
 \vspace{0.2cm}
 \textbf{SeqGPLVM:}
 \begin{itemize}
-  \item If you infer $Z_i$ from $\bar A_{iT}$ and then refit a propensity model for $A_{it}$ using $Z_i$,
-        you risk a circular ``generated regressor'' problem.
-  \item A safer route is to integrate over the posterior of $Z_i$ or use SeqGPLVM propensities directly.
-  \item Theory relies on assumptions like the conditional Markov structure and (often discussed) ``pinpointability''.
+  \item More flexible treatment model; can capture nonlinearities and interactions. But since for each time we have a separate GP, this is the not the most efficient way for DGPs with smooth time dynamics.
+  \item But can be sensitive to overfitting, leading to extreme weights and unstable estimates.
+  \item Theory relies on assumptions like the conditional Markov structure.
+  \item Strong assumption: Pinpointability. the latent variable must be identifiable from the treatment history. In another word, 
+  the unmeasured confounder must be determinstic function of the treatment history (and covariates). This violates the positivity assumption. 
 \end{itemize}
 \end{frame}
 
@@ -324,10 +331,10 @@ but they trade off simplicity vs flexibility.
 \end{itemize}
 
 \vspace{0.3cm}
-\textbf{Next steps (thesis direction):}
+\textbf{Next steps:}
 \begin{itemize}
   \item More diagnostics for weight stability + sensitivity to panel length.
-  \item Clarify the ``two-stage'' issue and when posterior integration is needed.
+  \item Clarify the mathematical assumptions between the two methods.
   \item Explore DGPs that stress-test key assumptions (e.g., pinpointability).
 \end{itemize}
 \end{frame}
