@@ -56,6 +56,8 @@ treatment assignment at each time point. Mathematically, we need to find functio
 f_t \colon \mathcal{Z} \times \mathcal{X}_t \times \mathcal{A}_{t-1} \rightarrow \mathcal{A}_t
 \]
 
+In SeqGPLVM, we model these functions as non-parametric functions using Gaussian processes (GPs), 
+i.e., \(f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))\) for \(t = 1, \ldots, T\), where \(k_t\) is the kernel function at time \(t\).
 
 The sequential latent variable model in stage 1 is implemented using 
 Gaussian processes latent variable models (GPLVMs) \cite{lawrenceGaussianProcessLatent2003}. If 
