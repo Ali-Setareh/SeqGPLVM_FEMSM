@@ -35,7 +35,7 @@ variational distributions.
 
 \subsection{Variational inference background}
 \label{sec:variational_inference_background}
-Our inferential target is the posterior distribution over latent variables given the data and hyperparameters:
+Our inferential target is the joint posterior distribution over latent variables given the data and hyperparameters:
 \(
 p_{\boldsymbol{\gamma}}(\boldsymbol{\lambda}\mid \mathbf{X},\mathbf{A})
 \). Bayes' rule gives 
@@ -145,10 +145,10 @@ on the joint space of observed covariates and latent variables:
 Then, we define a GP prior over the latent function \(f_{t'}(\cdot)\) that maps 
 these augmented inputs to the observed outcomes:
 \begin{equation}
-    f_{t'}(\cdot) \sim \mathcal{GP}\left(m(\cdot), k(\cdot, \cdot; \boldsymbol{\gamma}_{t'})\right),
+    f_{t'}(\cdot) \sim \mathcal{GP}\left(m_{t'}(\cdot), k_{t'}(\cdot, \cdot; \boldsymbol{\gamma}_{t'})\right),
 \end{equation}
-where \(m(\cdot)\) is the mean function, \(k(\cdot, \cdot; \boldsymbol{\gamma})\) is the kernel function 
-parameterized by hyperparameters \(\boldsymbol{\gamma}\). We then perform inference 
+where \(m_{t'}(\cdot)\) is the mean function, \(k_{t'}(\cdot, \cdot; \boldsymbol{\gamma}_{t'})\) is the kernel function 
+parameterized by hyperparameters \(\boldsymbol{\gamma}_{t'}\). We then perform inference 
 over the finite vector of function values,
 \begin{equation}
 \mathbf{f}_{t'} = f_{t'}(\widetilde{\mathbf{X}}_{t'}) \in \mathbb{R}^{N}
@@ -191,7 +191,7 @@ kept exact. Shortly we will see the advantage of this parameterization when we d
  
 Note that the variational distribution is indexed by both 
 \(\boldsymbol{\psi}\) and \(\boldsymbol{\gamma}\) because of this choice unlike the usual 
-variational inference setting. The factorization in Eq.~\ref{eq:gplvm_var_posterior} is known as 
+variational inference setting. See section 4.1 \cite{leibfriedTutorialSparseGaussian2022} for more details.The factorization in Eq.~\ref{eq:gplvm_var_posterior} is known as 
 the mean field approximation. It assumes that the 
 latent variables are independent across data points in the variational posterior. We also assume that 
 the variational distribution over the latent variables is not conditioned on the observed covariates, i.e.,
@@ -325,7 +325,7 @@ and in the time-separable case \( \log p(\boldsymbol{\psi}) = \sum_{t=1}^{T}\log
   \centering
   \includegraphics[width=\paperwidth,trim=0.5cm 0.5cm 0.5cm 0.5cm,
   clip]{figures/build/fit_seqgplvm_dag.pdf}
-  \caption{...}
+  \caption{Inference dag for the SeqGPLVM.}
   \label{fig:seqdecon-dag}
 \end{figure}
 \end{landscape}

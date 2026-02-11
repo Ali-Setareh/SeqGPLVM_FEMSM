@@ -57,14 +57,50 @@ f_t \colon \mathcal{Z} \times \mathcal{X}_t \times \mathcal{A}_{t-1} \rightarrow
 \]
 
 In SeqGPLVM, we model these functions as non-parametric functions using Gaussian processes (GPs), 
-i.e., \(f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))\) for \(t = 1, \ldots, T\), where \(k_t\) is the kernel function at time \(t\).
-
-The sequential latent variable model in stage 1 is implemented using 
-Gaussian processes latent variable models (GPLVMs) \cite{lawrenceGaussianProcessLatent2003}. If 
-Specifically, we place GP priors on the functions that map the latent variables and 
-observed covariates to the treatment assignments at each time 
-point, i.e., \(f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))\) 
-for \(t = 1, \ldots, T\), where \(k_t\) is the kernel function at time \(t\).
+i.e., \(f_t \sim \mathcal{GP}(0, k_t(\cdot, \cdot))\) for \(t = 1, \ldots, T\), where \(k_t\) is the kernel function at time \(t\). 
 The use of GPs allows for flexible modeling of complex, non-linear 
-relationships between the latent confounders, observed covariates, and treatment 
-assignments over time.
+relationships between the latent confounders, observed covariates, 
+and treatment assignments over time. Since the kernels are defined on the joint space of the latent substitutes and the observed history, 
+we have a lot of flexibility to encode different types of interactions between these variables. For the sake 
+of simplicity, we use the same kernel for all time points, but in principle, 
+we can use different kernels at different time points. The inference task is then to estimate the joint posterior 
+distribution of the latent confounder substitutes and the latent functions given the observed treatment history and covariates. We can write 
+the joint posterior distribution as follows:
+\begin{align}
+p(\mathbf{Z}, \mathbf{F} \mid \mathbf{A}, \mathbf{X})
+&\propto p(\mathbf{A} \mid \mathbf{F})\, p(\mathbf{F} \mid \mathbf{Z}, \mathbf{X})\, p(\mathbf{Z}\mid \mathbf{X}) \\
+&= \prod_{i=1}^N \prod_{t=1}^T p(a_{i,t} \mid f_t)\, p(f_t \mid \mathbf{z}_i, \mathbf{x}_{i,t})\, p(\mathbf{z}_i)
+\end{align}
+where \(\mathbf{Z} = \{\mathbf{z}_1, \ldots, \mathbf{z}_N\}\) is the set of 
+latent confounder substitutes for all individuals, 
+\(\mathbf{F} = \{f_1, \ldots, f_T\}\) is the set of latent functions for all 
+time points. 
+In the last line we assume the prior distribution over the latent 
+confounding substitute,  \(p(\mathbf{Z}\mid \mathbf{X}) = p(\mathbf{Z})\). 
+This is the called none amortized version of the SeqGPLVM, 
+where we do not condition the prior distribution of the latent 
+confounder substitutes on the observed covariates. 
+In principle, we can also have an amortized version where we use a 
+neural network to parameterize 
+this prior. More details in \ref{discussion}. We also assume that the latent confounder substitutes are distributed 
+i.i.d. across individuals. 
+
+Since the exact posterior distribution is intractable, we adopt the 
+variational inference with inducing point \cite{titsiasBayesianGaussianProcess2010} for inference. 
+Since the GP kernels are defined on \(\mathcal{Z} \times \mathcal{X}_t \times \mathcal{A}_{t-1}\), 
+the dimensionality of the inducing points is \(|\mathcal{Z}| + |\mathcal{X}_t| + |\mathcal{A}_{t-1}|\). 
+The likelihood term \(p(a_{i,t} \mid f_t)\) is dependent on the type of treatment variable. 
+For instance if \(\mathcal{A_t}\in \{0,1\}\), we can use a Bernoulli likelihood, 
+and if \(\mathcal{A}_t\) is continuous, we can use a Gaussian likelihood. For more 
+details on the inference procedure, see \ref{sec:seqgplvm_loss}. In Fig \ref{fig:seqgplvm_architecture} we show 
+the architecture of the SeqGPLVM.
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{figures/build/fit_seqgplvm_dag.pdf}
+    \caption{Architecture of the Sequential Gaussian processes latent variable model (SeqGPLVM). 
+    \(\theta_t\) are the kernel hyperparameters at time \(t\), \(f_t(\cdot)\) are the 
+    latent functions, \(u_t\) are the function values at the inducing points \(m_t\). Filled 
+    nodes are observed variables, empty nodes are latent variables. Since inducing points 
+    are parameters without a prior, they are shown without nodes. }
+    \label{fig:seqgplvm_architecture}
+\end{figure}

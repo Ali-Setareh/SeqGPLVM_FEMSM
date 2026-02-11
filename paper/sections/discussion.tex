@@ -25,7 +25,7 @@ As mentioned in section \ref{sec:seqgplvm}, in \cite{hattSequentialDeconfounding
 SeqGPLVM as a factor model whose purpose is to estimate the posterior over the latent confounder substitutes, 
 \(p(\mathbf{z}_i \mid \bar{a}_{iT}, \bar{\mathbf{x}}_{iT})\). Then, the authors proceed to use samples 
 from this posterior distribution as if they were observed covariates in a second stage outcome model. 
-Specifically, they suggest fitting two two propensity score based models: 
+Specifically, they suggest fitting two propensity score based models: 
 marginal structural model (MSM)\cite{robinsEstimationCausalEffects2008} and 
 Recurrent Marginal Structural Networks \cite{limForecastingTreatmentResponses2018}. The 
 problem with this approach is that in both of these models, the authors fit a second propensity score model 
