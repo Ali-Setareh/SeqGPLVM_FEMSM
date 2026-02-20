@@ -177,5 +177,5 @@ def load_by_params(root: str | Path, params: dict, *, columns=None):
     """Find the run via params (hash) and load its dataframe."""
     hit = find_by_params(root, params["dgp"], params)
     if not hit:
-        raise FileNotFoundError(f"No indexed run for dgp={params["dgp"]} with params={params}")
+        raise FileNotFoundError(f"No indexed run for dgp={params['dgp']} with params={params}")
     return load_by_run_id(root, params["dgp"], hit["run_id"], columns=columns)

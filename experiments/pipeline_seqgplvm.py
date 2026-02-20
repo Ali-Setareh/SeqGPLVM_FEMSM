@@ -74,7 +74,7 @@ def main():
 
     val_cfg = {
         "train_id": train_id,
-        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 4000},
+        "optimize_hyperparams_val": {"lr": 1e-2, "num_epochs": 10},
         "checkpoint_interval": 2000,
         "param_logging_freq": 50,
         "resume_mode": "no",
@@ -114,7 +114,7 @@ def main():
 
     propensity_scores  = propensity_seqgplvm(
         train_id=train_id,
-        sample_count=100,
+        sample_count=10,
         load_data=False,
         save_propensity=False,
         drop_monotone=drop_monotone,

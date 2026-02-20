@@ -265,7 +265,7 @@ def find_train(
 def upsert_training_index(root: Union[str, Path], row: dict):
     """
     Write a JSON file for this (model, train_id) under
-    results/index/training_rows/.
+    results/index/.
 
     One file per training run, no shared Parquet index (safe for many jobs).
     """
