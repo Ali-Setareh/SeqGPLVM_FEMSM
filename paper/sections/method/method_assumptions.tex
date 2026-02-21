@@ -1,14 +1,50 @@
 \section{Assumptions}
 \label{sec:assumptions}
-Both methods described in this section rely on a set of assumptions to ensure the identifiability
+In this work, we categorize the assumptions into two groups: those necessary for 
+the identification of causal effects and those required for estimation. 
+As estimation assumptions are method-specific and highly technical, 
+we refer the reader to the original papers for further detail. 
+In this section, we outline the common \emph{identification} assumptions 
+behind both the FE--MSM and SeqGPLVM approaches. Both methods described in this section 
+rely on a set of assumptions to ensure the identifiability
 of the causal effects in the presence of unmeasured time-invariant confounding. 
 We summarize these assumptions below:
-\begin{itemize}
-    \item \textbf{Consistency}: The observed outcome for each individual under their observed treatment history is equal to the potential outcome under that treatment history. Formally, for each individual \(i\) and time \(t\), if \(A_{i,t} = a\), then \(Y_{i,t} = Y_{i,t}(a)\).
-    
-    \item \textbf{Positivity}: For all possible values of the observed covariates and latent variables, there is a positive probability of receiving each treatment level at each time point. Formally, for all \(t\), \(P(A_{i,t} = a \mid \mathbf{X}_{i,t}, \boldsymbol{\lambda}_i) > 0\) for all treatment levels \(a\).
-    
-    \item \textbf{Latent Ignorability}: Given the observed covariates and the latent variables that capture unmeasured confounding, the treatment assignment at each time point is independent of the potential outcomes. Formally, for all \(t\), \(Y_{i,t}(a) \perp A_{i,t} \mid \mathbf{X}_{i,t}, \boldsymbol{\lambda}_i\).
-    
-    \item \textbf{Time-Invariance of Unmeasured Confounding}: The unmeasured confounding captured by the latent variables is assumed to be time-invariant. This means that the latent variables do not change over time and consistently affect both treatment assignment and outcomes across all time points.
-\end{itemize}
+% --- Common assumptions (C1, C2, ...) ---
+% Assumes you already defined the assumpC environment (C-prefix) in the preamble.
+
+\begin{assumpC}[Consistency]\label{ass:C-consistency}
+The observed outcome for each individual under their observed treatment history equals
+the potential outcome under that treatment history. Formally, for each individual $i$
+and time $t$, if $\bar{A}_{i,t}=\bar{a}_{i,t}$, then $Y_{i,t}=Y_{i,t}(\bar{a}_{i,t})$. 
+Moreover, $Y_{i,T+1} = Y_{i,T+1}(\underline{a}_{i,T-k})$ if 
+$\bar{A}_{i,T}=\left(\overline{A}_{i,T-k-1},\underline{a}_{i,T-k}\right)$.
+\end{assumpC}
+
+\begin{assumpC}[Positivity]\label{ass:C-positivity}
+\[
+\Pr\!\left[ A_t = a_t \,\middle|\, 
+\overline{A}_{t-1} = \overline{a}_{t-1},\,
+\overline{X}_t = \overline{x}_t \right] > 0
+\]
+
+for all values $(\overline{a}_{t-1}, \overline{x}_t)$ with
+
+\[
+\Pr\!\left[ \overline{A}_{t-1} = \overline{a}_{t-1},\,
+\overline{X}_t = \overline{x}_t \right] \neq 0
+\]
+
+in the population of interest, and for all $a_t \in \mathcal{A}_t$.
+\end{assumpC}
+
+\begin{assumpC}[Time-invariance of unmeasured confounding]\label{ass:C-timeinvariant-uc}
+The unmeasured confounding is assumed to be
+time-invariant. That is, $\boldsymbol{U}_i$ does not change over time and
+consistently affects both treatments across all time points and the final outcome.
+\end{assumpC}
+
+\begin{assumpC}[No interference]\label{ass:C-no-interference}
+The treatment assignment for one individual does not affect the potential outcomes of
+other individuals.
+\end{assumpC}
+

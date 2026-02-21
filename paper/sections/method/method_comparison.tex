@@ -43,17 +43,30 @@
     Choose $k$ and specify an MSM for $Y_i(d_{T-k:T})$.}
     \&
     {\textbf{MSM / estimand.}\\
-    Choose $k$ and specify an MSM for $Y_i(d_{T-k:T})$.} \\
-    {\textbf{Unit-specific ignorability}\\
-    + consistency + positivity. }
+    Choose $k$ and specify an MSM for $Y_i(d_{T-k:T})$.}\\
+    {\begin{minipage}[t]{\linewidth}
+        \begin{enumerate}\setlength\itemsep{1pt}\setlength\parskip{0pt}
+        \item No interference
+        \item Consistency
+        \item Positivity
+        \item \textbf{Unit-specific ignorability}
+        \item \textbf{Truncated Marginal Structural Model}
+        \end{enumerate}
+    \end{minipage}}
     \&
-    {\textbf{Latent sufficiency + (paper claim).}\\
-    Assume CMM + time-invariant confounding\\
-    + consistency + positivity.\\
-    \emph{Theorem 1 claim:} implies ignorability given $Z_i$. } \\
+    {\begin{minipage}[t]{\linewidth}
+        \begin{enumerate}\setlength\itemsep{1pt}\setlength\parskip{0pt}
+        \item No interference
+        \item Consistency
+        \item Positivity
+        \item \textbf{Time-invariant unmeasured confounding}
+        \item \textbf{Conditional Markov model}
+        \item 
+        \end{enumerate}
+    \end{minipage}}\\
     {\textbf{Identification.}\\
-    $\mathbb{E}\!\left[Y_i(d_{T-k:T})\right]$ identified via unit-specific\\
-    propensities $\pi_{it}(x_t, d_{t-1}, \alpha_i)$. }
+    Given (claimed) ignorability, causal effects can be estimated\\
+    by MSM/IPTW using propensities conditional on $(X, A, Z)$.}
     \&
     {\textbf{Identification.}\\
     Given (claimed) ignorability, causal effects can be estimated\\
@@ -82,7 +95,7 @@
 % --- Row labels ---
 \node[stage] at ($(m-2-1.west)+(-12mm,0)$) {Target};
 \node[stage] at ($(m-3-1.west)+(-12mm,0)$) {Identification assumptions};
-\node[stage] at ($(m-4-1.west)+(-12mm,0)$) {Identify};
+\node[stage] at ($(m-4-1.west)+(-12mm,0)$) {Estimation assumptions};
 \node[stage] at ($(m-5-1.west)+(-12mm,0)$) {Treatment\\ model};
 \node[stage] at ($(m-6-1.west)+(-12mm,0)$) {Weights};
 \node[stage] at ($(m-7-1.west)+(-12mm,0)$) {Outcome};

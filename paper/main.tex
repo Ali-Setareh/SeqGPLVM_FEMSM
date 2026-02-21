@@ -32,7 +32,6 @@
 \usepackage{float}
 \usepackage{xcolor}
 \usepackage{soul}
-\usepackage{cleveref}
 \usepackage{bbm}
 \usepackage{tikz}
 \usepackage{pdflscape}
@@ -43,6 +42,41 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \usepackage{blindtext}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{etoolbox}   % for \ifstrempty
+\usepackage[nameinlink,noabbrev]{cleveref} % optional, for \cref
+
+% --- Theorem style: "Assumption C1. (Consistency.)"
+\newtheoremstyle{assumpstyle}%
+  {3pt}{3pt}% space above/below
+  {}% body font
+  {}% indent
+  {\bfseries}% head font
+  {}% punctuation after head
+  {.5em}% space after head
+  {%
+    \thmname{#1}\thmnumber{ #2}.%
+    \ifstrempty{#3}{}{ \textit{(#3).}}%
+  }%
+
+\theoremstyle{assumpstyle}
+
+% --- Common assumptions: C1, C2, ...
+\newtheorem{assumpC}{Assumption}
+\renewcommand{\theassumpC}{C\arabic{assumpC}}
+
+% --- FE-specific assumptions: FE1, FE2, ...
+\newtheorem{assumpFE}{Assumption}
+\renewcommand{\theassumpFE}{FE\arabic{assumpFE}}
+
+% --- SeqGPLVM-specific assumptions: SG1, SG2, ...
+\newtheorem{assumpSG}{Assumption}
+\renewcommand{\theassumpSG}{SG\arabic{assumpSG}}
+
+% --- Make cleveref print "Assumption C1" etc.
+\crefname{assumpC}{Assumption}{Assumptions}
+\crefname{assumpFE}{Assumption}{Assumptions}
+\crefname{assumpSG}{Assumption}{Assumptions}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET VARIABLES FOR TITLE PAGE

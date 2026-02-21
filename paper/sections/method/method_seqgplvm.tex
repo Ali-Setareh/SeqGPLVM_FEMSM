@@ -6,16 +6,20 @@ will keep it first order because that is what Hatt et al do.}
 Sequential Gaussian processes latent variable model (SeqGPLVM) is probabilistic latent variable 
 model. It is based on the assumption that the conditional joint observed treatment hisotory distribution 
 can be written as a as a conditional Markov model (CMM) conditioned on both observed covariates and
-the confounder substitute. 
-\begin{equation}
+the confounder substitute $Z_i$. 
+\begin{assumpSG}[Conditional Markov treatment model]\label{ass:SG-Marcovianity}
+    \begin{equation}
     p_{\boldsymbol{\gamma}}(\bar{a}_{iT} \mid \bar{\mathbf{x}}_{iT}, \mathbf{z}_i) = p_{\gamma_0}(a_{i1} \mid \mathbf{x}_{i1}, \mathbf{z}_i) \prod_{t=2}^T p_{\gamma_t}(a_{it} \mid a_{i,t-1}, \mathbf{x}_{it}, \mathbf{z}_i)
-\end{equation}
+    \end{equation}
+    (for rigorous definition of CMM we can look at 
+\cite{bouchattaouiCausalDynamicVariational2025})
+\end{assumpSG}
+
 where \(\gamma = \{\gamma_0, \gamma_2, \ldots, \gamma_T\}\) are the \emph{generative} 
 parameters of the treatment assignment model at each time point. Note that the each time point can have 
 its own set of parameters. This is cruicial to understand the SeqGPLVM architecture. 
 In theorem 1 of \cite{hattSequentialDeconfoundingCausal2024}, it is shown that, if the treatment 
-assignment follows a CMM (for rigorous definition of CMM we can look at 
-\cite{bouchattaouiCausalDynamicVariational2025}), we obtain sequential ignorability 
+assignment follows a CMM, we obtain sequential ignorability 
 conditioned on the observed covariates' history, treatment history and the
 confounder substitute, i.e., for all $t \in \{1, \ldots, T\}$ and for all $\bar{a}_t$,
 \begin{equation}
@@ -38,7 +42,7 @@ In \cite{hattSequentialDeconfoundingCausal2024}, the exact procedure for adjusti
     observed treatment history over time to estimate the confounder substitute $\mathbf{z}_i$ for each individual.
     \item \textbf{Stage 2: Outcome Model.} Use the estimated confounder substitutes from Stage 1 as additional covariates to adjust for confounding in the outcome model. This outcome model can be MSM, G-formula, etc.
 \end{itemize}
-The key idea here is that once we have estimated the confounder substitutes $\mathbf{z}_i$, we can 
+The key idea here is that once we have estimated the confounder substitutes $Z_i$, we can 
 treat them as \emph{observed-like} covariates and include them in the outcome model to adjust for 
 confounding, leveraging the sequential ignorability result in equation 
 \ref{eq:seqgplvm-single-unit-seqignorability-t=T}. Despite the flexibility of this approach in choosing 
