@@ -4,7 +4,7 @@
 will keep it first order because that is what Hatt et al do.}
 
 Sequential Gaussian processes latent variable model (SeqGPLVM) is probabilistic latent variable 
-model. It is based on the assumption that the conditional joint observed treatment hisotory distribution 
+model. It is based on the assumption that the conditional joint treatment hisotory distribution 
 can be written as a as a conditional Markov model (CMM) conditioned on both observed covariates and
 the confounder substitute $Z_i$. 
 \begin{assumpSG}[Conditional Markov treatment model]\label{ass:SG-Marcovianity}
@@ -45,7 +45,12 @@ In \cite{hattSequentialDeconfoundingCausal2024}, the exact procedure for adjusti
 The key idea here is that once we have estimated the confounder substitutes $Z_i$, we can 
 treat them as \emph{observed-like} covariates and include them in the outcome model to adjust for 
 confounding, leveraging the sequential ignorability result in equation 
-\ref{eq:seqgplvm-single-unit-seqignorability-t=T}. Despite the flexibility of this approach in choosing 
+\ref{eq:seqgplvm-single-unit-seqignorability-t=T}. \hl{The key selling point of this approach is 
+that instead of assuming the sequential ignorability, they derive it from the CMM assumption 
+and argue that CMM is a more plausible assumption in many real world settings with time-varying treatments. Although 
+both this claim and the proof of theorem 1 in} \cite{hattSequentialDeconfoundingCausal2024} \hl{are subject to some critique.}
+
+Despite the flexibility of this approach in choosing 
 the outcome model, it has critical pitfalls that we will discuss in section \ref{sec:hatt-problems}. 
 To avoid these issues, and since we are going to use only IPTW/MSM as our outcome model,  
 in our implementation, we use the estimated propensities from the
@@ -55,7 +60,7 @@ the FE-MSM method described in section \ref{sec:fe-msm}.
 If the treatment assignment mechanism follows a CMM, then the task we need to solve is to find a 
 map from the joint space of the observed covariates' history and treatment history and the latent 
 substitute to the 
-treatment assignment at each time point. Mathematically, we need to find functions \(f_t\) such that 
+treatment assignment at each time point. This task can be done using any latent variable model that can fit a CMM. Mathematically, we need to find functions \(f_t\) such that 
 \[
 f_t \colon \mathcal{Z} \times \mathcal{X}_t \times \mathcal{A}_{t-1} \rightarrow \mathcal{A}_t
 \]
@@ -97,11 +102,11 @@ The likelihood term \(p(a_{i,t} \mid f_t)\) is dependent on the type of treatmen
 For instance if \(\mathcal{A_t}\in \{0,1\}\), we can use a Bernoulli likelihood, 
 and if \(\mathcal{A}_t\) is continuous, we can use a Gaussian likelihood. For more 
 details on the inference procedure, see \ref{sec:seqgplvm_loss}. In Fig \ref{fig:seqgplvm_architecture} we show 
-the architecture of the SeqGPLVM.
+the inference DAG of the SeqGPLVM.
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\textwidth]{figures/build/fit_seqgplvm_dag.pdf}
-    \caption{Architecture of the Sequential Gaussian processes latent variable model (SeqGPLVM). 
+    \includegraphics[width=\linewidth]{figures/build/fit_seqgplvm_dag.pdf}
+    \caption{Inference DAG of the Sequential Gaussian processes latent variable model (SeqGPLVM). 
     \(\theta_t\) are the kernel hyperparameters at time \(t\), \(f_t(\cdot)\) are the 
     latent functions, \(u_t\) are the function values at the inducing points \(m_t\). Filled 
     nodes are observed variables, empty nodes are latent variables. Since inducing points 

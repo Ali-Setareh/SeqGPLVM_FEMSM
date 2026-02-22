@@ -15,23 +15,23 @@ We summarize these assumptions below:
 \begin{assumpC}[Consistency]\label{ass:C-consistency}
 The observed outcome for each individual under their observed treatment history equals
 the potential outcome under that treatment history. Formally, for each individual $i$
-and time $t$, if $\bar{A}_{i,t}=\bar{a}_{i,t}$, then $Y_{i,t}=Y_{i,t}(\bar{a}_{i,t})$. 
+and time $t$, if $\bar{A}_{i,t}=\bar{a}_{i,t}$, then $Y_{i,t+1}=Y_{i,t+1}(\bar{a}_{i,t})$. 
 Moreover, $Y_{i,T+1} = Y_{i,T+1}(\underline{a}_{i,T-k})$ if 
-$\bar{A}_{i,T}=\left(\overline{A}_{i,T-k-1},\underline{a}_{i,T-k}\right)$.
+$\bar{A}_{i,T}=\left(\bar{A}_{i,T-k-1},\underline{a}_{i,T-k}\right)$.
 \end{assumpC}
 
 \begin{assumpC}[Positivity]\label{ass:C-positivity}
 \[
 \Pr\!\left[ A_t = a_t \,\middle|\, 
-\overline{A}_{t-1} = \overline{a}_{t-1},\,
-\overline{X}_t = \overline{x}_t \right] > 0
+\bar{A}_{t-1} = \bar{a}_{t-1},\,
+\bar{X}_t = \bar{x}_t \right] > 0
 \]
 
-for all values $(\overline{a}_{t-1}, \overline{x}_t)$ with
+for all values $(\bar{a}_{t-1}, \bar{x}_t)$ with
 
 \[
-\Pr\!\left[ \overline{A}_{t-1} = \overline{a}_{t-1},\,
-\overline{X}_t = \overline{x}_t \right] \neq 0
+\Pr\!\left[ \bar{A}_{t-1} = \bar{a}_{t-1},\,
+\bar{X}_t = \bar{x}_t \right] \neq 0
 \]
 
 in the population of interest, and for all $a_t \in \mathcal{A}_t$.
@@ -44,6 +44,11 @@ consistently affects both treatments across all time points and the final outcom
 \end{assumpC}
 
 \begin{assumpC}[No interference]\label{ass:C-no-interference}
+The treatment assignment for one individual does not affect the potential outcomes of
+other individuals.
+\end{assumpC}
+
+\begin{assumpC}[Structural sequential ignorability]\label{ass:C-structural-sequential-ignorability}
 The treatment assignment for one individual does not affect the potential outcomes of
 other individuals.
 \end{assumpC}

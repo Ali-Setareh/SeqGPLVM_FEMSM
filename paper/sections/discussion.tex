@@ -17,17 +17,12 @@
     violates the pinpointability assumption. Maybe reading D'amor critique paper again can help with this.
     \item discuss about the SeqGPLVM architecture choice of having separate parameters for each time step vs having shared parameters across time steps and its
     implications. Note that this is not the most efficient way to parameterize a time series model if we believe that the dgp's paramters do not change over time.  
-    \item A key limitation is that Hatt & Feuerriegel provide an identification argument 
-    conditional on a correctly specified latent treatment model, 
-    but they do not develop a corresponding asymptotic theory for the 
-    resulting two-stage estimator. In particular, the paper does not analyze how 
-    estimation (and approximation) error in the learned latent confounder—obtained from the 
-    fitted CMM/SeqGPLVM—propagates into the downstream causal estimator (IPW/MSM or outcome regression), nor does it give conditions under which plug-in propensity scores lead to consistent, 
-𝑁
-N
-	​
-
--asymptotically normal effect estimates with a valid variance estimator
+    \item discuss about the big assumption \cite{blackwellEffectPoliticalAdvertising2024} 
+    make about $Z_i = f(U_i)$ and perhaps what effectively \cite{hattSequentialDeconfoundingCausal2024} 
+    is doing to not assume this but instead in their theorwm 1, they are tyring to show that 
+    their $Z_i$, is enough to retain the sequential ignorability assumption. But a future 
+    direction is to investigate if one results in another in the sense that if 
+    $Z_i$ is enough to retain the sequential ignorability assumption, then it must be the case that $Z_i = f(U_i)$ for some function $f$.
 \end{itemize}
 
 \section{Problem of reusing the estimated latent variables in a second stage outcome model involving propensity score estimation}
