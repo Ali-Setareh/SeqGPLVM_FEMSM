@@ -1,4 +1,4 @@
-\section{Sequential Gaussian processes latent variable model}
+\subsection{Sequential Gaussian processes latent variable model}
 \label{sec:seqgplvm}
 \hl{It seems that we dont need a first order CMM necessarily, we can have higher order CMMs as well? for now I 
 will keep it first order because that is what Hatt et al do.}
@@ -14,6 +14,7 @@ the confounder substitute $Z_i$.
     (for rigorous definition of CMM we can look at 
 \cite{bouchattaouiCausalDynamicVariational2025})
 \end{assumpSG}
+
 
 where \(\gamma = \{\gamma_0, \gamma_2, \ldots, \gamma_T\}\) are the \emph{generative} 
 parameters of the treatment assignment model at each time point. Note that the each time point can have 
@@ -36,6 +37,26 @@ result for t=T, i.e.,
 Note that this equation means that the potential outcome of the entire treatment history at time T+1 is independent of the treatment assignment 
 at \emph{any} time point t, given the entire observed covariates' history and treatment history up to time T-1, along with the confounder substitute. 
 
+Although in \cite{hattSequentialDeconfoundingCausal2024}, the authors only mentioned the 
+set of assumptions in \ref{ass:C-consistency}-\ref{ass:C-no-interference} plus \ref{ass:SG-Marcovianity}, they 
+implicitly assume a assumption that we call here \emph{No single-time-point confounding} assumption. This  
+assumption is the time version of no-single-cause assumption in \cite{wangBlessingsMultipleCauses2019}. It rules 
+out the existance of confounders that only affect in only single time point. Note that, \ref{ass:C-timeinvariant-uc} is not 
+sufficient to exclude these single-time-point confounders since a confounder can be constant but its effect 
+varry with time. 
+
+\begin{assumpSG}
+    \label{ass:SG-No-single-time-point-confounding}
+    For each $t\in\{1,\dots,T\}$, there does not exist an unobserved variable $U_t$ such that
+    (i) $A_t \not\!\perp\!\!\!\perp Y(\bar a_T)\mid \bar A_{t-1},\bar X_t$ for some $\bar a_T$ (i.e., $U_t$ 
+    confounds the effect of $A_t$ on the outcome),
+    and (ii) $U_t \perp\!\!\!\perp \bar A_{-t}\mid \bar A_{t-1},\bar X_t$ (i.e., $U_t$ 
+    affects \emph{only} the treatment assignment at time $t$ and leaves no dependence 
+    footprint in the remaining treatment process).
+    Equivalently, any unobserved confounder influencing $A_t$ must also induce 
+    dependence with at least one other treatment $A_s$ ($s\neq t$), conditional on the observed history.
+\end{assumpSG}
+This assumption states that the unmeasured time-invariant confounder is not a function of any single time point's treatment assignment, but rather a function of the entire treatment history. 
 In \cite{hattSequentialDeconfoundingCausal2024}, the exact procedure for adjusting for unmeasured time-invariant confounding using SeqGPLVM is as follows:
 \begin{itemize}
     \item \textbf{Stage 1: Sequential Latent Factor Model.} Fit a latent variable model to the 

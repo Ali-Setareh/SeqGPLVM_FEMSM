@@ -359,3 +359,6 @@ paper/**/*.temp
 # macOS / Windows noise (optional)
 .DS_Store
 Thumbs.db
+
+/overleaf_export.zip
+/scripts/
