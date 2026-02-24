@@ -362,3 +362,13 @@ Thumbs.db
 
 /overleaf_export.zip
 /scripts/
+# --- Allow specific outputs we DO want tracked ---
+
+# Track PDFs inside figures/build/
+!paper/figures/
+!paper/figures/build/
+!paper/figures/build/*.pdf
+
+# Track this one PNG in paper/
+!paper/qds.png
+paper/figures/**/*.tex

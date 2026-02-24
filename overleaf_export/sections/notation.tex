@@ -1,0 +1,34 @@
+\chapter{Notation and setup}
+In this section we introduce the notation and the setupused throughout this thesis. 
+Let $i=1, \ldots, N$ index the individuals in the study and let $t=1, \ldots, T$ 
+index the time points at which measurements are taken. We denote the treatment 
+variable at time $t$ for individual $i$ as $A_{it}$, which can take on values from a 
+predefined set of treatment options. In this thesis, 
+we assume a binary treatment, $A_{it} \in \{0,1\}$. The outcome variable at 
+time $t$ for individual $i$ is 
+denoted as $Y_{i,t+1}$ to emphasize that the outcome is measured after the treatment at time $t$.
+We also consider a set of observed covariates $X_{it}$, 
+which may include both time-varying 
+and time-invariant variables. The history of treatment and covariates up to time $t$ for 
+individual $i$ is represented as
+$\bar{A}_{it} = (A_{i1}, A_{i2}, \ldots, A_{it})$ and $\bar{X}_{it} = (X_{i1}, X_{i2}, \ldots, X_{it})$, 
+respectively. We denote the potential outcome at time $t$ for individual $i$ under a specific treatment
+regime $\bar{a}_t = (a_1, a_2, \ldots, a_t)$ as $Y_{i,t+1}(\bar{a}_t)$. Finally, we use $U_i$ 
+to represent \emph{structural} unmeasured confounders that are time-invariant for individual $i$. 
+
+We also define truncated versions of the treatment and covariate histories from \(k\) 
+steps prior up to time \(t\) as \(\underbar{A}_{i,t-k}\) and \(\underbar{X}_{i,t-k}\), respectively. 
+The outcome setup we are focusing on is a single outcome measured at the end of 
+the study, i.e., at time T+1, denoted as $Y_{i,T+1}$. This is the setup considered in
+\cite{blackwellEffectPoliticalAdvertising2024} and it is a special case of the setup in
+\cite{hattSequentialDeconfoundingCausal2024} who consider outcomes measured at each time point. This 
+choice is both motivated by the specific application they consider 
+(political advertising) and technical reasons related to the consistency of the IPTW-FE estimator.
+
+Moreover, since the asymptotic properties and consistency of the IPTW-FE estimator 
+proposed by \cite{blackwellEffectPoliticalAdvertising2024} relies on the 
+truncated potnetial outcomes, we can define the truncated potential outcomes as
+$Y_{i,T+1}(\underline{a}_{T-k}) \equiv Y_{i,T+1}(\overline{A}_{i,T-k-1},\, \underline{a}_{i,T-k})$. This 
+definition is to capture the meaning of the potential outcome of manipulating 
+the last $k$ treatment values, while leaving the earlier treatment values as observed. In this way, 
+the earlier treatments before the last $k$ time points can be thought of as part of the baseline covariates. 

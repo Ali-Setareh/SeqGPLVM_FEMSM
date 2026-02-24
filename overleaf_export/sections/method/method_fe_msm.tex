@@ -1,0 +1,29 @@
+\subsection{Fixed effects model}
+\label{sec:fe-msm}
+The fixed-effect marginal structuran model (FE-MSM) proposed 
+by \cite{blackwellEffectPoliticalAdvertising2024} 
+can be seen as a very direct way of bringing back the sequential 
+ignorability assumption where we suspect of unmeasured time-invariant confounding. 
+instead of trying to model the unmeasured confounder explicitly, 
+we include a unit-specific fixed effect in the propensity score 
+model that is used to construct IPTW weights. More formally, the identification of 
+the causal effect of interest relies on the following assumption:
+\begin{assumpFE}[Unit-specific ignorability]\label{ass:FE-unit-specific-ignor}
+    \[
+    \{ Y_{i,t+1}(\bar{a}_{t}),\, \bar X_{i,t+1}(\bar a_t) \}
+\;\perp\!\!\!\perp\;
+A_{it}
+\;\big|\;
+\bar X_{it},\,
+\bar A_{i,t-1} = \bar a_{t-1},\,
+Z_i. \]
+\end{assumpFE}
+
+Assumption \ref{ass:FE-unit-specific-ignor} states that con
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/build/fixed_effect_dag.pdf}
+    \caption{Architecture of the Fixed Effects model.}
+    \label{fig:fixed_effect_architecture}
+\end{figure}

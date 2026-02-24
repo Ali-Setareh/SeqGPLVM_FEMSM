@@ -1,0 +1,115 @@
+% !TeX root = main.tex
+
+\documentclass[12pt,a4paper,twoside,openright]{book}
+%\usepackage[work]{MCthesis}			% you can select this to work
+
+
+
+
+\usepackage[final]{MCthesis}				% this is for the final submission
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[utf8]{inputenc} 		% allow utf-8 input
+\usepackage[T1]{fontenc}    		% use 8-bit T1 fonts
+\usepackage{lmodern}
+\usepackage{hyperref}       		% hyperlinks
+\usepackage{url}            			% simple URL typesetting
+\usepackage{booktabs}       		% professional-quality tables
+\usepackage{nicefrac}       		% compact symbols for 1/2, etc.
+\usepackage{microtype}      		% microtypography
+\usepackage{xcolor}         			% colors
+\usepackage{amssymb,amsmath,amsfonts,amsbsy, amsthm}
+\usepackage{bm}             			% bold vectors
+\usepackage{listings} 			% to include R-Code
+\usepackage[section]{placeins}		% forces floats to appear in the section they are placed in
+\usepackage{listings} 			% to include R-Code
+\usepackage[]{apacite}	% bibliography example
+\usepackage[toc,page]{appendix}
+\usepackage{framed}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{soul}
+\usepackage{bbm}
+\usepackage{tikz}
+\usepackage{pdflscape}
+\usepackage{booktabs}
+\usepackage{siunitx} % optional, but nice for numbers
+%\sethlcolor{red}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{blindtext}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{etoolbox}   % for \ifstrempty
+\usepackage[nameinlink,noabbrev]{cleveref} % optional, for \cref
+
+% --- Theorem style: "Assumption C1. (Consistency.)"
+\newtheoremstyle{assumpstyle}%
+  {3pt}{3pt}% space above/below
+  {}% body font
+  {}% indent
+  {\bfseries}% head font
+  {}% punctuation after head
+  {.5em}% space after head
+  {%
+    \thmname{#1}\thmnumber{ #2}.%
+    \ifstrempty{#3}{}{ \textit{(#3).}}%
+  }%
+
+\theoremstyle{assumpstyle}
+
+% --- Common assumptions: C1, C2, ...
+\newtheorem{assumpC}{Assumption}
+\renewcommand{\theassumpC}{C\arabic{assumpC}}
+
+% --- FE-specific assumptions: FE1, FE2, ...
+\newtheorem{assumpFE}{Assumption}
+\renewcommand{\theassumpFE}{FE\arabic{assumpFE}}
+
+% --- SeqGPLVM-specific assumptions: SG1, SG2, ...
+\newtheorem{assumpSG}{Assumption}
+\renewcommand{\theassumpSG}{SG\arabic{assumpSG}}
+
+% --- Make cleveref print "Assumption C1" etc.
+\crefname{assumpC}{Assumption}{Assumptions}
+\crefname{assumpFE}{Assumption}{Assumptions}
+\crefname{assumpSG}{Assumption}{Assumptions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SET VARIABLES FOR TITLE PAGE
+\title{A Comparative Study of Two Methods for Estimating Causal Effects with Time-Varying Treatments under Time-Invariant Unmeasured Confounding}
+\author{Ali Setareh Kokab}
+\fromCity{Tübingen}
+\matnr{6332297}
+\date{\today} % submission date
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SET VARIABLES FOR  SUPERVISION AND EXAMINERS
+\supervisor{Prof. Dr. Holger Brandt}{}{}
+\reviewer{}{}{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+\begin{document}
+\maketitle
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+\input{sections/Introduction}
+\input{sections/notation}
+\input{sections/method}
+\input{sections/simulation_study}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/appendix}
+\input{sections/supplementary}
+\bibliographystyle{apacite}
+\bibliography{references}
+\end{document}
