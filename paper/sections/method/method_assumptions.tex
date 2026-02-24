@@ -37,19 +37,22 @@ for all values $(\bar{a}_{t-1}, \bar{x}_t)$ with
 in the population of interest, and for all $a_t \in \mathcal{A}_t$.
 \end{assumpC}
 
-\begin{assumpC}[Time-invariance of unmeasured confounding]\label{ass:C-timeinvariant-uc}
-The unmeasured confounding is assumed to be
-time-invariant. That is, $\boldsymbol{U}_i$ does not change over time and
-consistently affects both treatments across all time points and the final outcome.
-\end{assumpC}
-
 \begin{assumpC}[No interference]\label{ass:C-no-interference}
 The treatment assignment for one individual does not affect the potential outcomes of
 other individuals.
 \end{assumpC}
 
-\begin{assumpC}[Structural sequential ignorability]\label{ass:C-structural-sequential-ignorability}
-The treatment assignment for one individual does not affect the potential outcomes of
-other individuals.
+\begin{assumpC}[Time-invariance of unmeasured confounding]\label{ass:C-timeinvariant-uc}
+The unmeasured confounding is assumed to be
+time-invariant. That is, $U_{i,t} = U_i$ for $t \in \{1,\dots,T\}$. We can then write 
+conditional ignorability as 
+\[
+    \{ Y_{i,t+1}(\bar{a}_{t}),\, \bar X_{i,t+1}(\bar a_t) \}
+\;\perp\!\!\!\perp\;
+A_{it}
+\;\big|\;
+\bar X_{it},\,
+\bar A_{i,t-1} = \bar a_{t-1},\,
+U_i. \]
 \end{assumpC}
 

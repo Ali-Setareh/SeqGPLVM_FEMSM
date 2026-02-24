@@ -1,12 +1,45 @@
 \section{Second stage: Outcome model}
 \label{sec:outcome-model}
 
-After estimating the propensity scores in the first stage, 
-we proceed to the second stage, which involves estimating the outcome model using 
-inverse probability of treatment weighting (IPTW). 
+In this section, we describe the second stage of the proposed two-stage estimation procedures. 
+The  goal of the second stage is to estimate the causal mean response surface 
+$\mathbb{E}[Y_i(\underline{a})]$ through a Marginal Structural Model (MSM). 
+In this thesis, we focus on the truncated treatment histories similar to \cite{blackwellEffectPoliticalAdvertising2024}, 
+where we model the effects of manipulating the last $k$ periods of treatment 
+while treating earlier history as baseline confounding. 
+
+\subsection{Common Framework and IPTW Identification}
+Both the FE-MSM and SeqGPLVM methods use Inverse Probability of Treatment Weighting (IPTW) 
+to construct a pseudo-population where the treatment history is independent of the measured and 
+unmeasured time-invariant confounders. Under the assumption of sequential ignorability 
+(either unit-specific or conditioned on a latent substitute), the truncated potential outcome 
+$Y_i(\underline{a}_{T-k})$ is identified using the following weighted estimand:
+$$\mathbb{E}[Y_i(\underline{a}_{T-k})] = \mathbb{E}\left[\frac{\mathbf{1}(\underline{A}_{i,T-k} = \underline{a}_{T-k})Y_i}{\prod_{t=T-k}^{T} \pi_{it}^{a_t}(1 - \pi_{it})^{1-a_t}}\right]$$
+Weight Construction: We utilize **stabilized weights** to mitigate the high variance often associated with standard IPTW estimators. The denominator consists of the product of predicted propensities $\hat{\pi}_{it}$ from the first-stage treatment model.
+Positivity and Trimming: To prevent numerically unstable or infinite weights, we apply **propensity truncation**. For both models, propensities are clipped at $\varepsilon = 10^{-6}$ to ensure they remain bounded away from 0 and 1. For units with no treatment variation (always-treated or never-treated), we follow Blackwell and Yamauchi’s approach of setting denominator propensities to $1-\varepsilon$ or $\varepsilon$ to avoid degeneracy.
+Linear MSM Specification: We fit a linear, additive MSM to summarize the causal response surface:
+    $$f(\underline{a}_{T-k}; \gamma) = \alpha' + \tau'_F a_T + \tau'_C \sum_{t=T-k}^{T-1} a_t$$
+    where $\tau'_F$ represents the effect of the final treatment and $\tau'_C$ represents the cumulative effect of recent history.
+
+
 
 \subsection{FE-MSM}
+The Fixed-Effects MSM (FE-MSM) addresses time-invariant unmeasured confounding by incorporating unit-specific fixed effects directly into the propensity score model.
+
+Unit-Specific Sequential Ignorability: This method relies on the assumption that treatment is randomized conditional on the observed history and a time-constant unit-specific effect $\alpha_i$.
+Estimation Procedure: We obtain estimates for the propensity parameters $\beta$ and the unit effects $\alpha_i$ via **Conditional Maximum Likelihood**. This approach is justified under **large-$N$, large-$T$ asymptotics, where the bias from noisy fixed-effect estimation (the incidental parameters problem) fades over time.
+Weighted Least Squares: Once the fixed-effect weights are constructed, the MSM parameters $\gamma$ are estimated by solving a weighted estimating equation, which reduces to **Weighted Least Squares (WLS)** for our linear specification. We use a **robust (sandwich) variance estimator** to obtain valid Wald confidence intervals.
+
 \subsection{SeqGPLVM}
+
+In contrast to the point-estimate approach of FE-MSM, the SeqGPLVM captures unmeasured confounding by inferring a posterior distribution $q(Z)$ over a latent substitute $Z_i$.
+
+Handling Circular Dependency: To avoid the "circular dependency" created by using $Z_i$ as a covariate in a separate propensity model, we use the estimated propensities from the SeqGPLVM **directly** to build the IPTW weights.
+Multiple Imputation (MI)-Style Procedure: To propagate the latent uncertainty from the GP-based treatment model, we draw $S$ samples $Z^{(s)} \sim q(Z)$. For each draw, we:
+    1.  Compute draw-specific propensities and weights $W^{(s)}$.
+    2.  Fit the weighted MSM to obtain a draw-specific estimate $\hat{\gamma}^{(s)}$ and robust covariance $V^{(s)}$.
+Rubin’s Rules for Pooling: The final point estimate is the average across draws, $\bar{\gamma} = S^{-1}\sum \hat{\gamma}^{(s)}$. The total variance is calculated using **Rubin’s within/between decomposition**, $T = W + (1 + 1/S)B$, which explicitly accounts for the variability induced by the uncertainty in the inferred latent confounder.
+
 
 
 Although the seqgplvm can be used in the settings in which the outcome is observed at every time point, 

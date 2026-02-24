@@ -39,18 +39,18 @@ at \emph{any} time point t, given the entire observed covariates' history and tr
 
 Although in \cite{hattSequentialDeconfoundingCausal2024}, the authors only mentioned the 
 set of assumptions in \ref{ass:C-consistency}-\ref{ass:C-no-interference} plus \ref{ass:SG-Marcovianity}, they 
-implicitly assume a assumption that we call here \emph{No single-time-point confounding} assumption. This  
+implicitly assume an assumption that we call here \emph{No single-time-point confounding} assumption. This  
 assumption is the time version of no-single-cause assumption in \cite{wangBlessingsMultipleCauses2019}. It rules 
 out the existance of confounders that only affect in only single time point. Note that, \ref{ass:C-timeinvariant-uc} is not 
 sufficient to exclude these single-time-point confounders since a confounder can be constant but its effect 
 varry with time. 
 
-\begin{assumpSG}
+\begin{assumpSG}[No single-time-point confounding]
     \label{ass:SG-No-single-time-point-confounding}
     For each $t\in\{1,\dots,T\}$, there does not exist an unobserved variable $U_t$ such that
-    (i) $A_t \not\!\perp\!\!\!\perp Y(\bar a_T)\mid \bar A_{t-1},\bar X_t$ for some $\bar a_T$ (i.e., $U_t$ 
+    (i) $A_t \not\!\perp\!\!\!\perp Y_{i,t+1}(\bar a_T)\mid \bar A_{i,t-1},\bar X_{i,t}$ for some $\bar a_t$ (i.e., $U_t$ 
     confounds the effect of $A_t$ on the outcome),
-    and (ii) $U_t \perp\!\!\!\perp \bar A_{-t}\mid \bar A_{t-1},\bar X_t$ (i.e., $U_t$ 
+    and (ii) $U_t \perp\!\!\!\perp \bar A_{i,-t}\mid \bar A_{i,t-1},\bar X_{i,t}$ (i.e., $U_t$ 
     affects \emph{only} the treatment assignment at time $t$ and leaves no dependence 
     footprint in the remaining treatment process).
     Equivalently, any unobserved confounder influencing $A_t$ must also induce 
