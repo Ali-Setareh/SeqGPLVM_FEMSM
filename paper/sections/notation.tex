@@ -4,7 +4,10 @@ Let $i=1, \ldots, N$ index the individuals in the study and let $t=1, \ldots, T$
 index the time points at which measurements are taken. We denote the treatment 
 variable at time $t$ for individual $i$ as $A_{it}$, which can take on values from a 
 predefined set of treatment options. In this thesis, 
-we assume a binary treatment, $A_{it} \in \{0,1\}$. The outcome variable at 
+we assume a binary treatment, $A_{it} \in \{0,1\}$. We adopt the convention that treatment 
+is absent at the beginning of the study, $t=0$ and therefore $A_{i0} = 0$ 
+for all individuals $i$. 
+The outcome variable at 
 time $t$ for individual $i$ is 
 denoted as $Y_{i,t+1}$ to emphasize that the outcome is measured after the treatment at time $t$.
 We also consider a set of observed covariates $X_{it}$, 

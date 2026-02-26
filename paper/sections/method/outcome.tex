@@ -1,27 +1,134 @@
 \section{Second stage: Outcome model}
 \label{sec:outcome-model}
 
-In this section, we describe the second stage of the proposed two-stage estimation procedures. 
-The  goal of the second stage is to estimate the causal mean response surface 
-$\mathbb{E}[Y_i(\underline{a})]$ through a Marginal Structural Model (MSM). 
-In this thesis, we focus on the truncated treatment histories similar to \cite{blackwellEffectPoliticalAdvertising2024}, 
-where we model the effects of manipulating the last $k$ periods of treatment 
-while treating earlier history as baseline confounding. 
+This section describes the second stage of the proposed two-stage estimation 
+procedures. In the first stage, we fit a treatment model and obtain estimated propensity 
+scores for each unit and time point. In the second stage, 
+we use these propensities to construct inverse-probability weights and 
+estimate functionals of the truncated mean response surface through a 
+marginal structural model (MSM) parameterization.
 
-\subsection{Common Framework and IPTW Identification}
+Following \cite{blackwellEffectPoliticalAdvertising2024}, we focus on 
+\emph{truncated} treatment histories: we consider interventions on the 
+most recent $K+1$ treatment window while treating earlier treatment history as 
+baseline confounding. Let $T$ denote the last observed period and fix $K\ge 1$. Define the recent treatment window
+\[
+\underline{A}_{i,T-K} := (A_{i,T-K},A_{i,T-K+1},\dots,A_{i,T}),
+\]
+and let $\underline{a}_{T-K}$ denote a counterfactual regime over that window. The corresponding truncated potential outcome is
+\[
+Y_i(\underline{a}_{T-K}) \equiv Y_i\!\big(\bar{A}_{i,1:T-K-1},\,\underline{a}_{T-K}\big),
+\]
+i.e., we intervene on the last window and leave earlier history as realized.
+
+\subsection{Common framework: MSM parameterization and IPTW identification}
+MSMs are \emph{marginal} models for counterfactual mean outcomes: 
+rather than modeling the observed conditional outcome distribution, 
+they parameterize the mean of potential outcomes directly as a 
+function of the treatment regime \cite{robinsMarginalStructuralModels2000}.
+Concretely, we posit an MSM of the form
+\begin{equation}
+\label{eq:msm-generic}
+\mathbb{E}\!\left[Y_i(\underline{a}_{T-K})\right] \;=\; m(\underline{a}_{T-K};\gamma),
+\end{equation}
+where $m(\cdot;\gamma)$ is a user-chosen family indexed by a finite-dimensional parameter vector $\gamma$.
+
+\paragraph{IPTW estimand and pseudo-population intuition.}
 Both the FE-MSM and SeqGPLVM methods use Inverse Probability of Treatment Weighting (IPTW) 
 to construct a pseudo-population where the treatment history is independent of the measured and 
 unmeasured time-invariant confounders. Under the assumption of sequential ignorability 
-(either unit-specific or conditioned on a latent substitute), the truncated potential outcome 
-$Y_i(\underline{a}_{T-k})$ is identified using the following weighted estimand:
-$$\mathbb{E}[Y_i(\underline{a}_{T-k})] = \mathbb{E}\left[\frac{\mathbf{1}(\underline{A}_{i,T-k} = \underline{a}_{T-k})Y_i}{\prod_{t=T-k}^{T} \pi_{it}^{a_t}(1 - \pi_{it})^{1-a_t}}\right]$$
-Weight Construction: We utilize **stabilized weights** to mitigate the high variance often associated with standard IPTW estimators. The denominator consists of the product of predicted propensities $\hat{\pi}_{it}$ from the first-stage treatment model.
-Positivity and Trimming: To prevent numerically unstable or infinite weights, we apply **propensity truncation**. For both models, propensities are clipped at $\varepsilon = 10^{-6}$ to ensure they remain bounded away from 0 and 1. For units with no treatment variation (always-treated or never-treated), we follow Blackwell and Yamauchi’s approach of setting denominator propensities to $1-\varepsilon$ or $\varepsilon$ to avoid degeneracy.
-Linear MSM Specification: We fit a linear, additive MSM to summarize the causal response surface:
-    $$f(\underline{a}_{T-k}; \gamma) = \alpha' + \tau'_F a_T + \tau'_C \sum_{t=T-k}^{T-1} a_t$$
-    where $\tau'_F$ represents the effect of the final treatment and $\tau'_C$ represents the cumulative effect of recent history.
+(either unit-specific or conditioned on a latent substitute), the expected value of truncated potential outcome 
+$Y_i(\underline{a}_{T-K})$ is identified using the following weighted estimand:
+$$\mathbb{E}[Y_i(\underline{a}_{T-K})] = \mathbb{E}\left[\frac{\mathbf{1}(\underline{A}_{i,T-K} = \underline{a}_{T-K})Y_i}{\prod_{t=T-K}^{T} \pi_{it}^{a_t}(1 - \pi_{it})^{1-a_t}}\right].$$
+In practice, the unknown $\pi_{it}$ are replaced with first-stage estimates $\widehat{\pi}_{it}$. 
 
 
+\paragraph{Stabilized weights.}
+To mitigate the high variance associated with unstabilized IPTW, 
+we use \emph{stabilized} weights \cite{robinsMarginalStructuralModels2000}.
+We adopt the standard longitudinal extension, using a numerator model that 
+conditions on treatment history but excludes time-varying covariates, $p(A_{i,t} \mid \bar{A}_{i,t-1})$, and a 
+denominator model that accounts for confounding (via observed history and the 
+first-stage confounding adjustment). Concretely, our stabilized weight takes the form
+\[
+\widehat{SW}_i
+=
+\prod_{t=T-k}^{T}
+\frac{
+\widehat{\pi}^{\,\text{num}}_{it}{}^{A_{it}}\left(1-\widehat{\pi}^{\,\text{num}}_{it}\right)^{1-A_{it}}
+}{
+\widehat{\pi}^{\,\text{den}}_{it}{}^{A_{it}}\left(1-\widehat{\pi}^{\,\text{den}}_{it}\right)^{1-A_{it}}
+},
+\]
+where $\widehat{\pi}^{\,\text{den}}_{it}$ is the first-stage propensity estimate used for confounding adjustment, and
+$\widehat{\pi}^{\,\text{num}}_{it}$ is estimated from a reduced model depending only on treatment history.
+
+\paragraph{Positivity and practical truncation.}
+Identification and stable estimation require overlap (positivity): 
+the probability of each relevant treatment history must be bounded away from $0$ and $1$. 
+Although, we assume at the population level positivity holds (\ref{ass:C-positivity}), 
+it does not guarantee positivity in realized finite samples.
+When overlap is limited, weights can become extreme and estimates unstable; 
+in the longitudinal MSM literature, this is a practical limitation of IPTW. 
+To prevent numerically unstable weights, we apply propensity truncation by clipping all estimated probabilities to
+\[
+\widetilde{\pi}_{it} := \min\{1-\varepsilon,\;\max(\widehat{\pi}_{it},\varepsilon)\},\qquad \varepsilon=10^{-6}.
+\]
+In addition, for units with no within-unit treatment variation 
+(always-treated or never-treated), estimating propensity estimation with individual effects can degenerate. 
+Following \cite{blackwellEffectPoliticalAdvertising2024}, we handle these ``monotone'' 
+units by setting the corresponding denominator probabilities to $1-\varepsilon$ 
+(always-treated) or $\varepsilon$ (never-treated), ensuring finite weights and a 
+well-defined second-stage fit. 
+
+\paragraph{Second-stage estimation and uncertainty.}
+Given weights $\widehat{SW}_i$, the second-stage estimator of $\gamma$ is 
+obtained by fitting the MSM in
+\eqref{eq:msm-generic} using a weighted estimating equation 
+(equivalently, a weighted regression).
+For valid uncertainty quantification under IPTW, we report robust (sandwich)
+standard errors. As discussed in \cite{robinsMarginalStructuralModels2000},
+non-robust model-based standard errors from weighted regressions are not generally
+guaranteed to provide correct coverage, whereas robust (sandwich) intervals are
+appropriate in this setting. This works for FE-MSM, however for SeqGPLVM, 
+we also need to account for the additional sampling uncertainty from the latent substitute 
+posterior. We describe our approach to this 
+in the next section.
+
+\subsection{FE-MSM}
+The fixed-effects MSM (FE-MSM) addresses time-invariant unmeasured confounding by incorporating unit-specific effects directly into the first-stage propensity model. The identifying condition is \emph{unit-specific sequential ignorability}: conditional on observed history and a time-constant unit effect $\alpha_i$, treatment is as-if randomized at each time point.
+
+\paragraph{First stage (propensity estimation).}
+We estimate the propensity parameters and eliminate the nuisance unit effects via conditional maximum likelihood, producing fitted probabilities $\widehat{\pi}_{it}$ and thus stabilized weights for the second stage. This approach is motivated by panel asymptotics where longer panels alleviate bias from fixed-effect estimation noise.
+
+\paragraph{Second stage (MSM fit).}
+Using the stabilized and truncated weights described above, we estimate the MSM parameter $\gamma$ by solving the corresponding weighted estimating equations and report robust (sandwich) uncertainty.
+
+\subsection{SeqGPLVM}
+In contrast to the point-estimate adjustment in FE-MSM, the SeqGPLVM approach represents time-invariant unmeasured confounding through a latent substitute $Z_i$ and yields a posterior distribution $q(Z)$ from the first-stage sequential treatment model.
+
+\paragraph{Connection to substitute-confounder logic.}
+The identification strategy mirrors the general 
+``substitute confounder'' idea: infer a latent variable that captures 
+shared (multi-cause) confounding structure, while ruling out remaining 
+single-cause confounding through an explicit assumption. In the multiple-cause 
+setting, Wang and Blei formalize this as ``no unobserved single-cause confounders,
+'' together with SUTVA and overlap. In our longitudinal setting, the SeqGPLVM plays 
+the role of the assignment model that induces a substitute $Z_i$ used to adjust the 
+treatment process.
+
+\paragraph{Avoiding circularity in propensity modeling.}
+To avoid the circular dependency that would arise from using $Z_i$ as a covariate in a separate propensity regression, we use the treatment probabilities implied by the SeqGPLVM directly as the denominator propensities in the stabilized weights.
+
+\paragraph{Propagating latent uncertainty (MI-style MSM fitting).}
+To propagate uncertainty about the latent substitute into the causal effect estimates, we use a multiple-imputation (MI)-style procedure: draw $S$ samples $Z^{(s)}\sim q(Z)$, compute draw-specific propensities and weights, and fit the same MSM to obtain $\widehat{\gamma}^{(s)}$ with robust covariance $V^{(s)}$. We pool the results using Rubin's within/between decomposition, which adds the between-draw variability to the average within-draw variance to reflect uncertainty from the latent first stage.
+
+\paragraph{Remark on overlap.}
+As in any IPTW-based procedure, limited overlap can lead to high-variance estimates. 
+In the deconfounder framework, overlap is an explicit requirement for identifying mean 
+potential outcomes given the substitute confounder. 
+analogously, we enforce practical truncation of estimated probabilities to 
+stabilize estimation in finite samples.
 
 \subsection{FE-MSM}
 The Fixed-Effects MSM (FE-MSM) addresses time-invariant unmeasured confounding by incorporating unit-specific fixed effects directly into the propensity score model.

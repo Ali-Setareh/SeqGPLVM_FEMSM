@@ -7,6 +7,7 @@
   journal = {MPRA Paper},
   number = {43430},
   publisher = {University Library of Munich, Germany},
+  urldate = {2026-01-28},
   abstract = {We consider estimation of the causal effect of a sequential binary treatment (typically corresponding to a policy or a subsidy in the economic context) on a final outcome, when the treatment assignment at a given occasion depends on the sequence of previous assignments as well as on time-varying confounders. In this case, a popular modeling strategy is represented by Marginal Structural Models; within this approach, the causal effect of the treatment is estimated by the Inverse Probability Weighting (IPW) estimator, which is consistent provided that all the confounders are observed (sequential ignorability). To alleviate this serious limitation, we propose a new estimator, called Latent Class Inverse Probability Weighting (LC-IPW), which is based on two steps: first, a finite mixture model is fitted in order to compute latent-class-specific weights; then, these weights are used to fit the Marginal Structural Model of interest. A simulation study shows that the LC-IPW estimator outperforms the IPW estimator for all the considered configurations, even in cases of no unobserved confounding. The proposed approach is applied to the estimation of the causal effect of wage subsidies on employment, using a dataset of Finnish firms observed for eight years. The LC-IPW estimate confirms the existence of a positive effect, but its magnitude is nearly halved with respect to the IPW estimate, pointing out the substantial role of unobserved confounding in this setting.},
   langid = {english},
   keywords = {Causal inference,Longitudinal design,Mixture model,Potential outcomes,Sequential treatment}
@@ -19,6 +20,7 @@
   journal = {SSRN Electronic Journal},
   issn = {1556-5068},
   doi = {10.2139/ssrn.2568724},
+  urldate = {2026-02-08},
   abstract = {Across the social sciences, lagged explanatory variables are a common strategy to confront challenges to causal identification using observational data. We show that ``lag identification''---the use of lagged explanatory variables to solve endogeneity problems---is an illusion: lagging independent variables merely moves the channel through which endogeneity biases causal estimates, replacing a ``selection on observables'' assumption with an equally untestable ``no dynamics among unobservables'' assumption. We build our argument intuitively using directed acyclic graphs, then provide analytical results on the bias resulting from lag identification in a simple linear regression framework. We then present simulation results that characterize how, even under favorable conditions, lag identification leads to incorrect inferences. These findings have important implications for current practice among applied researchers in political science, economics, and related disciplines. We conclude by specifying the conditions under which lagged explanatory variables are appropriate for identifying causal effects.},
   langid = {english}
 }
@@ -34,6 +36,7 @@
   volume = {119},
   pages = {884--895},
   publisher = {JMLR.org},
+  urldate = {2026-02-02},
   abstract = {The estimation of treatment effects is a pervasive problem in medicine. Existing methods for estimating treatment effects from longitudinal observational data assume that there are no hidden confounders, an assumption that is not testable in practice and, if it does not hold, leads to biased estimates. In this paper, we develop the Time Series Deconfounder, a method that leverages the assignment of multiple treatments over time to enable the estimation of treatment effects in the presence of multi-cause hidden confounders. The Time Series Deconfounder uses a novel recurrent neural network architecture with multitask output to build a factor model over time and infer latent variables that render the assigned treatments conditionally independent; then, it performs causal inference using these latent variables that act as substitutes for the multi-cause unobserved confounders. We provide a theoretical analysis for obtaining unbiased causal effects of time-varying exposures using the Time Series Deconfounder. Using both simulated and real data we show the effectiveness of our method in deconfounding the estimation of treatment responses over time.}
 }
 
@@ -47,6 +50,7 @@
   primaryclass = {stat},
   publisher = {arXiv},
   doi = {10.48550/arXiv.2105.03478},
+  urldate = {2025-12-30},
   abstract = {Marginal structural models are a popular tool for investigating the effects of time-varying treatments, but they require an assumption of no unobserved confounders between the treatment and outcome. With observational data, this assumption may be difficult to maintain, and in studies with panel data, many researchers use fixed effects models to purge the data of time-constant unmeasured confounding. Unfortunately, traditional linear fixed effects models are not suitable for estimating the effects of time-varying treatments, since they can only estimate lagged effects under implausible assumptions. To resolve this tension, we a propose a novel inverse probability of treatment weighting estimator with propensity-score fixed effects to adjust for time-constant unmeasured confounding in marginal structural models of fixed-length treatment histories. We show that these estimators are consistent and asymptotically normal when the number of units and time periods grow at a similar rate. Unlike traditional fixed effect models, this approach works even when the outcome is only measured at a single point in time as is common in marginal structural models. We apply these methods to estimating the effect of negative advertising on the electoral success of candidates for statewide offices in the United States.},
   archiveprefix = {arXiv},
   keywords = {Statistics - Applications,Statistics - Methodology}
@@ -57,6 +61,7 @@
   author = {Blackwell, Matthew and Yamauchi, Soichiro},
   year = 2024,
   month = feb,
+  urldate = {2025-09-01},
   abstract = {Corporations, unions, and other interest groups have become key sponsors of television advertising in United States elections after the Supreme Court's decision in Citizen's United v. FEC that eliminated restrictions on such spending. This paper estimates the partisan effects of ads sponsored by these groups to obtain a more complete picture of voter behavior and electoral politics. Advertising strategies vary over the course of the campaign, and so marginal structural models are a natural tool to estimate these effects. Unfortunately, this approach requires an assumption of no unobserved confounders between the treatment and outcome, which may not be plausible with observational electoral data. To address this, we propose a novel inverse probability of treatment weighting estimator with propensity-score fixed effects to adjust for time-constant unmeasured confounding in marginal structural models of fixed-length treatment histories. We show that these estimators are consistent and asymptotically normal when the number of units and time periods grow at a similar rate. Unlike traditional fixed effect models, this approach works even when the outcome is only measured at a single point in time as in our setting, though the method does rely on some degree of treatment switching within units. Against conventional wisdom, we find that interest group ads are only effective when run by groups supporting Democratic candidates and that these effects are most prominent after Donald Trump became a presidential candidate in 2016.},
   langid = {english}
 }
@@ -78,6 +83,7 @@
   primaryclass = {stat},
   publisher = {arXiv},
   doi = {10.48550/arXiv.2310.10559},
+  urldate = {2026-02-02},
   abstract = {Accurately estimating treatment effects over time is crucial in fields such as precision medicine, epidemiology, economics, and marketing. Many current methods for estimating treatment effects over time assume that all confounders are observed or attempt to infer unobserved ones. In contrast, our approach focuses on unobserved adjustment variables, which specifically have a causal effect on the outcome sequence. Under the assumption of unconfoundedness, we address estimating Conditional Average Treatment Effects (CATEs) while accounting for unobserved heterogeneity in response to treatment due to these unobserved adjustment variables. Our proposed Causal Dynamic Variational Autoencoder (CDVAE) is grounded in theoretical guarantees concerning the validity of latent adjustment variables and generalization bounds on CATE estimation error. Extensive evaluations on synthetic and real-world datasets show that CDVAE outperforms existing baselines. Moreover, we demonstrate that state-of-the-art models significantly improve their CATE estimates when augmented with the latent substitutes learned by CDVAE, approaching oracle-level performance without direct access to the true adjustment variables.},
   archiveprefix = {arXiv},
   keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
@@ -92,6 +98,7 @@
   pages = {934--956},
   publisher = {PMLR},
   issn = {2640-3498},
+  urldate = {2025-12-30},
   abstract = {Observational data is often used to estimate the effect of a treatment when randomized experiments are infeasible or costly. However, observational data often yields biased estimates of treatment effects, since treatment assignment can be confounded by unobserved variables. A remedy is offered by deconfounding methods that adjust for such unobserved confounders. In this paper, we develop the Sequential Deconfounder, a method that enables estimating individualized treatment effects over time in presence of unobserved confounders. This is the first deconfounding method that can be used with a single treatment assigned at each timestep. The Sequential Deconfounder uses a novel Gaussian process latent variable model to infer substitutes for the unobserved confounders, which are then used in conjunction with an outcome model to estimate treatment effects over time. We prove that using our method yields unbiased estimates of individualized treatment responses over time. Using simulated and real medical data, we demonstrate the efficacy of our method in deconfounding the estimation of treatment responses over time.},
   langid = {english}
 }
@@ -106,6 +113,7 @@
   pages = {100617},
   issn = {1569-4909},
   doi = {10.1016/j.alcr.2024.100617},
+  urldate = {2026-02-08},
   abstract = {Panel data are ubiquitous in scientific fields such as social sciences. Various modeling approaches have been presented for observational causal inference based on such data. Existing approaches typically impose restrictive assumptions on the data-generating process such as Gaussian responses or time-invariant effects, or they can only consider short-term causal effects. To surmount these restrictions, we present the dynamic multivariate panel model (DMPM) that supports time-varying, time-invariant, and individual-specific effects, multiple responses across a wide variety of distributions, and arbitrary dependency structures of lagged responses of any order. We formally demonstrate how DMPM facilitates causal inference within the structural causal modeling framework and we take a Bayesian approach for the estimation of the posterior distributions of the model parameters and causal effects of interest. We demonstrate the use of DMPM by applying the approach to both real and synthetic data.},
   keywords = {Bayesian methods,Causal inference,Intervention,Markov models,Panel data,Prediction}
 }
@@ -121,6 +129,7 @@
   pages = {467--490},
   issn = {0092-5853, 1540-5907},
   doi = {10.1111/ajps.12417},
+  urldate = {2026-02-08},
   abstract = {Many researchers use unit fixed effects regression models as their default methods for causal inference with longitudinal data. We show that the ability of these models to adjust for unobserved time-invariant confounders comes at the expense of dynamic causal relationships, which are permitted under an alternative selection-on-observables approach. Using the nonparametric directed acyclic graph, we highlight two key causal identification assumptions of unit fixed effects models: Past treatments do not directly influence current outcome, and past outcomes do not affect current treatment. Furthermore, we introduce a new nonparametric matching framework that elucidates how various unit fixed effects models implicitly compare treated and control observations to draw causal inference. By establishing the equivalence between matching and weighted unit fixed effects estimators, this framework enables a diverse set of identification strategies to adjust for unobservables in the absence of dynamic causal relationships between treatment and outcome variables. We illustrate the proposed methodology through its application to the estimation of GATT membership effects on dyadic trade volume.},
   langid = {english}
 }
@@ -134,6 +143,7 @@
   pages = {7841--7864},
   publisher = {PMLR},
   issn = {2640-3498},
+  urldate = {2026-01-23},
   abstract = {Gaussian process latent variable models (GPLVM) are a flexible and non-linear approach to dimensionality reduction, extending classical Gaussian processes to an unsupervised learning context. The Bayesian incarnation of the GPLVM uses a variational framework, where the posterior over latent variables is approximated by a well-behaved variational family, a factorised Gaussian yielding a tractable lower bound. However, the non-factorisability of the lower bound prevents truly scalable inference. In this work, we study the doubly stochastic formulation of the Bayesian GPLVM model amenable with minibatch training. We show how this framework is compatible with different latent variable formulations and perform experiments to compare a suite of models. Further, we demonstrate how we can train in the presence of massively missing data and obtain high-fidelity reconstructions. We demonstrate the model's performance by benchmarking against the canonical sparse GPLVM for high dimensional data examples.},
   langid = {english}
 }
@@ -148,6 +158,7 @@
   pages = {329--336},
   publisher = {MIT Press},
   address = {Cambridge, MA, USA},
+  urldate = {2026-01-27},
   abstract = {In this paper we introduce a new underlying probabilistic model for principal component analysis (PCA). Our formulation interprets PCA as a particular Gaussian process prior on a mapping from a latent space to the observed data-space. We show that if the prior's covariance function constrains the mappings to be linear the model is equivalent to PCA, we then extend the model by considering less restrictive covariance functions which allow non-linear mappings. This more general Gaussian process latent variable model (GPLVM) is then evaluated as an approach to the visualisation of high dimensional data for three different data-sets. Additionally our non-linear algorithm can be further kernelised leading to 'twin kernel PCA' in which a mapping between feature spaces occurs.}
 }
 
@@ -161,6 +172,7 @@
   primaryclass = {cs},
   publisher = {arXiv},
   doi = {10.48550/arXiv.2012.13962},
+  urldate = {2026-01-25},
   abstract = {Gaussian processes (GPs) provide a framework for Bayesian inference that can offer principled uncertainty estimates for a large range of problems. For example, if we consider regression problems with Gaussian likelihoods, a GP model enjoys a posterior in closed form. However, identifying the posterior GP scales cubically with the number of training examples and requires to store all examples in memory. In order to overcome these obstacles, sparse GPs have been proposed that approximate the true posterior GP with pseudo-training examples. Importantly, the number of pseudo-training examples is user-defined and enables control over computational and memory complexity. In the general case, sparse GPs do not enjoy closed-form solutions and one has to resort to approximate inference. In this context, a convenient choice for approximate inference is variational inference (VI), where the problem of Bayesian inference is cast as an optimization problem -- namely, to maximize a lower bound of the log marginal likelihood. This paves the way for a powerful and versatile framework, where pseudo-training examples are treated as optimization arguments of the approximate posterior that are jointly identified together with hyperparameters of the generative model (i.e. prior and likelihood). The framework can naturally handle a wide scope of supervised learning problems, ranging from regression with heteroscedastic and non-Gaussian likelihoods to classification problems with discrete labels, but also problems with multidimensional labels. The purpose of this tutorial is to provide access to the basic matter for readers without prior knowledge in both GPs and VI. A proper exposition to the subject enables also access to more recent advances (like importance-weighted VI as well as interdomain, multioutput and deep GPs) that can serve as an inspiration for new research ideas.},
   archiveprefix = {arXiv},
   keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
@@ -172,13 +184,47 @@
   author = {Lim, Bryan},
   year = 2018,
   volume = {31},
-  publisher = {Curran Associates, Inc.}
+  publisher = {Curran Associates, Inc.},
+  urldate = {2026-02-02}
+}
+
+@article{robinsAssociationCausationMarginal1999,
+  title = {Association, {{Causation}}, {{And Marginal Structural Models}}},
+  author = {Robins, James M.},
+  year = 1999,
+  month = nov,
+  journal = {Synthese},
+  volume = {121},
+  number = {1},
+  pages = {151--179},
+  issn = {1573-0964},
+  doi = {10.1023/A:1005285815569},
+  urldate = {2026-02-24},
+  langid = {english},
+  keywords = {Marginal Structural Model}
 }
 
 @inproceedings{robinsEstimationCausalEffects2008,
   title = {Estimation of the Causal Effects of Time-Varying Exposures},
   author = {Robins, James M. and Hern{\'a}n, Miguel A.},
-  year = 2008
+  year = 2008,
+  urldate = {2026-02-02}
+}
+
+@article{robinsMarginalStructuralModels2000,
+  title = {Marginal {{Structural Models}} and {{Causal Inference}} in {{Epidemiology}}:},
+  shorttitle = {Marginal {{Structural Models}} and {{Causal Inference}} in {{Epidemiology}}},
+  author = {Robins, James M. and Hern{\'a}n, Miguel {\'A}ngel and Brumback, Babette},
+  year = 2000,
+  month = sep,
+  journal = {Epidemiology},
+  volume = {11},
+  number = {5},
+  pages = {550--560},
+  issn = {1044-3983},
+  doi = {10.1097/00001648-200009000-00011},
+  urldate = {2026-02-25},
+  langid = {english}
 }
 
 @inproceedings{titsiasBayesianGaussianProcess2010,
@@ -190,6 +236,7 @@
   pages = {844--851},
   publisher = {{JMLR Workshop and Conference Proceedings}},
   issn = {1938-7228},
+  urldate = {2026-01-27},
   abstract = {We introduce a variational inference framework for training the Gaussian process latent variable model and thus performing Bayesian nonlinear dimensionality reduction. This method allows us to variationally integrate out the input variables of the Gaussian process and compute a lower bound on the exact marginal likelihood of the nonlinear latent variable model. The maximization of the variational lower bound provides a Bayesian training procedure that is robust to overfitting and can automatically select the dimensionality of the nonlinear latent space. We demonstrate our method on real world datasets. The focus in this paper is on dimensionality reduction problems, but the methodology is more general. For example, our algorithm is immediately applicable for training Gaussian process models in the presence of missing or uncertain inputs.},
   langid = {english}
 }
@@ -213,6 +260,7 @@
   publisher = {Taylor \& Francis},
   issn = {0162-1459},
   doi = {10.1080/01621459.2019.1686987},
+  urldate = {2026-02-02},
   abstract = {Causal inference from observational data is a vital problem, but it comes with strong assumptions. Most methods assume that we observe all confounders, variables that affect both the causal variables and the outcome variables. This assumption is standard but it is also untestable. In this article, we develop the deconfounder, a way to do causal inference with weaker assumptions than the traditional methods require. The deconfounder is designed for problems of multiple causal inference: scientific studies that involve multiple causes whose effects are simultaneously of interest. Specifically, the deconfounder combines unsupervised machine learning and predictive model checking to use the dependencies among multiple causes as indirect evidence for some of the unobserved confounders. We develop the deconfounder algorithm, prove that it is unbiased, and show that it requires weaker assumptions than traditional causal inference. We analyze its performance in three types of studies: semi-simulated data around smoking and lung cancer, semi-simulated data around genome-wide association studies, and a real dataset about actors and movie revenue. The deconfounder is an effective approach to estimating causal effects in problems of multiple causal inference. Supplementary materials for this article are available online.},
   keywords = {Causal inference,Machine learning,Probabilistic models,Unconfoundedness,Unobserved confounding}
 }
