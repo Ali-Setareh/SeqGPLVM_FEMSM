@@ -23,6 +23,20 @@
     their $Z_i$, is enough to retain the sequential ignorability assumption. But a future 
     direction is to investigate if one results in another in the sense that if 
     $Z_i$ is enough to retain the sequential ignorability assumption, then it must be the case that $Z_i = f(U_i)$ for some function $f$.
+    \item advantage using seqgplvm is that it let the uncertainty in the 
+    estimation of propensity scores to be propagated to the final 
+    estimation of the causal effect. 
+
+    \item in this work we show via simulations that SeqGPLVM can result in similar results as 
+    FE-MSM and this motivates to work on the consistency theory of SeqGPLVM similar to 
+    what \cite{blackwellEffectPoliticalAdvertising2024} did for FE-MSM. more specifically, 
+    we need to show that the propensity scores estimated by SeqGPLVM are 
+    consistent estimates of the true propensity scores. 
+
+    \item discuss that it would be better if we use the amortized version of 
+    SeqGPLVM since now for new data we need to refit only the part of the model 
+    corresponding to the latent variable while freezing the rest of the parameters. 
+    but via amortized inference, we can directly get the latent variable for new data without refitting any part of the model.
 \end{itemize}
 
 \section{Problem of reusing the estimated latent variables in a second stage outcome model involving propensity score estimation}

@@ -29,9 +29,11 @@ function of the treatment regime \cite{robinsMarginalStructuralModels2000}.
 Concretely, we posit an MSM of the form
 \begin{equation}
 \label{eq:msm-generic}
-\mathbb{E}\!\left[Y_i(\underline{a}_{T-K})\right] \;=\; m(\underline{a}_{T-K};\gamma),
+\mathbb{E}\!\left[Y_i(\underline{a}_{T-K})\right] \;=\; m(\underline{a}_{T-K};\beta),
 \end{equation}
-where $m(\cdot;\gamma)$ is a user-chosen family indexed by a finite-dimensional parameter vector $\gamma$.
+where $m(\cdot;\beta)$ is a user-chosen family indexed by a finite-dimensional parameter vector $\beta$. 
+If the MSM is misspecified, \(\boldsymbol{\beta}\) can be interpreted as the 
+weighted projection of the true causal mean response surface onto the chosen model class.
 
 \paragraph{IPTW estimand and pseudo-population intuition.}
 Both the FE-MSM and SeqGPLVM methods use Inverse Probability of Treatment Weighting (IPTW) 
@@ -61,7 +63,8 @@ first-stage confounding adjustment). Concretely, our stabilized weight takes the
 },
 \]
 where $\widehat{\pi}^{\,\text{den}}_{it}$ is the first-stage propensity estimate used for confounding adjustment, and
-$\widehat{\pi}^{\,\text{num}}_{it}$ is estimated from a reduced model depending only on treatment history.
+$\widehat{\pi}^{\,\text{num}}_{it}$ is estimated from a reduced model depending only on treatment history. Note that, 
+the correct specification of the numerator model is not required for consistency of MSM parameters estimations \cite{robinsMarginalStructuralModels2000}. 
 
 \paragraph{Positivity and practical truncation.}
 Identification and stable estimation require overlap (positivity): 
