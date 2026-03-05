@@ -4,11 +4,13 @@ The fixed-effect marginal structuran model (FE-MSM) proposed
 by \cite{blackwellEffectPoliticalAdvertising2024} 
 can be seen as a very direct way of bringing back the sequential 
 ignorability assumption where we suspect of unmeasured time-invariant confounding. 
-instead of trying to model the unmeasured confounder explicitly, 
+Instead of trying to model the unmeasured confounder explicitly, 
 we include a unit-specific fixed effect in the propensity score 
 model that is used to construct IPTW weights. More formally, the identification of 
 the causal effect of interest relies on the following assumption:
-\begin{assumpFE}[Unit-specific ignorability]\label{ass:FE-unit-specific-ignor}
+\begin{idassumpFE}[Unit-specific ignorability]\label{ass:FE-unit-specific-ignor}
+    Let $Z_i$ be a time-invariant unmeasured random variable, For 
+    all $i$, $t$ and $\bar{a}_t$,
     \[
     \{ Y_{i,t+1}(\bar{a}_{t}),\, \bar X_{i,t+1}(\bar a_t) \}
 \;\perp\!\!\!\perp\;
@@ -17,16 +19,51 @@ A_{it}
 \bar X_{it},\,
 \bar A_{i,t-1} = \bar a_{t-1},\,
 Z_i. \]
-\end{assumpFE}
+\end{idassumpFE}
 
-Assumption \ref{ass:FE-unit-specific-ignor} states that con
+Assumption \ref{ass:FE-unit-specific-ignor} states that conditioned on 
+the past treatment and covariate history, as well as 
+the unmeasured time-invariant confounder substitute $Z_i$, 
+the treatment assignment at time $t$ is independent of 
+the potential outcomes process and covariates process at time $t+1$. 
 
-\begin{assumpFE}[Sampling ]
+\begin{modassumpFE}[Correct specification of the propensity score model up to time-invariant unmeasured heterogeneity]
+\label{ass:FE-ps-correct}
+There exists an \emph{unmeasured}, unit-specific, time-constant variable $Z_i$ capturing
+time-invariant unmeasured heterogeneity in treatment assignment, and a known model class
+$\{\pi_{it}(\cdot;\theta,z)\}_{\theta\in\Theta}$ (parametric in $\theta$), such that for all individuals $i$
+and times $t$,
+\[
+\Pr\!\bigl(D_{it}=1 \,\big|\, \bar X_{it},\, \bar A_{i,t-1},\, Z_i \bigr)
+=
+\pi_{it}\!\left(\bar X_{it},\, \bar A_{i,t-1};\, \theta_0,\, Z_i\right),
+\]
+for some finite-dimensional parameter vector $\theta_0$. In other words, the functional form
+in $\theta$ is correctly specified \emph{conditional on} $Z_i$ (i.e., the model is correct \emph{up to}
+the unmeasured heterogeneity $Z_i$).
+\end{modassumpFE}
+
+\begin{modassumpFE}[Unidimensionality assumption]
     
-\end{assumpFE}
+    
+\end{modassumpFE}
 \begin{figure}
     \centering
     \includegraphics[width=0.8\linewidth]{figures/build/fixed_effect_dag.pdf}
-    \caption{Architecture of the Fixed Effects model.}
-    \label{fig:fixed_effect_architecture}
+    \caption{
+    Plate diagram of the first-stage fixed-effects propensity-score model,
+    i.e.\ the conditional assignment likelihood
+    $
+    p(\mathbf{A} \mid \mathbf{X}, \mathbf{Z}, \theta)
+    =
+    \prod_{i,t}
+    p\!\left(A_{it} \mid A_{i,t-1}, X_{i,t-1}, Z_i, \theta\right).
+    $
+    We do not specify a model for the 
+    joint distribution of $(\mathbf{X}, \mathbf{Z})$. Note that, 
+    since $Z_i$ is considered as a parameter and not a random variable 
+    in this method, 
+    it does not have a node around it.
+    }
+\label{fig:fixed_effect_architecture}
 \end{figure}

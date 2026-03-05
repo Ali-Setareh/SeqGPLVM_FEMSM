@@ -1,5 +1,5 @@
 \chapter{Notation and setup}
-In this section we introduce the notation and the setupused throughout this thesis. 
+In this section we introduce the notation and the setup used throughout this thesis. 
 Let $i=1, \ldots, N$ index the individuals in the study and let $t=1, \ldots, T$ 
 index the time points at which measurements are taken. We denote the treatment 
 variable at time $t$ for individual $i$ as $A_{it}$, which can take on values from a 
@@ -28,10 +28,9 @@ the study, i.e., at time T+1, denoted as $Y_{i,T+1}$. This is the setup consider
 choice is both motivated by the specific application they consider 
 (political advertising) and technical reasons related to the consistency of the IPTW-FE estimator.
 
-Moreover, since the asymptotic properties and consistency of the IPTW-FE estimator 
-proposed by \cite{blackwellEffectPoliticalAdvertising2024} relies on the 
+Moreover, since the asymptotic properties and consistency of the IPTW-FE estimator relies on the 
 truncated potnetial outcomes, we can define the truncated potential outcomes as
 $Y_{i,T+1}(\underline{a}_{T-k}) \equiv Y_{i,T+1}(\overline{A}_{i,T-k-1},\, \underline{a}_{i,T-k})$. This 
-definition is to capture the meaning of the potential outcome of manipulating 
+definition represents the potential outcome of manipulating 
 the last $k$ treatment values, while leaving the earlier treatment values as observed. In this way, 
 the earlier treatments before the last $k$ time points can be thought of as part of the baseline covariates. 

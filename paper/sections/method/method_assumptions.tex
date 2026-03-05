@@ -3,19 +3,19 @@
 In this work, we categorize the assumptions into three groups: identification assumptions, 
 modeling assumptions, and estimation assumptions. Identification assumptions, 
 are the assumptions which let us write target causal estimands such as 
-$\mathbb{E}[Y_i(\bar{a})]$ in terms of observed data. Based on our identification 
-strategy, we need to model different stuff. For instance in the case of identification of 
-$\mathbb{E}[Y_i(\bar{a})]$ using IPTW, we must model the propensity scores. Modeling assumptions 
-are concenred with the necessary assumption about this part of the procedure. At the end, 
-we may need to estimate different parts of the procedure using different methods/estimators, 
-and each method may require its own set of assumptions. 
+$\mathbb{E}[Y_i(\bar{a})]$ in terms of observed data. 
+Based on the identification strategy, certain quantities must be modeled. 
+For example, identifying $\mathbb{E}[Y_i(\bar{a})]$ using IPTW requires 
+modeling the propensity scores. Modeling assumptions are about the 
+requirements placed on these models. Finally, 
+different components of the procedure may be estimated using different methods, each requiring its own assumptions.
+
 As estimation assumptions are method-specific and highly technical, 
 we refer the reader to the original papers for further detail. 
-In this section, we outline the common identification and modeling assumptions 
-behind both FE--MSM and SeqGPLVM approaches. Both methods described in this section 
-rely on a set of assumptions to ensure the identifiability
-of the causal effects in the presence of unmeasured time-invariant confounding. 
-We summarize these assumptions below:
+We outline the common identification and modeling assumptions 
+behind both FE--MSM and SeqGPLVM approaches below. Throughout the text, 
+we use C, I, and M to denote common, identification, and modeling 
+assumptions, respectively.
 % --- Common assumptions (C1, C2, ...) ---
 % Assumes you already defined the assumpC environment (C-prefix) in the preamble.
 

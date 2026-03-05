@@ -7,13 +7,13 @@ Sequential Gaussian processes latent variable model (SeqGPLVM) is probabilistic 
 model. It is based on the assumption that the conditional joint treatment hisotory distribution 
 can be written as a as a conditional Markov model (CMM) conditioned on both observed covariates and
 the confounder substitute $Z_i$. 
-\begin{assumpSG}[Conditional Markov treatment model]\label{ass:SG-Marcovianity}
+\begin{idassumpSG}[Conditional Markov treatment model]\label{ass:SG-Marcovianity}
     \begin{equation}
     p_{\boldsymbol{\gamma}}(\bar{a}_{iT} \mid \bar{\mathbf{x}}_{iT}, \mathbf{z}_i) = p_{\gamma_0}(a_{i1} \mid \mathbf{x}_{i1}, \mathbf{z}_i) \prod_{t=2}^T p_{\gamma_t}(a_{it} \mid a_{i,t-1}, \mathbf{x}_{it}, \mathbf{z}_i)
     \end{equation}
     (for rigorous definition of CMM we can look at 
 \cite{bouchattaouiCausalDynamicVariational2025})
-\end{assumpSG}
+\end{idassumpSG}
 
 
 where \(\gamma = \{\gamma_0, \gamma_2, \ldots, \gamma_T\}\) are the \emph{generative} 
@@ -45,7 +45,7 @@ out the existance of confounders that only affect in only single time point. Not
 sufficient to exclude these single-time-point confounders since a confounder can be constant but its effect 
 varry with time. 
 
-\begin{assumpSG}[No single-time-point confounding]
+\begin{idassumpSG}[No single-time-point confounding]
     \label{ass:SG-No-single-time-point-confounding}
     For each $t\in\{1,\dots,T\}$, there does not exist an unobserved variable $U_t$ such that
     (i) $A_t \not\!\perp\!\!\!\perp Y_{i,t+1}(\bar a_T)\mid \bar A_{i,t-1},\bar X_{i,t}$ for some $\bar a_t$ (i.e., $U_t$ 
@@ -55,7 +55,7 @@ varry with time.
     footprint in the remaining treatment process).
     Equivalently, any unobserved confounder influencing $A_t$ must also induce 
     dependence with at least one other treatment $A_s$ ($s\neq t$), conditional on the observed history.
-\end{assumpSG}
+\end{idassumpSG}
 This assumption states that the unmeasured time-invariant confounder is not a function of any single time point's treatment assignment, but rather a function of the entire treatment history. 
 In \cite{hattSequentialDeconfoundingCausal2024}, the exact procedure for adjusting for unmeasured time-invariant confounding using SeqGPLVM is as follows:
 \begin{itemize}
@@ -127,10 +127,16 @@ the inference DAG of the SeqGPLVM.
 \begin{figure}[ht]
     \centering
     \includegraphics[width=\linewidth]{figures/build/fit_seqgplvm_dag.pdf}
-    \caption{Inference DAG of the Sequential Gaussian processes latent variable model (SeqGPLVM). 
-    \(\theta_t\) are the kernel hyperparameters at time \(t\), \(f_t(\cdot)\) are the 
-    latent functions, \(u_t\) are the function values at the inducing points \(m_t\). Filled 
-    nodes are observed variables, empty nodes are latent variables. Since inducing points 
-    are parameters without a prior, they are shown without nodes. }
+    \caption{Plate diagram of the first-stage SeqGPLVM treatment model used to estimate
+time-varying propensity scores. For each time point $t$, a Gaussian process
+$f_t(\cdot)$ with hyperparameters $\theta_t$ maps the latent state and
+observed history into the assignment probability for $A_{it}$.
+The variables $u_t$ denote GP function values at inducing inputs $m_t$
+(shown without nodes as they are treated as parameters).
+Filled nodes indicate observed quantities and unfilled nodes latent quantities.
+The outer plate indexes individuals $i = 1, \dots, N$ and the temporal structure
+repeats over $t = 1, \dots, T$. The diagram represents the conditional 
+assignment model underlying propensity-score estimation and does not 
+impose a model on the marginal distribution of the covariate process.}
     \label{fig:seqgplvm_architecture}
 \end{figure}

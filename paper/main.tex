@@ -61,22 +61,33 @@
 
 \theoremstyle{assumpstyle}
 
-% --- Common assumptions: C1, C2, ...
+% --- Common identification assumptions: C-I1, C-I2, ...
 \newtheorem{assumpC}{Assumption}
-\renewcommand{\theassumpC}{C\arabic{assumpC}}
+\renewcommand{\theassumpC}{C-I\arabic{assumpC}}
 
-% --- FE-specific assumptions: FE1, FE2, ...
-\newtheorem{assumpFE}{Assumption}
-\renewcommand{\theassumpFE}{FE\arabic{assumpFE}}
+% --- FE-specific identification assumptions: FE-I1, FE-I2, ...
+\newtheorem{idassumpFE}{Assumption}
+\renewcommand{\theidassumpFE}{FE-I\arabic{idassumpFE}}
 
-% --- SeqGPLVM-specific assumptions: SG1, SG2, ...
-\newtheorem{assumpSG}{Assumption}
-\renewcommand{\theassumpSG}{SG\arabic{assumpSG}}
+% --- SeqGPLVM-specific identification assumptions: SG-I1, SG-I2, ...
+\newtheorem{idassumpSG}{Assumption}
+\renewcommand{\theidassumpSG}{SG-I\arabic{idassumpSG}}
+
+% --- FE-specific modeling assumptions: FE-M1, FE-M2, ...
+\newtheorem{modassumpFE}{Assumption}
+\renewcommand{\themodassumpFE}{FE-M\arabic{modassumpFE}}
+
+% --- SeqGPLVM-specific modeling assumptions: SG-M1, SG-M2, ...
+\newtheorem{modassumpSG}{Assumption}
+\renewcommand{\themodassumpSG}{SG-M\arabic{modassumpSG}}
+
 
 % --- Make cleveref print "Assumption C1" etc.
 \crefname{assumpC}{Assumption}{Assumptions}
-\crefname{assumpFE}{Assumption}{Assumptions}
-\crefname{assumpSG}{Assumption}{Assumptions}
+\crefname{idassumpFE}{Assumption}{Assumptions}
+\crefname{idassumpSG}{Assumption}{Assumptions}
+\crefname{modassumpFE}{Assumption}{Assumptions}
+\crefname{modassumpSG}{Assumption}{Assumptions}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % SET VARIABLES FOR TITLE PAGE
