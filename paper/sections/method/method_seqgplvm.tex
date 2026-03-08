@@ -40,7 +40,7 @@ at \emph{any} time point t, given the entire observed covariates' history and tr
 Although in \cite{hattSequentialDeconfoundingCausal2024}, the authors only mentioned the 
 set of assumptions in \ref{ass:C-consistency}-\ref{ass:C-no-interference} plus \ref{ass:SG-Marcovianity}, they 
 implicitly assume an assumption that we call here \emph{No single-time-point confounding} assumption. This  
-assumption is the time version of no-single-cause assumption in \cite{wangBlessingsMultipleCauses2019}. It rules 
+assumption is the dynamic version of no-single-cause assumption in \cite{wangBlessingsMultipleCauses2019}. It rules 
 out the existance of confounders that only affect in only single time point. Note that, \ref{ass:C-timeinvariant-uc} is not 
 sufficient to exclude these single-time-point confounders since a confounder can be constant but its effect 
 varry with time. 
@@ -57,6 +57,13 @@ varry with time.
     dependence with at least one other treatment $A_s$ ($s\neq t$), conditional on the observed history.
 \end{idassumpSG}
 This assumption states that the unmeasured time-invariant confounder is not a function of any single time point's treatment assignment, but rather a function of the entire treatment history. 
+
+\begin{idassumpSG}[Consistency of the confounder substitute]
+    \label{ass:SG-Consistency}
+    The confounder substitute $Z_i$
+    
+\end{idassumpSG}
+
 In \cite{hattSequentialDeconfoundingCausal2024}, the exact procedure for adjusting for unmeasured time-invariant confounding using SeqGPLVM is as follows:
 \begin{itemize}
     \item \textbf{Stage 1: Sequential Latent Factor Model.} Fit a latent variable model to the 

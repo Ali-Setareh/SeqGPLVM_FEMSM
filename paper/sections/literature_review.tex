@@ -1,0 +1,18 @@
+\chapter{Literature review}
+\label{chap:literature_review}
+There are different suggested identification strategies for specifically designed to address such feedbacks such as the g-formula or inverse probability of treatment weighting (IPTW) \cite{robinsEstimationCausalEffects2008a}. 
+However, these identification strategies rely on the assumption of 
+sequential ignorability, which states that the researcher 
+has gathered all the \emph{required} data for the causal analysis or more  
+formally there are no unmeasured confounders between the treatments and the outcome at each time point. %In the most general case, 
+%confounders can be seen as a common cause of two or more variables in the causal graph. 
+%In the context of longitudinal data, we are often concerned about unmeasured confounders effecting the 
+%treatment assignment and the outcome at each time point.  
+This is a strong assumption and often violated in real world settings. 
+
+To address the problem of unmeasured confoundedness in static settings, there have been 
+different methods proposed. Some need additional data with a very specific 
+structure such as instrumental variable methods \cite{angristIdentificationLocalAverage1996} 
+or using proxy variables \cite{tchetgenIntroductionProximalCausal2020}, 
+
+while others rely on strong assumptions about the data generating process such as the deconfounder method \cite{wangBlessingsMultipleCauses2019}.
