@@ -139,6 +139,21 @@
   keywords = {Bayesian methods,Causal inference,Intervention,Markov models,Panel data,Prediction}
 }
 
+@article{hernanComparisonDynamicTreatment2006,
+  title = {Comparison of {{Dynamic Treatment Regimes}} via {{Inverse Probability Weighting}}},
+  author = {Hern{\'a}n, Miguel A. and Lanoy, Emilie and Costagliola, Dominique and Robins, James M.},
+  year = 2006,
+  journal = {Basic \& Clinical Pharmacology \& Toxicology},
+  volume = {98},
+  number = {3},
+  pages = {237--242},
+  issn = {1742-7843},
+  doi = {10.1111/j.1742-7843.2006.pto_329.x},
+  urldate = {2026-03-09},
+  abstract = {Abstract: Appropriate analysis of observational data is our best chance to obtain answers to many questions that involve dynamic treatment regimes. This paper describes a simple method to compare dynamic treatment regimes by artificially censoring subjects and then using inverse probability weighting (IPW) to adjust for any selection bias introduced by the artificial censoring. The basic strategy can be summarized in four steps: 1) define two regimes of interest, 2) artificially censor individuals when they stop following one of the regimes of interest, 3) estimate inverse probability weights to adjust for the potential selection bias introduced by censoring in the previous step, 4) compare the survival of the uncensored individuals under each regime of interest by fitting an inverse probability weighted Cox proportional hazards model with the dichotomous regime indicator and the baseline confounders as covariates. In the absence of model misspecification, the method is valid provided data are available on all time-varying and baseline joint predictors of survival and regime discontinuation. We present an application of the method to compare the AIDS-free survival under two dynamic treatment regimes in a large prospective study of HIV-infected patients. The paper concludes by discussing the relative advantages and disadvantages of censoring/IPW versus g-estimation of nested structural models to compare dynamic regimes.},
+  langid = {english}
+}
+
 @article{hernanObservationalStudiesAnalyzed2008,
   title = {Observational Studies Analyzed like Randomized Experiments: An Application to Postmenopausal Hormone Therapy and Coronary Heart Disease},
   shorttitle = {Observational Studies Analyzed like Randomized Experiments},
@@ -217,6 +232,24 @@
   abstract = {In this paper we introduce a new underlying probabilistic model for principal component analysis (PCA). Our formulation interprets PCA as a particular Gaussian process prior on a mapping from a latent space to the observed data-space. We show that if the prior's covariance function constrains the mappings to be linear the model is equivalent to PCA, we then extend the model by considering less restrictive covariance functions which allow non-linear mappings. This more general Gaussian process latent variable model (GPLVM) is then evaluated as an approach to the visualisation of high dimensional data for three different data-sets. Additionally our non-linear algorithm can be further kernelised leading to 'twin kernel PCA' in which a mapping between feature spaces occurs.}
 }
 
+@article{leeFindingDynamicTreatment2012,
+  title = {Finding {{Dynamic Treatment Effects Under Anticipation}}: {{The Effects}} of {{Spanking}} on {{Behaviour}}},
+  shorttitle = {Finding {{Dynamic Treatment Effects Under Anticipation}}},
+  author = {Lee, Myoung-jae and Huang, Fali},
+  year = 2012,
+  month = apr,
+  journal = {Journal of the Royal Statistical Society Series A: Statistics in Society},
+  volume = {175},
+  number = {2},
+  pages = {535--567},
+  issn = {0964-1998, 1467-985X},
+  doi = {10.1111/j.1467-985X.2011.01001.x},
+  urldate = {2026-03-09},
+  abstract = {The dynamic treatment effect literature considers multiple treatments administered over time, with some treatments affected by interim outcomes. But the literature overlooks the possibility of individuals acting in anticipation of future treatments.This lack of anticipation aspect may not matter in the drug--response relationships which motivated the literature. But human beings (or animals with some intelligence) do not just respond to current and past treatments, but also `reflect and anticipate' future treatments. For example, a punishment or reward is likely to prompt forward looking. Even if no personal punishment or reward is involved, people may take action in anticipation of a future government policy, which would be an important concern for policy makers. The paper explores how to find dynamic treatment effects allowing for forward looking or anticipation by extending available dynamic treatment effect approaches in the literature. Then the methods proposed are applied to the effects of spanking on a child's bad behaviour where a child may act better in anticipation of future spanking, which is analogous to the relationship between punishment and crime.},
+  copyright = {https://academic.oup.com/journals/pages/open\_access/funder\_policies/chorus/standard\_publication\_model},
+  langid = {english}
+}
+
 @misc{leibfriedTutorialSparseGaussian2022,
   title = {A {{Tutorial}} on {{Sparse Gaussian Processes}} and {{Variational Inference}}},
   author = {Leibfried, Felix and Dutordoir, Vincent and John, S. T. and Durrande, Nicolas},
@@ -241,6 +274,22 @@
   volume = {31},
   publisher = {Curran Associates, Inc.},
   urldate = {2026-02-02}
+}
+
+@article{neugebauerCausalInferenceLongitudinal2007,
+  title = {Causal Inference in Longitudinal Studies with History-Restricted Marginal Structural Models},
+  author = {Neugebauer, Romain and {van der Laan}, Mark J. and Joffe, Marshall M. and Tager, Ira B.},
+  year = 2007,
+  month = jan,
+  journal = {Electronic journal of statistics},
+  volume = {1},
+  pages = {119--154},
+  issn = {1935-7524},
+  doi = {10.1214/07-EJS050},
+  urldate = {2026-03-09},
+  abstract = {A new class of Marginal Structural Models (MSMs), History-Restricted MSMs (HRMSMs), was recently introduced for longitudinal data for the purpose of defining causal parameters which may often be better suited for public health research or at least more practicable than MSMs (, ). HRMSMs allow investigators to analyze the causal effect of a treatment on an outcome based on a fixed, shorter and user-specified history of exposure compared to MSMs. By default, the latter represent the treatment causal effect of interest based on a treatment history defined by the treatments assigned between the study's start and outcome collection. We lay out in this article the formal statistical framework behind HRMSMs. Beyond allowing a more flexible causal analysis, HRMSMs improve computational tractability and mitigate statistical power concerns when designing longitudinal studies. We also develop three consistent estimators of HRMSM parameters under sufficient model assumptions: the Inverse Probability of Treatment Weighted (IPTW), G-computation and Double Robust (DR) estimators. In addition, we show that the assumptions commonly adopted for identification and consistent estimation of MSM parameters (existence of counterfactuals, consistency, time-ordering and sequential randomization assumptions) also lead to identification and consistent estimation of HRMSM parameters.},
+  pmcid = {PMC3475192},
+  pmid = {23087778}
 }
 
 @article{parzenGeneralizedLinearMixed2011,
