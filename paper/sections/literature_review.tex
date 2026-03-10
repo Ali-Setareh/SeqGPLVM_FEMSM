@@ -6,11 +6,16 @@
 \end{itemize}
 Longitudinal causal inference is a broad area of research with a rich literature. There are 
 two main dimensions along which the literature can be categorized. The first dimension is the structure 
-of the causal diagram, i.e. the presence or absence of treatment-confounder feedback or presence 
+of the causal diagram. A causal diagram $\mathcal{G}$ consist of 
+a set of nodes $\mathbf{V}$ and a set of directed edges $\mathbf{E}$. 
+Each node in the graph represents a variable and each directed edge 
+represents a causal relationship between two variables. 
+The structure of the causal diagram encodes the assumptions about the 
+data generating process
+, i.e. the presence or absence of treatment-confounder feedback or presence 
 of unobserved confounders. This dimension 
-is more about how the study is designed and the data is collected and it encodes the knowledge about the 
-data generating process. The second dimension is about the causal target of interest. This dimension is more 
-about the research question. One of the most common causal estimands in longitudinal data is the 
+is more about how the study is designed and the data is collected. The second dimension is about the causal target of interest. This dimension is more 
+about the research question \cite{lundbergWhatYourEstimand2021}. One of the most common causal estimands in longitudinal data is the 
 
 and the second dimension is the presence or absenc.
 To situate the two methods that we are going to compare in this thesis, we will review 
