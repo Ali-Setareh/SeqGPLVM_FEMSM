@@ -4,6 +4,22 @@
   langid = {english}
 }
 
+@article{arkhangelskyCausalModelsLongitudinal2024,
+  title = {Causal Models for Longitudinal and Panel Data: A Survey},
+  shorttitle = {Causal Models for Longitudinal and Panel Data},
+  author = {Arkhangelsky, Dmitry and Imbens, Guido},
+  year = 2024,
+  month = sep,
+  journal = {The Econometrics Journal},
+  volume = {27},
+  number = {3},
+  pages = {C1-C61},
+  issn = {1368-4221},
+  doi = {10.1093/ectj/utae014},
+  urldate = {2026-03-11},
+  abstract = {In this survey we discuss the recent causal panel data literature. This recent literature has focused on credibly estimating causal effects of binary interventions in settings with longitudinal data, emphasising practical advice for empirical researchers. It pays particular attention to heterogeneity in the causal effects, often in situations where few units are treated and with particular structures on the assignment pattern. The literature has extended earlier work on difference-in-differences or two-way fixed effect estimators. It has more generally incorporated factor models or interactive fixed effects. It has also developed novel methods using synthetic control approaches.}
+}
+
 @article{bartolucciEstimatingDynamicCausal2012,
   title = {Estimating Dynamic Causal Effects with Unobserved Confounders: A Latent Class Version of the Inverse Probability Weighted Estimator},
   shorttitle = {Estimating Dynamic Causal Effects with Unobserved Confounders},
@@ -44,6 +60,21 @@
   publisher = {JMLR.org},
   urldate = {2026-02-02},
   abstract = {The estimation of treatment effects is a pervasive problem in medicine. Existing methods for estimating treatment effects from longitudinal observational data assume that there are no hidden confounders, an assumption that is not testable in practice and, if it does not hold, leads to biased estimates. In this paper, we develop the Time Series Deconfounder, a method that leverages the assignment of multiple treatments over time to enable the estimation of treatment effects in the presence of multi-cause hidden confounders. The Time Series Deconfounder uses a novel recurrent neural network architecture with multitask output to build a factor model over time and infer latent variables that render the assigned treatments conditionally independent; then, it performs causal inference using these latent variables that act as substitutes for the multi-cause unobserved confounders. We provide a theoretical analysis for obtaining unbiased causal effects of time-varying exposures using the Time Series Deconfounder. Using both simulated and real data we show the effectiveness of our method in deconfounding the estimation of treatment responses over time.}
+}
+
+@inproceedings{bicaTimeSeriesDeconfounder2020a,
+  title = {Time {{Series Deconfounder}}: {{Estimating Treatment Effects}} over {{Time}} in the {{Presence}} of {{Hidden Confounders}}},
+  shorttitle = {Time {{Series Deconfounder}}},
+  booktitle = {Proceedings of the 37th {{International Conference}} on {{Machine Learning}}},
+  author = {Bica, Ioana and Alaa, Ahmed and Schaar, Mihaela Van Der},
+  year = 2020,
+  month = nov,
+  pages = {884--895},
+  publisher = {PMLR},
+  issn = {2640-3498},
+  urldate = {2026-03-10},
+  abstract = {The estimation of treatment effects is a pervasive problem in medicine. Existing methods for estimating treatment effects from longitudinal observational data assume that there are no hidden confounders, an assumption that is not testable in practice and, if it does not hold, leads to biased estimates. In this paper, we develop the Time Series Deconfounder, a method that leverages the assignment of multiple treatments over time to enable the estimation of treatment effects in the presence of multi-cause hidden confounders. The Time Series Deconfounder uses a novel recurrent neural network architecture with multitask output to build a factor model over time and infer latent variables that render the assigned treatments conditionally independent; then, it performs causal inference using these latent variables that act as substitutes for the multi-cause unobserved confounders. We provide a theoretical analysis for obtaining unbiased causal effects of time-varying exposures using the Time Series Deconfounder. Using both simulated and real data we show the effectiveness of our method in deconfounding the estimation of treatment responses over time.},
+  langid = {english}
 }
 
 @misc{blackwellAdjustingUnmeasuredConfounding2021,
@@ -110,6 +141,39 @@
   langid = {english}
 }
 
+@article{chengInstrumentalVariableEstimation2024,
+  title = {Instrumental {{Variable Estimation}} for {{Causal Inference}} in {{Longitudinal Data}} with {{Time-Dependent Latent Confounders}}},
+  author = {Cheng, Debo and Xu, Ziqi and Li, Jiuyong and Liu, Lin and Liu, Jixue and Gao, Wentao and Le, Thuc Duy},
+  year = 2024,
+  month = mar,
+  journal = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume = {38},
+  number = {10},
+  pages = {11480--11488},
+  issn = {2374-3468},
+  doi = {10.1609/aaai.v38i10.29029},
+  urldate = {2026-03-10},
+  abstract = {Causal inference from longitudinal observational data is a challenging problem due to the difficulty in correctly identifying the time-dependent confounders, especially in the presence of latent time-dependent confounders. Instrumental variable (IV) is a powerful tool for addressing the latent confounders issue, but the traditional IV technique cannot deal with latent time-dependent confounders in longitudinal studies. In this work, we propose a novel Time-dependent Instrumental Factor Model (TIFM) for time-varying causal effect estimation from data with latent time-dependent confounders. At each time-step, the proposed TIFM method employs the Recurrent Neural Network (RNN) architecture to infer latent IV, and then uses the inferred latent IV factor for addressing the confounding bias caused by the latent time-dependent confounders. We provide a theoretical analysis for the proposed TIFM method regarding causal effect estimation in longitudinal data. Extensive evaluation with synthetic datasets demonstrates the effectiveness of TIFM in addressing causal effect estimation over time. We further apply TIFM to a climate dataset to showcase the potential of the proposed method in tackling real-world problems.},
+  copyright = {Copyright (c) 2024 Association for the Advancement of Artificial Intelligence},
+  langid = {english},
+  keywords = {ML: Causal Learning}
+}
+
+@article{daiVariationalTemporalDeconfounder2025,
+  title = {Variational Temporal Deconfounder Network for Individualized Treatment Effect Estimation with Longitudinal Observational Data},
+  author = {Dai, Hao and Huang, Yu and Liu, Yuxi and He, Xing and Guo, Jingchuan and Prosperi, Mattia and Bian, Jiang},
+  year = 2025,
+  month = sep,
+  journal = {Journal of Biomedical Informatics},
+  volume = {169},
+  pages = {104880},
+  issn = {1532-0464},
+  doi = {10.1016/j.jbi.2025.104880},
+  urldate = {2026-03-10},
+  abstract = {Objective By leveraging real-world electronic health record (EHR) data, this study set out to estimate individualized treatment effects (ITE) in longitudinal observational settings to advance personalized medicine, addressing key challenges that are often observed in real-world clinical scenarios and pose statistical challenges, including hidden confounding and dynamic treatment regimens. Methods We propose the Variational Temporal Deconfounder Network (VTDNet), a novel framework designed to account for time-varying hidden confounding using a variational recurrent transformer-based autoencoder. Specifically, VTDNet comprises three critical components: a temporal Encoder-Decoder structure to capture hidden representation, a Treatment Block that captures interdependencies among multiple treatments, and a Potential Outcome Block that predicts both factual and counterfactual outcomes. We assess the effectiveness of the proposed framework using a synthetic dataset and two real-world datasets: MIMIC-III, an EHR dataset focusing on intensive care settings, and NACC, emphasizing neurodegenerative disease, collected using a standardized protocol from participants enrolled in Alzheimer's Disease Research Center (ADRC) clinical cores. Results Experimental results on the synthetic dataset demonstrate superior accuracy under varying levels of confounding. On real-world EHR datasets, VTDNet achieves lower root mean squared error, mean absolute error, and influence function precision in the estimation of heterogeneous effects compared to existing state-of-the-art methods. Conclusion The proposed VTDNet offers a robust framework for estimating individualized treatment effects in longitudinal settings, effectively accommodating irregular time points and high-dimensional data while addressing hidden confounders through a deep generative approach. It holds significant potential to advance personalized medicine and support real-world evidence generation. Future work will aim to extend VTDNet to continuous treatment scenarios, such as dose--response analysis, to further broaden its applicability in clinical practice.},
+  keywords = {Deep learning,Hidden confounder,Longitudinal data,Real-world evidence,Treatment effects}
+}
+
 @misc{deanerProxyControlsPanel2023,
   title = {Proxy {{Controls}} and {{Panel Data}}},
   author = {Deaner, Ben},
@@ -130,6 +194,21 @@
   title = {Full Article: {{Causal Effects}} of {{Time-Varying Exposures}}: {{A Comparison}} of {{Structural Equation Modeling}} and {{Marginal Structural Models}} in {{Cross-Lagged Panel Research}}},
   urldate = {2026-03-10},
   howpublished = {https://www.tandfonline.com/doi/full/10.1080/10705511.2024.2316586}
+}
+
+@article{gillCausalInferenceComplex2001,
+  title = {Causal {{Inference}} for {{Complex Longitudinal Data}}: {{The Continuous Case}}},
+  shorttitle = {Causal {{Inference}} for {{Complex Longitudinal Data}}},
+  author = {Gill, Richard D. and Robins, James M.},
+  year = 2001,
+  month = dec,
+  journal = {The Annals of Statistics},
+  volume = {29},
+  number = {6},
+  issn = {0090-5364},
+  doi = {10.1214/aos/1015345962},
+  urldate = {2026-03-11},
+  langid = {english}
 }
 
 @inproceedings{hattSequentialDeconfoundingCausal2024,
@@ -226,6 +305,40 @@
   langid = {english}
 }
 
+@article{keilParametricGformulaTimetoevent2014,
+  title = {The Parametric {{G-formula}} for Time-to-Event Data: Towards Intuition with a Worked Example},
+  shorttitle = {The Parametric {{G-formula}} for Time-to-Event Data},
+  author = {Keil, Alexander P. and Edwards, Jessie K. and Richardson, David R. and Naimi, Ashley I. and Cole, Stephen R.},
+  year = 2014,
+  month = nov,
+  journal = {Epidemiology (Cambridge, Mass.)},
+  volume = {25},
+  number = {6},
+  pages = {889--897},
+  issn = {1044-3983},
+  doi = {10.1097/EDE.0000000000000160},
+  urldate = {2026-03-11},
+  abstract = {Background The parametric g-formula can be used to estimate the effect of a policy, intervention, or treatment. Unlike standard regression approaches, the parametric g-formula can be used to adjust for time-varying confounders that are affected by prior exposures. To date, there are few published examples in which the method has been applied. Methods We provide a simple introduction to the parametric g-formula and illustrate its application in analysis of a small cohort study of bone marrow transplant patients in which the effect of treatment on mortality is subject to time-varying confounding. Results Standard regression adjustment yields a biased estimate of the effect of treatment on mortality relative to the estimate obtained by the g-formula. Conclusions The g-formula allows estimation of a relevant parameter for public health officials: the change in the hazard of mortality under a hypothetical intervention, such as reduction of exposure to a harmful agent or introduction of a beneficial new treatment. We present a simple approach to implement the parametric g-formula that is sufficiently general to allow easy adaptation to many settings of public health relevance.},
+  pmcid = {PMC4310506},
+  pmid = {25140837}
+}
+
+@article{laanTargetedMinimumLoss,
+  title = {Targeted {{Minimum Loss Based Estimation}} of {{Causal Effects}} of {{Multiple Time Point Interventions}}},
+  author = {van der Laan, Mark J. and Gruber, Susan},
+  journal = {The International Journal of Biostatistics},
+  volume = {8},
+  number = {1},
+  publisher = {De Gruyter},
+  issn = {1557-4679},
+  doi = {10.1515/1557-4679.1370},
+  urldate = {2026-03-11},
+  abstract = {We consider estimation of the effect of a multiple time point intervention on an outcome of interest, where the intervention nodes are subject to time-dependent confounding by intermediate covariates.In previous work van der Laan (2010) and Stitelman and van der Laan (2011a) developed and implemented a closed form targeted maximum likelihood estimator (TMLE) relying on the log-likelihood loss function, and demonstrated important gains relative to inverse probability of treatment weighted estimators and estimating equation based estimators. This TMLE relies on an initial estimator of the entire probability distribution of the longitudinal data structure. To enhance the finite sample performance of the TMLE of the target parameter it is of interest to select the smallest possible relevant part of the data generating distribution, which is estimated and updated by TMLE. Inspired by this goal, we develop a new closed form TMLE of an intervention specific mean outcome based on general longitudinal data structures. The target parameter is represented as an iterative sequence of conditional expectations of the outcome of interest. This collection of conditional means represents the relevant part, which is estimated and updated using the general TMLE algorithm. We also develop this new TMLE for other causal parameters, such as parameters defined by working marginal structural models. The theoretical properties of the TMLE are also practically demonstrated with a small scale simulation study.The proposed TMLE is building upon a previously proposed estimator Bang and Robins (2005) by integrating some of its key and innovative ideas into the TMLE framework.},
+  copyright = {De Gruyter expressly reserves the right to use all content for commercial text and data mining within the meaning of Section 44b of the German Copyright Act.},
+  langid = {english},
+  keywords = {Asymptotic linearity of an estimator,causal effect,confounding,efficient influence curve,G-computation formula,influence curve,longitudinal data,loss function,marginal structural working model,nonparametric structural equation model,positivity assumption,randomization assumption,semiparametric statistical model,targeted maximum likelihood estimation,targeted minimum loss based estimation,TMLE,treatment regimen}
+}
+
 @inproceedings{lalchandGeneralisedGPLVMStochastic2022,
   title = {Generalised {{GPLVM}} with {{Stochastic Variational Inference}}},
   booktitle = {Proceedings of {{The}} 25th {{International Conference}} on {{Artificial Intelligence}} and {{Statistics}}},
@@ -298,6 +411,16 @@
   urldate = {2026-02-02}
 }
 
+@inproceedings{louizosCausalEffectInference2017,
+  title = {Causal {{Effect Inference}} with {{Deep Latent-Variable Models}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {Louizos, Christos and Shalit, Uri and Mooij, Joris M and Sontag, David and Zemel, Richard and Welling, Max},
+  year = 2017,
+  volume = {30},
+  publisher = {Curran Associates, Inc.},
+  urldate = {2026-03-10}
+}
+
 @article{lundbergWhatYourEstimand2021,
   title = {What {{Is Your Estimand}}? {{Defining}} the {{Target Quantity Connects Statistical Evidence}} to {{Theory}}},
   shorttitle = {What {{Is Your Estimand}}?},
@@ -314,6 +437,22 @@
   urldate = {2026-03-10},
   abstract = {We make only one point in this article. Every quantitative study must be able to answer the question: what is your estimand? The estimand is the target quantity---the purpose of the statistical analysis. Much attention is already placed on how to do estimation; a similar degree of care should be given to defining the thing we are estimating. We advocate that authors state the central quantity of each analysis---the theoretical estimand---in precise terms that exist outside of any statistical model. In our framework, researchers do three things: (1) set a theoretical estimand, clearly connecting this quantity to theory; (2) link to an empirical estimand, which is informative about the theoretical estimand under some identification assumptions; and (3) learn from data. Adding precise estimands to research practice expands the space of theoretical questions, clarifies how evidence can speak to those questions, and unlocks new tools for estimation. By grounding all three steps in a precise statement of the target quantity, our framework connects statistical evidence to theory.},
   langid = {english}
+}
+
+@misc{michaelInstrumentalVariableEstimation2020,
+  title = {Instrumental {{Variable Estimation}} of {{Marginal Structural Mean Models}} for {{Time-Varying Treatment}}},
+  author = {Michael, Haben and Cui, Yifan and Lorch, Scott and Tchetgen, Eric Tchetgen},
+  year = 2020,
+  month = jul,
+  number = {arXiv:2004.11769},
+  eprint = {2004.11769},
+  primaryclass = {stat},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2004.11769},
+  urldate = {2026-03-11},
+  abstract = {Robins 1997 introduced marginal structural models (MSMs), a general class of counterfactual models for the joint effects of time-varying treatment regimes in complex longitudinal studies subject to time-varying confounding. In his work, identification of MSM parameters is established under a sequential randomization assumption (SRA), which rules out unmeasured confounding of treatment assignment over time. We consider sufficient conditions for identification of the parameters of a subclass, Marginal Structural Mean Models (MSMMs), when sequential randomization fails to hold due to unmeasured confounding, using instead a time-varying instrumental variable. Our identification conditions require that no unobserved confounder predicts compliance type for the time-varying treatment. We describe a simple weighted estimator and examine its finite-sample properties in a simulation study. We apply the proposed estimator to examine the effect of delivery hospital on neonatal survival probability.},
+  archiveprefix = {arXiv},
+  keywords = {Statistics - Methodology}
 }
 
 @article{mulderCausalEffectsTimeVarying2024,
@@ -366,6 +505,21 @@
   abstract = {Longitudinal studies of a binary outcome are common in the health, social, and behavioral sciences. In general, a feature of random effects logistic regression models for longitudinal binary data is that the marginal functional form, when integrated over the distribution of the random effects, is no longer of logistic form. Recently, Wang and Louis [Biometrika 90 (2003) 765--775] proposed a random intercept model in the clustered binary data setting where the marginal model has a logistic form. An acknowledged limitation of their model is that it allows only a single random effect that varies from cluster to cluster. In this paper we propose a modification of their model to handle longitudinal data, allowing separate, but correlated, random intercepts at each measurement occasion. The proposed model allows for a flexible correlation structure among the random intercepts, where the correlations can be interpreted in terms of Kendall's \${$\tau\$$}. For example, the marginal correlations among the repeated binary outcomes can decline with increasing time separation, while the model retains the property of having matching conditional and marginal logit link functions. Finally, the proposed method is used to analyze data from a longitudinal study designed to monitor cardiac abnormalities in children born to HIV-infected women.},
   archiveprefix = {arXiv},
   keywords = {Statistics - Applications}
+}
+
+@article{petersenHistoryadjustedMarginalStructural2007,
+  title = {History-Adjusted {{Marginal Structural Models}} for {{Estimating Time-varying Effect Modification}}},
+  author = {Petersen, M. L. and Deeks, S. G. and Martin, J. N. and Van Der Laan, M. J.},
+  year = 2007,
+  month = aug,
+  journal = {American Journal of Epidemiology},
+  volume = {166},
+  number = {9},
+  pages = {985--993},
+  issn = {0002-9262, 1476-6256},
+  doi = {10.1093/aje/kwm232},
+  urldate = {2026-03-11},
+  langid = {english}
 }
 
 @article{robinsAssociationCausationMarginal1999,
@@ -439,6 +593,22 @@
   langid = {english}
 }
 
+@article{tanSensitivityModelsBounds2025,
+  title = {Sensitivity Models and Bounds under Sequential Unmeasured Confounding in Longitudinal Studies},
+  author = {TAN, {\relax ZHIQIANG}},
+  year = 2025,
+  journal = {Biometrika},
+  volume = {112},
+  number = {1},
+  pages = {asae044},
+  issn = {0006-3444},
+  doi = {10.1093/biomet/asae044},
+  urldate = {2026-03-11},
+  abstract = {We consider sensitivity analysis for causal inference in a longitudinal study with time-varying treatments and covariates. It is of interest to assess the worst-case possible values of counterfactual outcome means and average treatment effects under sequential unmeasured confounding. We formulate several multi-period sensitivity models to relax the corresponding versions of the assumption of sequential non-confounding. The primary sensitivity model involves only counterfactual outcomes, whereas the joint and product sensitivity models involve both counterfactual covariates and outcomes. We establish and compare explicit representations for the sharp and conservative bounds at the population level through convex optimization, depending only on the observed data. These results provide for the first time a satisfactory generalization from the marginal sensitivity model in the cross-sectional setting.},
+  pmcid = {PMC12352972},
+  pmid = {40822298}
+}
+
 @misc{tchetgenIntroductionProximalCausal2020,
   title = {An {{Introduction}} to {{Proximal Causal Learning}}},
   author = {Tchetgen, Eric J. Tchetgen and Ying, Andrew and Cui, Yifan and Shi, Xu and Miao, Wang},
@@ -476,6 +646,23 @@
   langid = {english}
 }
 
+@article{vansteelandtStructuralNestedModels2014,
+  title = {Structural {{Nested Models}} and {{G-estimation}}: {{The Partially Realized Promise}}},
+  shorttitle = {Structural {{Nested Models}} and {{G-estimation}}},
+  author = {Vansteelandt, Stijn and Joffe, Marshall},
+  year = 2014,
+  journal = {Statistical Science},
+  volume = {29},
+  number = {4},
+  eprint = {43288507},
+  eprinttype = {jstor},
+  pages = {707--731},
+  publisher = {Institute of Mathematical Statistics},
+  issn = {0883-4237},
+  urldate = {2026-03-11},
+  abstract = {Structural nested models (SNMs) and the associated method of G-estimation were first proposed by James Robins over two decades ago as approaches to modeling and estimating the joint effects of a sequence of treatments or exposures. The models and estimation methods have since been extended to dealing with a broader series of problems, and have considerable advantages over the other methods developed for estimating such joint effects. Despite these advantages, the application of these methods in applied research has been relatively infrequent; we view this as unfortunate. To remedy this, we provide an overview of the models and estimation methods as developed, primarily by Robins, over the years. We provide insight into their advantages over other methods, and consider some possible reasons for failure of the methods to be more broadly adopted, as well as possible remedies. Finally, we consider several extensions of the standard models and estimation methods.}
+}
+
 @article{wangBlessingsMultipleCauses2019,
   title = {The {{Blessings}} of {{Multiple Causes}}},
   author = {Wang, Yixin and Blei, David M.},
@@ -507,4 +694,35 @@
   abstract = {Wang and Blei (2019) studies multiple causal inference and proposes the deconfounder algorithm. The paper discusses theoretical requirements and presents empirical studies. Several refinements have been suggested around the theory of the deconfounder. Among these, Imai and Jiang clarified the assumption of "no unobserved single-cause confounders." Using their assumption, this paper clarifies the theory. Furthermore, Ogburn et al. (2020) proposes counterexamples to the theory. But the proposed counterexamples do not satisfy the required assumptions.},
   archiveprefix = {arXiv},
   keywords = {Computer Science - Machine Learning,Statistics - Machine Learning}
+}
+
+@misc{wangSequentialTreatmentEffect2025,
+  title = {Sequential {{Treatment Effect Estimation}} with {{Unmeasured Confounders}}},
+  author = {Wang, Yingrong and Wu, Anpeng and Li, Baohong and Xiao, Ziyang and Xiong, Ruoxuan and Han, Qing and Kuang, Kun},
+  year = 2025,
+  month = may,
+  number = {arXiv:2505.09113},
+  eprint = {2505.09113},
+  primaryclass = {cs},
+  publisher = {arXiv},
+  doi = {10.48550/arXiv.2505.09113},
+  urldate = {2026-03-10},
+  abstract = {This paper studies the cumulative causal effects of sequential treatments in the presence of unmeasured confounders. It is a critical issue in sequential decision-making scenarios where treatment decisions and outcomes dynamically evolve over time. Advanced causal methods apply transformer as a backbone to model such time sequences, which shows superiority in capturing long time dependence and periodic patterns via attention mechanism. However, even they control the observed confounding, these estimators still suffer from unmeasured confounders, which influence both treatment assignments and outcomes. How to adjust the latent confounding bias in sequential treatment effect estimation remains an open challenge. Therefore, we propose a novel Decomposing Sequential Instrumental Variable framework for CounterFactual Regression (DSIV-CFR), relying on a common negative control assumption. Specifically, an instrumental variable (IV) is a special negative control exposure, while the previous outcome serves as a negative control outcome. This allows us to recover the IVs latent in observation variables and estimate sequential treatment effects via a generalized moment condition. We conducted experiments on 4 datasets and achieved significant performance in one- and multi-step prediction, supported by which we can identify optimal treatments for dynamic systems.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Methodology}
+}
+
+@article{yingProximalCausalInference2023,
+  title = {Proximal Causal Inference for Complex Longitudinal Studies},
+  author = {Ying, Andrew and Miao, Wang and Shi, Xu and Tchetgen Tchetgen, Eric J},
+  year = 2023,
+  month = jul,
+  journal = {Journal of the Royal Statistical Society Series B: Statistical Methodology},
+  volume = {85},
+  number = {3},
+  pages = {684--704},
+  issn = {1369-7412},
+  doi = {10.1093/jrsssb/qkad020},
+  urldate = {2026-03-11},
+  abstract = {A standard assumption for causal inference about the joint effects of time-varying treatment is that one has measured sufficient covariates to ensure that within covariate strata, subjects are exchangeable across observed treatment values, also known as `sequential randomization assumption (SRA)'. SRA is often criticized as it requires one to accurately measure all confounders. Realistically, measured covariates can rarely capture all confounders with certainty. Often covariate measurements are at best proxies of confounders, thus invalidating inferences under SRA. In this paper, we extend the proximal causal inference (PCI) framework of Miao, Geng, et al. (2018. Identifying causal effects with proxy variables of an unmeasured confounder. Biometrika, 105(4), 987--993. https://doi.org/10.1093/biomet/asy038) to the longitudinal setting under a semiparametric marginal structural mean model (MSMM). PCI offers an opportunity to learn about joint causal effects in settings where SRA based on measured time-varying covariates fails, by formally accounting for the covariate measurements as imperfect proxies of underlying confounding mechanisms. We establish nonparametric identification with a pair of time-varying proxies and provide a corresponding characterization of regular and asymptotically linear estimators of the parameter indexing the MSMM, including a rich class of doubly robust estimators, and establish the corresponding semiparametric efficiency bound for the MSMM. Extensive simulation studies and a data application illustrate the finite sample behaviour of proposed methods.}
 }

@@ -3,21 +3,30 @@
 \begin{itemize}
     \item no aniticipation effects: $Y_{it}(\bar{a}_{T}) = Y_{it}(\bar{a}_{t})$ for all $t$ \cite{leeFindingDynamicTreatment2012}.
     \item static treatment regimes: for dynamic regimes \cite{hernanComparisonDynamicTreatment2006}
+    \item discrete time points: for continuous time \cite{}
 \end{itemize}
+
+
 Longitudinal causal inference is a broad area of research with a rich literature. There are 
-two main dimensions along which the literature can be categorized. The first dimension is the structure 
-of the causal diagram. A causal diagram $\mathcal{G}$ consist of 
-a set of nodes $\mathbf{V}$ and a set of directed edges $\mathbf{E}$. 
+two main dimensions along which the literature can be organized. The first is the structure 
+of the causal setting, typically represented by a directed acyclic graph (DAG) 
+with a set of nodes $\mathbf{V}$ and a set of directed edges $\mathbf{E}$. 
 Each node in the graph represents a variable and each directed edge 
 represents a causal relationship between two variables. 
 The structure of the causal diagram encodes the assumptions about the 
-data generating process
-, i.e. the presence or absence of treatment-confounder feedback or presence 
-of unobserved confounders. This dimension 
-is more about how the study is designed and the data is collected. The second dimension is about the causal target of interest. This dimension is more 
-about the research question \cite{lundbergWhatYourEstimand2021}. One of the most common causal estimands in longitudinal data is the 
+data generating process and the causal relationships between the variables. This includes 
+features such as the presence or absence of treatment-confounder feedback or presence 
+of unobserved confounders. The second dimension is about the causal target of interest, that is, the 
+estimand addressed by the method. This dimension is driven by the research question and 
+the scientific context of the study \cite{lundbergWhatYourEstimand2021}. 
+For example, in a longitudinal study with time-varying treatments, 
+one might be interested in estimating the average treatment effect at a specific time point, 
+the cumulative effect of the treatment over time, or the effect of a specific treatment regime. 
 
-and the second dimension is the presence or absenc.
+ 
+
+
+and the second dimension is the presence or absence of such feedbacks.
 To situate the two methods that we are going to compare in this thesis, we will review 
 There are different suggested identification strategies for specifically designed to address such feedbacks such as the g-formula or inverse probability of treatment weighting (IPTW) \cite{robinsEstimationCausalEffects2008a}. 
 However, these identification strategies rely on the assumption of 
