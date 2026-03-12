@@ -12,7 +12,9 @@ to simply find an association between those intervetions and the outcomes, but w
 something about
 the \emph{structure} of the data generating process or the causal diagram 
 and using that structure to identify the 
-causal target of interest. Knowing the structure of the data generating process 
+causal target of interest. 
+
+Knowing the structure of the data generating process 
 is not an easy task. 
 It often requires an expert knowledge of the domain and assumptions about how the 
 world works. One way to mitigate 
@@ -31,17 +33,22 @@ main levels of  complexity.
 %conducting causal inference with observational data. 
 The first level is when the 
 cuasal diagram is unknown and we wish to discover it from the data. This is the topic of 
-causal discovery, an active area of research and not the topic of this thesis. 
+causal discovery, an active area of research and not the subject of this thesis. 
 The second level of complexity is when the causal diagram is known but we have unmeasured confounders, i.e. 
 there are variables that affect both the treatment and the outcome but are not observed in the data. This is the 
-subject of this thesis. Furthermore, we are going to focus on the longitudinal data, a common research design where 
-the same individuals are observed at multiple time points. Estimating causal effects in such designs where 
+focus of this thesis. Furthermore, we are going to limit our focus to longitudinal data, a common research design where 
+the same individuals are observed at multiple time points. In many contemporary applications, 
+these repeated measurements are collected at high frequency in daily life through experience sampling, 
+smartphone-based assessments, and wearable sensors. The growing availability of such intensive 
+longitudinal data has made methods for longitudinal causal inference increasingly important \cite{myin-germeysExperienceSamplingMethodology2018}.
+ 
+Estimating causal effects in such designs where 
 treatments and confounders can vary over time is particularly challenging 
 because of the presence of treatment-confounder feedback, i.e.
 the treatments at previous time points both affect the confounders at the next time points 
 and the outcomes. To further define the study's boundaries, it is worth mentioning 
 that this paper focuses on \emph{discrete} time periods\cite{gillCausalInferenceComplex2001} and assumes a lack of anticipation effects, 
-where treatments at future points do not impact potential outcomes at time $t$ \cite{leeFindingDynamicTreatment2012}.
+where treatments at future points do not impact potential outcomes at the current time point \cite{leeFindingDynamicTreatment2012}.
 
 \section{Research question}
 This thesis aims to compare the performance and assumptions of two methods that have been 
@@ -56,7 +63,9 @@ Both methods are applicable to similar setting with
 a single treatment available at each time point and a single outcome at the end of the study.
 Moreover, they both invlove a unit-specific unobserved heterogeneity component that 
 is supposed to capture the effect of the
-unmeasured confounders. They diverge, however, in their characterization of this 
+unmeasured confounders. 
+
+They diverge, however, in their characterization of this 
 unobserved heterogeneity component, the assumptions they make about it and the scope of 
 applicability of their methods. 
 Whereas FE-MSM—rooted in econometrics and political science literature—conceptualizes this 
@@ -66,6 +75,20 @@ as a latent variable, a common framework in machine learning and psychometrics l
 together in the same paper using a unified notation and vocabulary is an effort to make a 
 bridge between different fields of research and to highlight the 
 assumptions and implications of these two methods in a same framework. 
+
+\section{Contribution}
+The main contribution of this thesis is as follows\footnote{Code available at \url{https://github.com/Ali-Setareh/SeqGPLVM_FEMSM}}:
+\begin{itemize}
+    \item To place the FE-MSM and SeqGPLVM approaches in a common notation and conceptual framework, making their assumptions, targets, and implications more directly comparable.
+    
+    \item To evaluate FE-MSM and SeqGPLVM on the same synthetic data-generating processes and to compare their performance under a common simulation design.
+    
+    \item To make the identifying and modeling assumptions underlying both methods more explicit.
+    \item To provide reproducible and publicly available code for both methods. In particular, this thesis delivers, to the best of my knowledge, the first modular GPyTorch implementation of SeqGPLVM, designed to accommodate different treatment types and intended for practical reuse beyond the original paper.
+    
+    \item To relate the sequential deconfounding framework to the deconfounder literature, in particular to the \emph{blessings of multiple causes} idea of Wang and Blei, and to discuss how critiques such as those of D'Amour extend to the time-varying treatment setting.
+\end{itemize}
+
 \section{Thesis structure}
 The rest of the thesis is structured as follows. Chapter ~\ref{chap:literature_review} reviews the 
 relevant literature on longitudinal causal inference with unmeasured confounders.,

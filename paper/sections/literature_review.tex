@@ -10,16 +10,29 @@ represents a causal relationship between two variables.
 The structure of the causal diagram encodes the assumptions about the 
 data generating process and the causal relationships between the variables \cite{pearlCausalityModelsReasoning2009}. This includes 
 features such as the presence or absence of treatment-confounder feedback or presence 
-of unobserved confounders as shown in Figure \ref{fig:sample_dags}.
+of unobserved confounders as shown in Figure \ref{fig:sample_dags}. Some methods are designed to work in specific types 
+of causal structures, while others are more general and can be applied to a wider range of settings.
 
 The second dimension is about the causal target of interest, that is, the 
 estimand addressed by the method. This dimension is driven by the research question and 
 the scientific context of the study \cite{lundbergWhatYourEstimand2021}. 
 For example, in a longitudinal study with time-varying treatments, 
 one might be interested in estimating the average treatment effect at a specific time point, 
-the cumulative effect of the treatment over time, or the effect of a specific treatment regime. These 
-targets are often formalized in the potential-outcomes framework, which is introduced in 
-detail in Chapter ~\ref{chap:method}.
+the cumulative effect of the treatment over time, or the effect of a specific treatment regime. A particular method 
+might be able to estimate one or more of these targets, but not all of them.
+
+\section{Potential outcomes and common assumptions}
+The causal targets are often formalized in the potential-outcomes framework \cite{rubinEstimatingCausalEffects1974}. 
+In this framework, we define the potential outcome of individual $i$ as $Y_i(a)$, representing the outcome that would be observed if 
+the treatment $A$ were set to a specific value $a$. The average treatment effect (ATE) is then defined as 
+the difference in expected potential outcomes under different treatment values, i.e., $\text{ATE} = \mathbb{E}[Y_i(1) - Y_i(0)]$ 
+for a binary treatment.
+
+Similarly, in the longitudinal setting, we can define the potential outcome at time $t$ for a static treatment regime 
+$\bar{a}_t = (a_1, a_2, \ldots, a_t)$ as $Y_{i,t+1}(\bar{a}_t)$, 
+representing the outcome that would be observed if the treatment were set to specific values at each time point. 
+The average treatment effect at time $t$ can then be defined as $\text{ATE}_t = \mathbb{E}[Y_{i,t+1}(\bar{a}_t) - Y_{i,t+1}(\bar{a}'_t)]$ for two different treatment regimes $\bar{a}_t$ and $\bar{a}'_t$.
+as $Y_i(a_1, a_2, \ldots, a_t)$, representing the outcome that would be observed if the treatment were set to specific values at each time point. The average treatment effect at time $t$ can then be defined as $\text{ATE}_t = \mathbb{E}[Y_i(a_1, a_2, \ldots, a_t) - Y_i(a'_1, a'_2, \ldots, a'_t)]$ for two different treatment regimes.
 
 
 
@@ -27,7 +40,7 @@ detail in Chapter ~\ref{chap:method}.
 \begin{figure}[htbp]
 \centering
 
-\begin{subfigure}{0.9\textwidth}
+\begin{subfigure}{0.8\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures/build/simple_dag.pdf}
 \caption{A simple causal DAG with treatment $A$, outcome $Y$, and confounder $X$. The confounder $X$ is a common cause of both the treatment $A$ and the outcome $Y$, which can lead to confounding bias if not properly adjusted for.}
@@ -35,7 +48,7 @@ detail in Chapter ~\ref{chap:method}.
 
 \vspace{0.6cm}
 
-\begin{subfigure}{0.9\textwidth}
+\begin{subfigure}{0.8\textwidth}
 \centering
 \includegraphics[width=\linewidth]{figures/build/treatment_covariate_feedback.pdf}
 \caption{A longitudinal causal DAG with time-varying treatments $A_t$, time-varying confounders $X_t$, and an unobserved confounder $U$.
