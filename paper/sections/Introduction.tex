@@ -47,18 +47,27 @@ treatments and confounders can vary over time is particularly challenging
 because of the presence of treatment-confounder feedback, i.e.
 the treatments at previous time points both affect the confounders at the next time points 
 and the outcomes. To further define the study's boundaries, it is worth mentioning 
-that this paper focuses on \emph{discrete} time periods\cite{gillCausalInferenceComplex2001} and assumes a lack of anticipation effects, 
+that this paper focuses on discrete time periods\cite{gillCausalInferenceComplex2001} and assumes a lack of anticipation effects, 
 where treatments at future points do not impact potential outcomes at the current time point \cite{leeFindingDynamicTreatment2012}.
 
-\section{Research question}
 This thesis aims to compare the performance and assumptions of two methods that have been 
 proposed to estimate the causal effects of time-varying treatments 
-in the presence of \emph{time-invariant} unmeasured confounders. The first method is the FE-MSM method 
-proposed by \cite{blackwellEffectPoliticalAdvertising2024} and the second method is the 
-SeqGPLVM method proposed by \cite{hattSequentialDeconfoundingCausal2024}. 
-Both approaches are comparable as they aim to estimate the 
+in the presence of \emph{time-invariant} unmeasured confounders. The first is the fixed-effect
+marginal structural model (FE-MSM) proposed by \cite{blackwellEffectPoliticalAdvertising2024}, 
+which cobines the marginal structural model (MSM) \cite{robinsMarginalStructuralModels2000} 
+with unit fixed effects. The second method is the 
+sequential deconfounding with Gaussian process latent variable model (SeqGPLVM) 
+method introduced by \cite{hattSequentialDeconfoundingCausal2024}. This method may be interpreted as the 
+sequential extension of the deconfounder method of \cite{wangBlessingsMultipleCauses2019} when 
+instead of having conditionally independent multiple treatments, there is a time ordered causally linked 
+sequence of treatments. It is based on the Gaussian process latent variable model \cite{lawrenceGaussianProcessLatent2003} 
+to estimate a statistically sufficient substitute for the unobserved confounders, 
+which is then used to retain the sequential ignorability assumption to estimate any causal target of interest. 
+
+The two methods are comparable as they can be used to estimate the 
 causal effects of time-varying treatments in the presence of time-invariant 
-unmeasured confounders espechially when previous treatments influence time-varying confounders. 
+unmeasured confounders, specifically where feedback mechanisms exist 
+between treatments and confounders. 
 Both methods are applicable to similar setting with  
 a single treatment available at each time point and a single outcome at the end of the study.
 Moreover, they both invlove a unit-specific unobserved heterogeneity component that 
@@ -69,31 +78,35 @@ They diverge, however, in their characterization of this
 unobserved heterogeneity component, the assumptions they make about it and the scope of 
 applicability of their methods. 
 Whereas FE-MSM—rooted in econometrics and political science literature—conceptualizes this 
-component as a frequentist fixed effect and a nuisance parameter, 
+component as a frequentist fixed effect and a nuisance parameter which is tied 
+to MSMs based routines, 
 the machine-learning-based SeqGPLVM views it 
-as a latent variable, a common framework in machine learning and psychometrics literature. Therefore, putting these two methods 
+as a latent variable and employs a much more flexible and non-parametric 
+approach to estimate these latent variables which can be employed in a wide range of 
+causal inference methods. 
+Therefore, putting these two methods 
 together in the same paper using a unified notation and vocabulary is an effort to make a 
 bridge between different fields of research and to highlight the 
 assumptions and implications of these two methods in a same framework. 
+
+
 
 \section{Contribution}
 The main contribution of this thesis is as follows\footnote{Code available at \url{https://github.com/Ali-Setareh/SeqGPLVM_FEMSM}}:
 \begin{itemize}
     \item To place the FE-MSM and SeqGPLVM approaches in a common notation and conceptual framework, making their assumptions, targets, and implications more directly comparable.
-    
     \item To evaluate FE-MSM and SeqGPLVM on the same synthetic data-generating processes and to compare their performance under a common simulation design.
-    
     \item To make the identifying and modeling assumptions underlying both methods more explicit.
     \item To provide reproducible and publicly available code for both methods. In particular, this thesis delivers, to the best of my knowledge, the first modular GPyTorch implementation of SeqGPLVM, designed to accommodate different treatment types and intended for practical reuse beyond the original paper.
-    
+    \item To derive the loss function for SeqGPLVM and to provide a detailed explanation of the estimation procedure, which was not fully elaborated in the original paper.
     \item To relate the sequential deconfounding framework to the deconfounder literature, in particular to the \emph{blessings of multiple causes} idea of Wang and Blei, and to discuss how critiques such as those of D'Amour extend to the time-varying treatment setting.
 \end{itemize}
 
 \section{Thesis structure}
 The rest of the thesis is structured as follows. Chapter ~\ref{chap:literature_review} reviews the 
 relevant literature on longitudinal causal inference with unmeasured confounders.,
-Chapter ~\ref{chap:method}, describes the FE-MSM method and the 
-SeqGPLVM method in detail, including their assumptions and estimation procedures. 
+Chapter ~\ref{chap:method}, describes the FE-MSM and the 
+SeqGPLVM in detail, including their assumptions and estimation procedures. 
 Chapter ~\ref{chap:simulation_study}, presents a simulation study comparing the performance of these 
 two methods under different scenarios. Finally, chapter ~\ref{chap:discussion}, discusses the 
 implications of findings and suggest directions for future research.
